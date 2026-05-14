@@ -22,6 +22,10 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
+export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  return await blob.arrayBuffer();
+}
+
 export function extractDomain(steps: Step[]): string | null {
   const stepWithUrl = steps.find((s) => s.url);
   if (!stepWithUrl) return null;
