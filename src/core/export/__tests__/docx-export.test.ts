@@ -63,9 +63,10 @@ describe('exportGuideAsDOCX', () => {
     const xml = await readDocumentXml(blob);
     expect(xml).toContain('My Guide');
     expect(xml).toContain('export.stepsCount[1]');
-    expect(xml).toContain('export.createdLabel[');
-    expect(xml).toContain('export.sourceLabel[example.com]');
-    expect(xml).toContain('export.stepLabel[01]');
+    expect(xml).toContain('EXPORT.CREATED');
+    expect(xml).toContain('EXPORT.SOURCE');
+    expect(xml).toContain('example.com');
+    expect(xml).toContain('<w:pageBreakBefore/>');
     expect(xml).toContain('Click the button');
   });
 
@@ -75,7 +76,7 @@ describe('exportGuideAsDOCX', () => {
 
     expect(xml).toContain('Test Guide');
     expect(xml).toContain('export.stepsCount[0]');
-    expect(xml).not.toContain('export.stepLabel[');
+    expect(xml).not.toContain('Click the button');
   });
 
   it('embeds screenshot media when steps have screenshots', async () => {
