@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
-import { exportGuideAsDOCX } from '@/core/export/docx-export';
+import { exportGuideAsDOCX, fitDocxImageSize } from '@/core/export/docx-export';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 
 function makeGuide(overrides: Partial<Guide> = {}): Guide {
@@ -94,5 +94,29 @@ describe('exportGuideAsDOCX', () => {
     const files = await unzipDocx(blob);
 
     expect(Object.keys(files).some((name) => name.startsWith('word/media/'))).toBe(false);
+  });
+});
+
+describe('fitDocxImageSize', () => {
+  it('preserves aspect ratio and never upscales', () => {
+    expect(fitDocxImageSize(400, 300)).toEqual({ width: 400, height: 300 });
+  });
+
+  it('clamps wide screenshots to max width', () => {
+    const { width, height } = fitDocxImageSize(1040, 600);
+    expect(width).toBe(520);
+    expect(height).toBe(300);
+  });
+
+  it('clamps tall screenshots so they fit one page', () => {
+    const { width, height } = fitDocxImageSize(400, 2000);
+    expect(height).toBe(640);
+    expect(width).toBe(128);
+  });
+
+  it('accounts for left indent when clamping width', () => {
+    const { width, height } = fitDocxImageSize(800, 600, 900);
+    expect(width).toBe(475);
+    expect(height).toBe(356);
   });
 });

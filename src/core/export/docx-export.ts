@@ -19,8 +19,23 @@ import { logger } from '@/lib/logger';
 type SupportedDocxImageType = 'bmp' | 'gif' | 'jpg' | 'png';
 
 const DOCX_MAX_IMAGE_WIDTH = 520;
+const DOCX_MAX_IMAGE_HEIGHT = 640; // px @ 96dpi, fits one page after margins
 const DOCX_STEP_INDENT = 900;
 const DOCX_FONT_FAMILY = 'Helvetica';
+
+/** Scale screenshot to fit page bounds without upscaling or distorting. */
+export function fitDocxImageSize(
+  screenshotWidth: number,
+  screenshotHeight: number,
+  leftIndent = 0,
+): { width: number; height: number } {
+  const maxWidth = DOCX_MAX_IMAGE_WIDTH - Math.round(leftIndent / 20);
+  const scale = Math.min(maxWidth / screenshotWidth, DOCX_MAX_IMAGE_HEIGHT / screenshotHeight, 1);
+  return {
+    width: Math.max(1, Math.round(screenshotWidth * scale)),
+    height: Math.max(1, Math.round(screenshotHeight * scale)),
+  };
+}
 
 function buildGradientDividerParagraph(): Paragraph {
   const gradientSegments = ['4F46E5', '635BED', '8178F4', 'A4A1F9', 'C7D2FE', '9BD2FE', '60C8FB', '38BDF8'];
@@ -145,8 +160,7 @@ async function buildImageParagraph(
 
   try {
     const arrayBuffer = await blobToArrayBuffer(screenshot.blob);
-    const width = Math.min(screenshot.width, DOCX_MAX_IMAGE_WIDTH - Math.round(leftIndent / 20));
-    const height = Math.max(1, Math.round((screenshot.height / screenshot.width) * width));
+    const { width, height } = fitDocxImageSize(screenshot.width, screenshot.height, leftIndent);
 
     return new Paragraph({
       alignment: AlignmentType.LEFT,
