@@ -1,4 +1,17 @@
-import { ArrowUpRight, Check, Crop, EyeOff, MousePointer2, PenTool, Square, Type, X } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Check,
+  Circle,
+  Crop,
+  EyeOff,
+  MousePointer2,
+  PenTool,
+  RectangleHorizontal,
+  Square,
+  Trash2,
+  Type,
+  X,
+} from 'lucide-react';
 import type { ComponentType } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
@@ -11,8 +24,10 @@ import {
   hitTest,
   moveAnnotation,
   resizeAnnotation,
+  resolveTarget,
 } from '@/core/screenshot/geometry';
-import type { Annotation, ScreenshotEdits } from '@/core/screenshot/types';
+import type { Annotation, ScreenshotEdits, TargetShape } from '@/core/screenshot/types';
+import { TARGET_COLORS } from '@/core/screenshot/types';
 
 type EditorTool = 'select' | 'box' | 'arrow' | 'text' | 'freehand' | 'redact' | 'crop';
 
@@ -43,6 +58,7 @@ const MIN_CROP_SIZE = 20;
 const HANDLE_DISPLAY_SIZE = 10;
 const HANDLE_HIT_PX = 10;
 const DRAFT_ID = 'draft';
+const TARGET_ID = 'click-target';
 
 const TOOLS: { id: EditorTool; icon: ComponentType<{ size?: number }>; labelKey: string }[] = [
   { id: 'select', icon: MousePointer2, labelKey: 'annotationEditor.toolSelect' },
@@ -76,7 +92,7 @@ function handleCorners(b: ScreenshotBounds): [Handle, number, number][] {
 }
 
 function isResizable(a: Annotation): boolean {
-  return a.type === 'box' || a.type === 'redact';
+  return a.type === 'box' || a.type === 'redact' || a.type === 'target';
 }
 
 function hitHandle(b: ScreenshotBounds, x: number, y: number, radius: number): Handle | null {
@@ -94,6 +110,19 @@ function drawShape(ctx: CanvasRenderingContext2D, a: Annotation, alpha: number) 
       ctx.strokeStyle = a.color;
       ctx.lineWidth = 3;
       ctx.strokeRect(a.x, a.y, a.w, a.h);
+      break;
+    case 'target':
+      ctx.strokeStyle = a.color;
+      ctx.lineWidth = 4;
+      if (a.shape === 'circle') {
+        ctx.beginPath();
+        ctx.ellipse(a.x + a.w / 2, a.y + a.h / 2, a.w / 2, a.h / 2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.roundRect(a.x, a.y, a.w, a.h, 10);
+        ctx.stroke();
+      }
       break;
     case 'arrow': {
       const head = 14;
@@ -143,7 +172,15 @@ function drawShape(ctx: CanvasRenderingContext2D, a: Annotation, alpha: number) 
 
 export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }: AnnotationEditorProps) {
   const [activeTool, setActiveTool] = useState<EditorTool>(initialToolFor(tool));
-  const [annotations, setAnnotations] = useState<Annotation[]>(screenshot.edits?.annotations ?? []);
+  const [annotations, setAnnotations] = useState<Annotation[]>(() => {
+    const existing = screenshot.edits?.annotations ?? [];
+    const t = resolveTarget(screenshot);
+    if (!t) return existing;
+    return [
+      ...existing,
+      { id: TARGET_ID, type: 'target', x: t.x, y: t.y, w: t.width, h: t.height, color: t.color, shape: t.shape },
+    ];
+  });
   const [viewport, setViewport] = useState<ScreenshotBounds | undefined>(screenshot.edits?.viewport);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [color, setColor] = useState<string>(COLORS[0]);
@@ -153,6 +190,14 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const [textValue, setTextValue] = useState('');
   const [bitmap, setBitmap] = useState<ImageBitmap | null>(null);
   const [saving, setSaving] = useState(false);
+  const [targetPicker, setTargetPicker] = useState(false);
+
+  const selected = annotations.find((a) => a.id === selectedId);
+  const selectedTarget = selected?.type === 'target' ? selected : null;
+
+  const updateTarget = (patch: { color?: string; shape?: TargetShape }) => {
+    setAnnotations((prev) => prev.map((a) => (a.id === TARGET_ID && a.type === 'target' ? { ...a, ...patch } : a)));
+  };
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -229,16 +274,16 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       ctx.restore();
     }
 
-    const selected = annotations.find((a) => a.id === selectedId);
-    if (selected) {
-      const b = annotationBounds(selected);
+    const sel = annotations.find((a) => a.id === selectedId);
+    if (sel) {
+      const b = annotationBounds(sel);
       ctx.save();
       ctx.strokeStyle = '#4F46E5';
       ctx.lineWidth = 2 * scale;
       ctx.setLineDash([6 * scale, 4 * scale]);
       ctx.strokeRect(b.x, b.y, b.width, b.height);
       ctx.setLineDash([]);
-      if (isResizable(selected)) {
+      if (isResizable(sel)) {
         const handleSize = HANDLE_DISPLAY_SIZE * scale;
         ctx.fillStyle = '#4F46E5';
         for (const [, hx, hy] of handleCorners(b)) {
@@ -420,7 +465,22 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
   const handleDone = async () => {
     setSaving(true);
-    const nextEdits: ScreenshotEdits = { ...screenshot.edits, annotations };
+    const targetAnnotation = annotations.find((a) => a.id === TARGET_ID);
+    const nextEdits: ScreenshotEdits = {
+      ...screenshot.edits,
+      annotations: annotations.filter((a) => a.id !== TARGET_ID),
+      target:
+        targetAnnotation && targetAnnotation.type === 'target'
+          ? {
+              x: targetAnnotation.x,
+              y: targetAnnotation.y,
+              width: targetAnnotation.w,
+              height: targetAnnotation.h,
+              shape: targetAnnotation.shape,
+              color: targetAnnotation.color,
+            }
+          : null,
+    };
     if (viewport) nextEdits.viewport = viewport;
     await updateScreenshotEdits(screenshot.id, nextEdits);
     onDone(nextEdits);
@@ -517,6 +577,63 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 className="absolute z-10 rounded-md border border-accent bg-card px-2 py-1 text-sm text-foreground outline-none"
                 style={{ left: textEditor.left, top: textEditor.top }}
               />
+            )}
+            {selectedTarget && (
+              <div
+                className="absolute z-20 -translate-x-1/2 flex flex-col items-center gap-1.5"
+                style={{
+                  left: `${((selectedTarget.x + selectedTarget.w / 2) / screenshot.width) * 100}%`,
+                  top: `${((selectedTarget.y + selectedTarget.h) / screenshot.height) * 100}%`,
+                }}
+              >
+                <div className="mt-2 flex items-center gap-1 rounded-xl bg-primary px-2 py-1.5 shadow-xl">
+                  <button
+                    type="button"
+                    title={i18n.t('annotationEditor.targetColor')}
+                    onClick={() => setTargetPicker((v) => !v)}
+                    className="w-6 h-6 rounded-full border-2 border-primary-foreground/20"
+                    style={{ backgroundColor: selectedTarget.color }}
+                  />
+                  <button
+                    type="button"
+                    title={i18n.t('annotationEditor.targetShape')}
+                    onClick={() => updateTarget({ shape: selectedTarget.shape === 'circle' ? 'rect' : 'circle' })}
+                    className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
+                  >
+                    {selectedTarget.shape === 'circle' ? <Circle size={14} /> : <RectangleHorizontal size={14} />}
+                  </button>
+                  <button
+                    type="button"
+                    title={i18n.t('common.delete')}
+                    onClick={() => {
+                      setAnnotations((prev) => prev.filter((a) => a.id !== TARGET_ID));
+                      setSelectedId(null);
+                      setTargetPicker(false);
+                    }}
+                    className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-destructive/25"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                {targetPicker && (
+                  <div className="flex items-center gap-1.5 rounded-xl bg-primary px-2.5 py-2 shadow-xl">
+                    {TARGET_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => updateTarget({ color: c })}
+                        className={`w-5 h-5 rounded-full ${selectedTarget.color === c ? 'ring-2 ring-primary-foreground ring-offset-2 ring-offset-primary' : ''}`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                    <input
+                      value={selectedTarget.color}
+                      onChange={(e) => updateTarget({ color: e.target.value })}
+                      className="w-20 rounded-md bg-primary-foreground/10 px-1.5 py-0.5 text-[11px] text-primary-foreground outline-none"
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

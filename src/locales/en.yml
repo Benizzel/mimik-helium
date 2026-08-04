@@ -184,6 +184,8 @@ annotationEditor:
   toolCrop: Crop
   colorLabel: Colour
   textPlaceholder: Type something...
+  targetColor: Target color
+  targetShape: Target shape
   done: Done
 
 exportMenu:

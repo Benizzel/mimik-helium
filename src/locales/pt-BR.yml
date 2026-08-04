@@ -184,6 +184,8 @@ annotationEditor:
   toolCrop: Recortar
   colorLabel: Cor
   textPlaceholder: Digite algo...
+  targetColor: Cor do alvo
+  targetShape: Forma do alvo
   done: Pronto
 
 exportMenu:
