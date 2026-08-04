@@ -417,12 +417,12 @@ export default function ScreenshotView({
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </div>
       )}
+      {!readOnly && saved && (
+        <span className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center px-2.5 h-7 rounded-md text-[10px] font-semibold bg-primary text-primary-foreground shadow-sm">
+          {i18n.t('screenshotView.saved')}
+        </span>
+      )}
       <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1">
-        {!readOnly && saved && (
-          <span className="flex items-center px-2 h-7 rounded-md text-[10px] font-semibold bg-primary text-primary-foreground shadow-sm">
-            {i18n.t('screenshotView.saved')}
-          </span>
-        )}
         {showZoomControls && (
           <>
             <button
