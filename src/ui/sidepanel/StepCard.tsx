@@ -4,6 +4,7 @@ import { i18n } from '#imports';
 import type { Screenshot, Step } from '@/core/guides/types';
 import { renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
+import ConfirmDialog from '@/ui/shared/ConfirmDialog';
 import ScreenshotView from '@/ui/shared/ScreenshotView';
 
 interface DragHandleProps {
@@ -34,6 +35,7 @@ export default function StepCard({
   const [dragOver, setDragOver] = useState(false);
   const [copied, setCopied] = useState(false);
   const pressedOnScreenshot = useRef(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     setDescription(step.description);
@@ -44,7 +46,8 @@ export default function StepCard({
   };
 
   const handleDelete = () => {
-    if (window.confirm(i18n.t('editor.deleteThisStep'))) onDelete(step.id);
+    setConfirmDelete(false);
+    onDelete(step.id);
   };
 
   const handleCopy = async () => {
@@ -127,7 +130,7 @@ export default function StepCard({
               </button>
             )}
             <button
-              onClick={handleDelete}
+              onClick={() => setConfirmDelete(true)}
               className="p-1 rounded-md transition-colors text-border hover:text-destructive"
               title={i18n.t('recording.deleteStep')}
             >
@@ -136,6 +139,13 @@ export default function StepCard({
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmDelete}
+        title={i18n.t('editor.deleteThisStep')}
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

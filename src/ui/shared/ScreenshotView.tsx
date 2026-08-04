@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
+import ConfirmDialog from '@/ui/shared/ConfirmDialog';
 
 interface ScreenshotViewProps {
   screenshot: Screenshot;
@@ -83,6 +84,7 @@ export default function ScreenshotView({
   const [deleted, setDeleted] = useState(false);
   const [saved, setSaved] = useState(false);
   const [altDraft, setAltDraft] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const processedKeyRef = useRef<string | null>(null);
   const urlRef = useRef<string | null>(null);
   const idRef = useRef(screenshot.id);
@@ -286,7 +288,7 @@ export default function ScreenshotView({
   };
 
   const handleDeleteImage = async () => {
-    if (!window.confirm(i18n.t('screenshotView.deleteConfirm'))) return;
+    setConfirmDelete(false);
     await deleteScreenshot(screenshot.id, screenshot.stepId);
     setDeleted(true);
   };
@@ -425,13 +427,21 @@ export default function ScreenshotView({
                 {i18n.t('screenshotView.download')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={handleDeleteImage}>
+              <DropdownMenuItem variant="destructive" onSelect={() => setConfirmDelete(true)}>
                 <Trash2 size={14} />
                 {i18n.t('screenshotView.deleteImage')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          <ConfirmDialog
+            open={confirmDelete}
+            title={i18n.t('screenshotView.deleteImage')}
+            description={i18n.t('screenshotView.deleteConfirm')}
+            destructive
+            onConfirm={handleDeleteImage}
+            onCancel={() => setConfirmDelete(false)}
+          />
         </div>
       )}
       {!readOnly && saved && (
