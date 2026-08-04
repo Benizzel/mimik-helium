@@ -167,6 +167,9 @@ screenshotView:
   redact: Ocultar
   crop: Recortar
   replaceImage: Reemplazar imagen
+  replaceHint: "Elige una nueva imagen para este paso"
+  replaceDrop: "Haz clic para buscar o suelta una imagen aquí"
+  replaceFormats: "PNG, JPG o WebP"
   download: Descargar
   deleteImage: Eliminar imagen
   deleteConfirm: "¿Eliminar esta captura? No hay vuelta atrás."

@@ -54,6 +54,8 @@ type DragState =
   | { mode: 'move'; id: string; lastX: number; lastY: number }
   | { mode: 'resize'; id: string; handle: Handle; lastX: number; lastY: number }
   | { mode: 'crop'; start: { x: number; y: number }; rect: ScreenshotBounds }
+  | { mode: 'cropResize'; handle: Handle; rect: ScreenshotBounds; lastX: number; lastY: number }
+  | { mode: 'cropMove'; rect: ScreenshotBounds; lastX: number; lastY: number }
   | { mode: 'draw'; start: { x: number; y: number }; shape: Annotation };
 
 const COLORS = ['#4F46E5', '#DC2626', '#059669', '#F59E0B', '#1E1B4B'];
@@ -319,12 +321,22 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
     const scale = getScale();
 
-    if (cropDraft) {
+    if (mode === 'crop') {
+      const frame = cropDraft ?? viewport ?? { x: 0, y: 0, width: canvas.width, height: canvas.height };
       ctx.save();
-      ctx.strokeStyle = '#4F46E5';
+      ctx.fillStyle = 'rgba(30, 27, 75, 0.55)';
+      ctx.beginPath();
+      ctx.rect(0, 0, canvas.width, canvas.height);
+      ctx.rect(frame.x, frame.y, frame.width, frame.height);
+      ctx.fill('evenodd');
+      ctx.strokeStyle = '#FFFFFF';
       ctx.lineWidth = 2 * scale;
-      ctx.setLineDash([6 * scale, 4 * scale]);
-      ctx.strokeRect(cropDraft.x, cropDraft.y, cropDraft.width, cropDraft.height);
+      ctx.strokeRect(frame.x, frame.y, frame.width, frame.height);
+      const hs = HANDLE_DISPLAY_SIZE * scale;
+      ctx.fillStyle = '#FFFFFF';
+      for (const [, hx, hy] of handleCorners(frame)) {
+        ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs);
+      }
       ctx.restore();
     }
 
@@ -344,7 +356,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       }
       ctx.restore();
     }
-  }, [annotations, draft, cropDraft, selectedId, bitmap, getScale]);
+  }, [annotations, draft, cropDraft, selectedId, bitmap, getScale, mode, viewport]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -373,6 +385,19 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     }
 
     if (mode === 'crop') {
+      const scale = getScale();
+      const frame = viewport ?? { x: 0, y: 0, width: screenshot.width, height: screenshot.height };
+      const handle = hitHandle(frame, p.x, p.y, HANDLE_HIT_PX * scale);
+      if (handle) {
+        dragRef.current = { mode: 'cropResize', handle, rect: frame, lastX: p.x, lastY: p.y };
+        setCropDraft(frame);
+        return;
+      }
+      if (p.x > frame.x && p.x < frame.x + frame.width && p.y > frame.y && p.y < frame.y + frame.height) {
+        dragRef.current = { mode: 'cropMove', rect: frame, lastX: p.x, lastY: p.y };
+        setCropDraft(frame);
+        return;
+      }
       const rect: ScreenshotBounds = { x: p.x, y: p.y, width: 0, height: 0 };
       dragRef.current = { mode: 'crop', start: p, rect };
       setCropDraft(rect);
@@ -444,6 +469,38 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       return;
     }
 
+    if (drag.mode === 'cropResize') {
+      const dx = p.x - drag.lastX;
+      const dy = p.y - drag.lastY;
+      drag.lastX = p.x;
+      drag.lastY = p.y;
+      const left = drag.handle === 'nw' || drag.handle === 'sw';
+      const top = drag.handle === 'nw' || drag.handle === 'ne';
+      const r = drag.rect;
+      const next: ScreenshotBounds = {
+        x: left ? r.x + dx : r.x,
+        y: top ? r.y + dy : r.y,
+        width: Math.max(MIN_CROP_SIZE, left ? r.width - dx : r.width + dx),
+        height: Math.max(MIN_CROP_SIZE, top ? r.height - dy : r.height + dy),
+      };
+      drag.rect = cropTo(next, { width: screenshot.width, height: screenshot.height });
+      setCropDraft(drag.rect);
+      return;
+    }
+
+    if (drag.mode === 'cropMove') {
+      const dx = p.x - drag.lastX;
+      const dy = p.y - drag.lastY;
+      drag.lastX = p.x;
+      drag.lastY = p.y;
+      drag.rect = cropTo(
+        { ...drag.rect, x: drag.rect.x + dx, y: drag.rect.y + dy },
+        { width: screenshot.width, height: screenshot.height },
+      );
+      setCropDraft(drag.rect);
+      return;
+    }
+
     if (drag.mode === 'crop') {
       const rect: ScreenshotBounds = {
         x: Math.min(drag.start.x, p.x),
@@ -480,12 +537,11 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     dragRef.current = null;
     if (!drag) return;
 
-    if (drag.mode === 'crop') {
+    if (drag.mode === 'crop' || drag.mode === 'cropResize' || drag.mode === 'cropMove') {
       setCropDraft(null);
       const rect = drag.rect;
       if (rect.width < MIN_CROP_SIZE || rect.height < MIN_CROP_SIZE) return;
       setViewport(cropTo(rect, { width: screenshot.width, height: screenshot.height }));
-      setActiveTool('select');
       return;
     }
 

@@ -16,6 +16,7 @@ import {
 } from '@/ui/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
+import ReplaceImageDialog from '@/ui/shared/ReplaceImageDialog';
 
 interface ScreenshotViewProps {
   screenshot: Screenshot;
@@ -85,6 +86,7 @@ export default function ScreenshotView({
   const [saved, setSaved] = useState(false);
   const [altDraft, setAltDraft] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [replaceOpen, setReplaceOpen] = useState(false);
   const processedKeyRef = useRef<string | null>(null);
   const urlRef = useRef<string | null>(null);
   const idRef = useRef(screenshot.id);
@@ -92,7 +94,6 @@ export default function ScreenshotView({
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragRef = useRef<DragState | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const baseScreenshot = screenshotOverride ?? screenshot;
   const effectiveEdits = editsOverride ?? screenshot.edits;
@@ -253,14 +254,8 @@ export default function ScreenshotView({
     scheduleSave(nextEdits);
   };
 
-  const handleReplaceClick = () => {
-    setTimeout(() => fileInputRef.current?.click(), 0);
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
+  const handleReplaceFile = async (file: File) => {
+    setReplaceOpen(false);
 
     const bitmap = await createImageBitmap(file);
     const { width, height } = bitmap;
@@ -418,7 +413,7 @@ export default function ScreenshotView({
                 {i18n.t('screenshotView.crop')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={handleReplaceClick}>
+              <DropdownMenuItem onSelect={() => setReplaceOpen(true)}>
                 <ImageUp size={14} />
                 {i18n.t('screenshotView.replaceImage')}
               </DropdownMenuItem>
@@ -433,7 +428,7 @@ export default function ScreenshotView({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          <ReplaceImageDialog open={replaceOpen} onSelect={handleReplaceFile} onCancel={() => setReplaceOpen(false)} />
           <ConfirmDialog
             open={confirmDelete}
             title={i18n.t('screenshotView.deleteImage')}
