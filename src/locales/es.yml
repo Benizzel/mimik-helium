@@ -165,6 +165,19 @@ screenshotView:
   zoomIn: Acercar
   zoomOut: Alejar
   saved: Guardado
+  editMenu: Editar captura
+  addClickTarget: Agregar objetivo de clic
+  annotate: Anotar
+  redact: Ocultar
+  crop: Recortar
+  replaceImage: Reemplazar imagen
+  download: Descargar
+  deleteImage: Eliminar imagen
+  deleteConfirm: "¿Eliminar esta captura? No hay vuelta atrás."
+  imageDeleted: Imagen eliminada
+  altButton: ALT
+  altLabel: Texto alternativo
+  altPlaceholder: Describe esta imagen para lectores de pantalla
 
 exportMenu:
   html: HTML

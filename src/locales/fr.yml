@@ -165,6 +165,19 @@ screenshotView:
   zoomIn: "Zoom avant"
   zoomOut: "Zoom arrière"
   saved: "Enregistré"
+  editMenu: "Modifier la capture"
+  addClickTarget: "Ajouter une cible de clic"
+  annotate: "Annoter"
+  redact: "Masquer"
+  crop: "Recadrer"
+  replaceImage: "Remplacer l'image"
+  download: "Télécharger"
+  deleteImage: "Supprimer l'image"
+  deleteConfirm: "Supprimer cette capture ? Pas de retour en arrière."
+  imageDeleted: "Image supprimée"
+  altButton: "ALT"
+  altLabel: "Texte alternatif"
+  altPlaceholder: "Décrivez cette image pour les lecteurs d'écran"
 
 exportMenu:
   html: HTML

@@ -24,7 +24,8 @@ export async function exportGuideAsMarkdown(
     const screenshot = screenshots.get(step.id);
     if (screenshot) {
       const b64 = await blobToBase64(await renderScreenshot(screenshot));
-      lines.push(`![${i18n.t('export.stepLabel', [num])}](data:${screenshot.mimeType};base64,${b64})`, '');
+      const altText = screenshot.edits?.alt || i18n.t('export.stepLabel', [num]);
+      lines.push(`![${altText}](data:${screenshot.mimeType};base64,${b64})`, '');
     }
   }
 

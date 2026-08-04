@@ -160,12 +160,23 @@ export async function saveScreenshot(screenshot: Screenshot): Promise<void> {
   await db.screenshots.add(screenshot);
 }
 
-export async function updateScreenshotBlob(screenshotId: string, blob: Blob): Promise<void> {
-  await db.screenshots.update(screenshotId, { blob });
+export async function updateScreenshotBlob(
+  screenshotId: string,
+  blob: Blob,
+  dimensions?: { width: number; height: number },
+): Promise<void> {
+  await db.screenshots.update(screenshotId, { blob, ...dimensions });
 }
 
 export async function updateScreenshotEdits(screenshotId: string, edits: ScreenshotEdits): Promise<void> {
   await db.screenshots.update(screenshotId, { edits });
+}
+
+export async function deleteScreenshot(screenshotId: string, stepId: string): Promise<void> {
+  await db.transaction('rw', db.screenshots, db.steps, async () => {
+    await db.screenshots.delete(screenshotId);
+    await db.steps.update(stepId, { screenshotId: undefined });
+  });
 }
 
 export async function getScreenshotsForSteps(stepIds: string[]): Promise<Map<string, Screenshot>> {
