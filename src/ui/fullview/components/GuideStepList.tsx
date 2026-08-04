@@ -11,7 +11,7 @@ interface GuideStepListProps {
   screenshots: Map<string, Screenshot>;
   onDescriptionChange: (stepId: string, description: string) => void;
   onDelete: (stepId: string) => void;
-  onBlur: (stepId: string) => void;
+  onOpenEditor: (stepId: string, tool: 'annotate' | 'redact' | 'crop') => void;
   onReorder: (newSteps: Step[]) => void;
 }
 
@@ -21,7 +21,7 @@ export default function GuideStepList({
   screenshots,
   onDescriptionChange,
   onDelete,
-  onBlur,
+  onOpenEditor,
   onReorder,
 }: GuideStepListProps) {
   const { scrollToStepId, setActiveStepId } = useFullview((s) => ({
@@ -93,7 +93,7 @@ export default function GuideStepList({
             screenshot={screenshots.get(step.id)}
             onDescriptionChange={onDescriptionChange}
             onDelete={onDelete}
-            onBlur={onBlur}
+            onOpenEditor={onOpenEditor}
             dragHandleProps={{
               onDragStart: (e: React.DragEvent) => {
                 setDragIndex(idx);

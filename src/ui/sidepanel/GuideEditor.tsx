@@ -1,14 +1,7 @@
 import { ArrowLeft, Layers, Maximize2, Play } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { i18n } from '#imports';
-import {
-  deleteStep,
-  getGuide,
-  reorderSteps,
-  updateGuideTitle,
-  updateScreenshotBlob,
-  updateStepDescription,
-} from '@/core/guides/service';
+import { deleteStep, getGuide, reorderSteps, updateGuideTitle, updateStepDescription } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { createTab, focusWindow, getExtensionURL, queryTabs, updateTab } from '@/lib/browser-api';
 import { sendMessage } from '@/lib/messaging';
@@ -16,7 +9,6 @@ import { getMostCommonDomain } from '@/lib/utils';
 import { Input } from '@/ui/components/ui/input';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
-import BlurCanvas from './BlurCanvas';
 import ExportMenu from './ExportMenu';
 import StepCard from './StepCard';
 
@@ -39,7 +31,6 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
   const [title, setTitle] = useState('');
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [blurringStepId, setBlurringStepId] = useState<string | null>(null);
 
   const loadGuide = useCallback(async () => {
     const result = await getGuide(guideId);
@@ -87,21 +78,22 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
     [guideId, loadGuide],
   );
 
-  const handleBlurSave = useCallback(
-    async (blob: Blob) => {
-      if (!blurringStepId || !data) return;
-      const blurScreenshot = data.screenshots.get(blurringStepId);
-      if (!blurScreenshot) return;
-      await updateScreenshotBlob(blurScreenshot.id, blob);
-      setData((prev) => {
-        if (!prev) return prev;
-        const newScreenshots = new Map(prev.screenshots);
-        newScreenshots.set(blurringStepId, { ...blurScreenshot, blob });
-        return { ...prev, screenshots: newScreenshots };
+  const openInFullView = useCallback(
+    (targetGuideId: string, stepId?: string, tool?: 'annotate' | 'redact' | 'crop') => {
+      const params = new URLSearchParams({ guideId: targetGuideId });
+      if (stepId) params.set('stepId', stepId);
+      if (tool) params.set('tool', tool);
+      const url = getExtensionURL(`/fullview.html?${params.toString()}`);
+      queryTabs({ url: getExtensionURL('/fullview.html') }).then((tabs) => {
+        if (tabs.length > 0 && tabs[0].id) {
+          updateTab(tabs[0].id, { active: true, url });
+          if (tabs[0].windowId) focusWindow(tabs[0].windowId);
+        } else {
+          createTab({ url });
+        }
       });
-      setBlurringStepId(null);
     },
-    [blurringStepId, data],
+    [],
   );
 
   if (loading) return <p className="text-sm text-purple p-4">{i18n.t('common.loading')}</p>;
@@ -118,13 +110,8 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
     );
   }
 
-  const blurScreenshot = blurringStepId ? data.screenshots.get(blurringStepId) : undefined;
-
   return (
     <div className="min-h-screen bg-card flex flex-col">
-      {blurringStepId && blurScreenshot && (
-        <BlurCanvas screenshot={blurScreenshot} onSave={handleBlurSave} onCancel={() => setBlurringStepId(null)} />
-      )}
       <div className="px-4 pt-3 pb-2">
         <div className="flex items-center gap-2">
           <button
@@ -141,17 +128,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
             className="text-lg font-bold bg-transparent border-0 border-b border-transparent hover:border-border focus-visible:ring-0 focus-visible:border-accent shadow-none p-0 h-auto text-foreground"
           />
           <button
-            onClick={() => {
-              const url = getExtensionURL(`/fullview.html?guideId=${guideId}`);
-              queryTabs({ url: getExtensionURL('/fullview.html') }).then((tabs) => {
-                if (tabs.length > 0 && tabs[0].id) {
-                  updateTab(tabs[0].id, { active: true, url: getExtensionURL(`/fullview.html?guideId=${guideId}`) });
-                  if (tabs[0].windowId) focusWindow(tabs[0].windowId);
-                } else {
-                  createTab({ url });
-                }
-              });
-            }}
+            onClick={() => openInFullView(guideId)}
             className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
             title={i18n.t('library.openInFullView')}
           >
@@ -208,7 +185,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
                 screenshot={data.screenshots.get(step.id)}
                 onDescriptionChange={handleDescriptionChange}
                 onDelete={handleDeleteStep}
-                onBlur={(stepId) => setBlurringStepId(stepId)}
+                onOpenEditor={(stepId, tool) => openInFullView(guideId, stepId, tool)}
                 dragHandleProps={{
                   onDragStart: (e: React.DragEvent) => {
                     setDragIndex(idx);

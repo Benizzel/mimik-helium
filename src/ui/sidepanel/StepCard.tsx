@@ -1,4 +1,4 @@
-import { Check, Copy, EyeOff, Trash2 } from 'lucide-react';
+import { Check, Copy, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import type { Screenshot, Step } from '@/core/guides/types';
@@ -17,7 +17,7 @@ interface StepCardProps {
   onDescriptionChange: (stepId: string, description: string) => void;
   onDelete: (stepId: string) => void;
   dragHandleProps?: DragHandleProps;
-  onBlur?: (stepId: string) => void;
+  onOpenEditor?: (stepId: string, tool: 'annotate' | 'redact' | 'crop') => void;
   onCopy?: (stepId: string) => void;
 }
 
@@ -27,7 +27,7 @@ export default function StepCard({
   onDescriptionChange,
   onDelete,
   dragHandleProps,
-  onBlur,
+  onOpenEditor,
 }: StepCardProps) {
   const [description, setDescription] = useState(step.description);
   const [dragOver, setDragOver] = useState(false);
@@ -81,6 +81,7 @@ export default function StepCard({
           alt={`Step ${step.index + 1} screenshot`}
           className="!rounded-none !border-0"
           crop
+          onOpenEditor={onOpenEditor ? (tool) => onOpenEditor(step.id, tool) : undefined}
         />
       ) : (
         <div className="w-full h-32 flex items-center justify-center text-sm bg-secondary text-purple">
@@ -104,22 +105,13 @@ export default function StepCard({
         <div className="flex items-center justify-end mt-1">
           <div className="flex items-center gap-0.5">
             {screenshot && (
-              <>
-                <button
-                  onClick={() => onBlur?.(step.id)}
-                  className="p-1 rounded-md transition-colors text-border hover:text-accent"
-                  title={i18n.t('editor.blurSensitiveArea')}
-                >
-                  <EyeOff size={13} />
-                </button>
-                <button
-                  onClick={handleCopy}
-                  className={`p-1 rounded-md transition-colors ${copied ? 'text-success' : 'text-border hover:text-success'}`}
-                  title={i18n.t('editor.copyScreenshot')}
-                >
-                  {copied ? <Check size={13} /> : <Copy size={13} />}
-                </button>
-              </>
+              <button
+                onClick={handleCopy}
+                className={`p-1 rounded-md transition-colors ${copied ? 'text-success' : 'text-border hover:text-success'}`}
+                title={i18n.t('editor.copyScreenshot')}
+              >
+                {copied ? <Check size={13} /> : <Copy size={13} />}
+              </button>
             )}
             <button
               onClick={handleDelete}
