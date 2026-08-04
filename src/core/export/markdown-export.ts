@@ -1,6 +1,7 @@
 import { i18n } from '#imports';
 import { blobToBase64, extractDomain, formatDate } from '@/core/export/utils';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
+import { renderScreenshot } from '@/core/screenshot/render';
 
 export async function exportGuideAsMarkdown(
   guide: Guide,
@@ -22,7 +23,7 @@ export async function exportGuideAsMarkdown(
 
     const screenshot = screenshots.get(step.id);
     if (screenshot) {
-      const b64 = await blobToBase64(screenshot.blob);
+      const b64 = await blobToBase64(await renderScreenshot(screenshot));
       lines.push(`![${i18n.t('export.stepLabel', [num])}](data:${screenshot.mimeType};base64,${b64})`, '');
     }
   }

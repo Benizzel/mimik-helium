@@ -1,22 +1,12 @@
 import { jsPDF } from 'jspdf';
 import { i18n } from '#imports';
-import { extractDomain, fetchFaviconBase64, formatDate } from '@/core/export/utils';
+import { blobToDataUrl, extractDomain, fetchFaviconBase64, formatDate } from '@/core/export/utils';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
+import { resolveViewport } from '@/core/screenshot/geometry';
+import { renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
 
 const JPEG_QUALITY = 0.85;
-
-async function reencodeScreenshotAsJpeg(blob: Blob): Promise<string> {
-  const bitmap = await createImageBitmap(blob);
-  const canvas = document.createElement('canvas');
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('no 2d context');
-  ctx.drawImage(bitmap, 0, 0);
-  bitmap.close?.();
-  return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
-}
 
 export async function exportGuideAsPDF(
   guide: Guide,
@@ -143,8 +133,10 @@ export async function exportGuideAsPDF(
 
     if (screenshot) {
       try {
-        imgDataUrl = await reencodeScreenshotAsJpeg(screenshot.blob);
-        imgHeight = Math.min((screenshot.height / screenshot.width) * imgWidth, maxImgHeight);
+        const rendered = await renderScreenshot(screenshot, { format: 'image/jpeg', quality: JPEG_QUALITY });
+        imgDataUrl = await blobToDataUrl(rendered);
+        const viewport = resolveViewport(screenshot);
+        imgHeight = Math.min((viewport.height / viewport.width) * imgWidth, maxImgHeight);
       } catch (err) {
         logger.warn('PDF: failed to load screenshot for step', step.index, err);
       }
