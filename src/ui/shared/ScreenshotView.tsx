@@ -23,7 +23,7 @@ interface ScreenshotViewProps {
   animate?: boolean;
   crop?: boolean;
   readOnly?: boolean;
-  onOpenEditor?: (tool: 'annotate' | 'redact' | 'crop') => void;
+  onOpenEditor?: (tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
 }
 
 interface DragState {
@@ -226,13 +226,14 @@ export default function ScreenshotView({
     if (drag.moved) scheduleSave(effectiveEdits ?? {});
   };
 
-  const handleAddClickTarget = () => {
+  const handleClickTarget = () => {
     const nextEdits: ScreenshotEdits = {
       ...effectiveEdits,
       target: resolveTarget(effectiveScreenshot) ?? defaultTargetRect(effectiveScreenshot),
     };
     setEditsOverride(nextEdits);
     scheduleSave(nextEdits);
+    onOpenEditor?.('target');
   };
 
   const handleAltChange = (value: string) => {
@@ -390,9 +391,9 @@ export default function ScreenshotView({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onSelect={handleAddClickTarget}>
+              <DropdownMenuItem onSelect={handleClickTarget}>
                 <Target size={14} />
-                {i18n.t('screenshotView.addClickTarget')}
+                {i18n.t('screenshotView.clickTarget')}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => onOpenEditor?.('annotate')}>
                 <Highlighter size={14} />

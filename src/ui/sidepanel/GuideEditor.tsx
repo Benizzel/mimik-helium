@@ -79,7 +79,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
   );
 
   const openInFullView = useCallback(
-    (targetGuideId: string, stepId?: string, tool?: 'annotate' | 'redact' | 'crop') => {
+    (targetGuideId: string, stepId?: string, tool?: 'annotate' | 'redact' | 'crop' | 'target') => {
       const params = new URLSearchParams({ guideId: targetGuideId });
       if (stepId) params.set('stepId', stepId);
       if (tool) params.set('tool', tool);

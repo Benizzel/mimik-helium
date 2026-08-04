@@ -32,7 +32,7 @@ type EditorTool = 'select' | 'box' | 'arrow' | 'text' | 'freehand' | 'redact' | 
 
 interface AnnotationEditorProps {
   screenshot: Screenshot;
-  tool: 'annotate' | 'redact' | 'crop';
+  tool: 'annotate' | 'redact' | 'crop' | 'target';
   onDone: (edits: ScreenshotEdits) => void;
   onCancel: () => void;
 }
@@ -69,9 +69,10 @@ const TOOLS: { id: EditorTool; icon: ComponentType<{ size?: number }>; labelKey:
   { id: 'crop', icon: Crop, labelKey: 'annotationEditor.toolCrop' },
 ];
 
-function initialToolFor(tool: 'annotate' | 'redact' | 'crop'): EditorTool {
+function initialToolFor(tool: 'annotate' | 'redact' | 'crop' | 'target'): EditorTool {
   if (tool === 'redact') return 'redact';
   if (tool === 'crop') return 'crop';
+  if (tool === 'target') return 'select';
   return 'box';
 }
 
@@ -176,7 +177,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     ];
   });
   const [viewport, setViewport] = useState<ScreenshotBounds | undefined>(screenshot.edits?.viewport);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(tool === 'target' ? TARGET_ID : null);
   const [color, setColor] = useState<string>(COLORS[0]);
   const [draft, setDraft] = useState<Annotation | null>(null);
   const [cropDraft, setCropDraft] = useState<ScreenshotBounds | null>(null);

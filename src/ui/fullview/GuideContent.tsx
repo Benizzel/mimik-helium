@@ -16,7 +16,7 @@ import GuideStepList from './components/GuideStepList';
 interface GuideContentProps {
   guideId: string;
   initialStepId?: string;
-  initialTool?: 'annotate' | 'redact' | 'crop';
+  initialTool?: 'annotate' | 'redact' | 'crop' | 'target';
 }
 
 interface GuideData {
@@ -38,7 +38,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
   const [title, setTitle] = useState('');
   const [typingTitle, setTypingTitle] = useState<string | null>(null);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
-  const [editingTool, setEditingTool] = useState<'annotate' | 'redact' | 'crop'>('annotate');
+  const [editingTool, setEditingTool] = useState<'annotate' | 'redact' | 'crop' | 'target'>('annotate');
   const titleRef = useRef('');
   const appliedInitialRef = useRef(false);
 
@@ -94,7 +94,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
     [guideId, loadGuide],
   );
 
-  const handleOpenEditor = useCallback((stepId: string, tool: 'annotate' | 'redact' | 'crop') => {
+  const handleOpenEditor = useCallback((stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => {
     setEditingStepId(stepId);
     setEditingTool(tool);
   }, []);

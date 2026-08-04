@@ -160,7 +160,7 @@ screenshotView:
   zoomOut: Alejar
   saved: Guardado
   editMenu: Editar captura
-  addClickTarget: Agregar objetivo de clic
+  clickTarget: Objetivo de clic
   annotate: Anotar
   redact: Ocultar
   crop: Recortar

@@ -11,7 +11,7 @@ interface GuideStepListProps {
   screenshots: Map<string, Screenshot>;
   onDescriptionChange: (stepId: string, description: string) => void;
   onDelete: (stepId: string) => void;
-  onOpenEditor: (stepId: string, tool: 'annotate' | 'redact' | 'crop') => void;
+  onOpenEditor: (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
   onReorder: (newSteps: Step[]) => void;
 }
 

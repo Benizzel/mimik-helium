@@ -160,7 +160,7 @@ screenshotView:
   zoomOut: "Zoom arrière"
   saved: "Enregistré"
   editMenu: "Modifier la capture"
-  addClickTarget: "Ajouter une cible de clic"
+  clickTarget: "Cible de clic"
   annotate: "Annoter"
   redact: "Masquer"
   crop: "Recadrer"

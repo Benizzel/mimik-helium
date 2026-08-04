@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 export type Route =
   | { page: 'library'; category: 'all' | 'starred' | 'trash' }
-  | { page: 'guide'; guideId: string; stepId?: string; tool?: 'annotate' | 'redact' | 'crop' };
+  | { page: 'guide'; guideId: string; stepId?: string; tool?: 'annotate' | 'redact' | 'crop' | 'target' };
 
 function parseHash(hash: string): Route {
   const h = hash.replace(/^#\/?/, '');

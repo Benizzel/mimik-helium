@@ -160,7 +160,7 @@ screenshotView:
   zoomOut: Zoom out
   saved: Saved
   editMenu: Edit screenshot
-  addClickTarget: Add click target
+  clickTarget: Click target
   annotate: Annotate
   redact: Redact
   crop: Crop
