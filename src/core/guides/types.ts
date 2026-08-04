@@ -1,3 +1,5 @@
+import type { ScreenshotEdits } from '@/core/screenshot/types';
+
 export interface Guide {
   id: string;
   title: string;
@@ -37,6 +39,7 @@ export interface Screenshot {
   height: number;
   bounds?: ScreenshotBounds;
   pixelRatio?: number;
+  edits?: ScreenshotEdits;
 }
 
 export interface Settings {
