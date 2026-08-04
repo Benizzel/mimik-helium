@@ -1,5 +1,5 @@
 import { Check, Copy, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import type { Screenshot, Step } from '@/core/guides/types';
 import { logger } from '@/lib/logger';
@@ -32,6 +32,7 @@ export default function StepCard({
   const [description, setDescription] = useState(step.description);
   const [dragOver, setDragOver] = useState(false);
   const [copied, setCopied] = useState(false);
+  const pressedOnScreenshot = useRef(false);
 
   useEffect(() => {
     setDescription(step.description);
@@ -63,10 +64,21 @@ export default function StepCard({
     dragHandleProps?.onDragOver(e);
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    if (pressedOnScreenshot.current) {
+      e.preventDefault();
+      return;
+    }
+    dragHandleProps?.onDragStart(e);
+  };
+
   return (
     <div
       draggable={!!dragHandleProps}
-      onDragStart={dragHandleProps?.onDragStart}
+      onPointerDownCapture={(e) => {
+        pressedOnScreenshot.current = !!(e.target as HTMLElement).closest('[data-screenshot-frame]');
+      }}
+      onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragLeave={() => setDragOver(false)}
       onDragEnd={() => {

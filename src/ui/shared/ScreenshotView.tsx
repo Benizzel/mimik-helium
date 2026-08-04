@@ -40,12 +40,8 @@ const ZOOM_OUT_FACTOR = 0.8;
 const VIEWPORT_EPSILON = 0.5;
 const TARGET_WIDTH_RATIO = 0.3;
 const TARGET_HEIGHT_RATIO = 0.15;
-
-function isFullFrame(viewport: ScreenshotBounds, screenshot: Screenshot): boolean {
-  return (
-    viewport.x === 0 && viewport.y === 0 && viewport.width === screenshot.width && viewport.height === screenshot.height
-  );
-}
+const FRAME_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const FRAME_TRANSITION = `width 0.4s ${FRAME_EASING}, height 0.4s ${FRAME_EASING}, left 0.4s ${FRAME_EASING}, top 0.4s ${FRAME_EASING}`;
 
 function withFullViewport(screenshot: Screenshot): Screenshot {
   return {
@@ -73,16 +69,14 @@ export default function ScreenshotView({
   onOpenEditor,
 }: ScreenshotViewProps) {
   const [fullUrl, setFullUrl] = useState<string | null>(null);
-  const [croppedUrl, setCroppedUrl] = useState<string | null>(null);
-  const [showCropped, setShowCropped] = useState(false);
+  const [showViewport, setShowViewport] = useState(false);
   const [editsOverride, setEditsOverride] = useState<ScreenshotEdits | undefined>(undefined);
   const [screenshotOverride, setScreenshotOverride] = useState<Screenshot | null>(null);
   const [deleted, setDeleted] = useState(false);
   const [saved, setSaved] = useState(false);
   const [altDraft, setAltDraft] = useState('');
   const processedKeyRef = useRef<string | null>(null);
-  const urlsRef = useRef<string[]>([]);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const urlRef = useRef<string | null>(null);
   const idRef = useRef(screenshot.id);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,70 +100,58 @@ export default function ScreenshotView({
     setAltDraft(effectiveEdits?.alt ?? '');
   }, [effectiveEdits?.alt]);
 
+  const annotationsForRender = effectiveEdits?.annotations;
+  const targetForRender = effectiveEdits?.target;
+
   useEffect(() => {
     if (!baseScreenshot.blob) return;
-    const cacheKey = `${baseScreenshot.id}:${baseScreenshot.blob.size}:${JSON.stringify(effectiveEdits)}`;
+    const cacheKey = `${baseScreenshot.id}:${baseScreenshot.blob.size}:${JSON.stringify(annotationsForRender ?? null)}:${JSON.stringify(targetForRender ?? null)}`;
     if (processedKeyRef.current === cacheKey) return;
 
     let cancelled = false;
-    const current: Screenshot = { ...baseScreenshot, edits: effectiveEdits };
+    const current: Screenshot = {
+      ...baseScreenshot,
+      edits: { annotations: annotationsForRender, target: targetForRender },
+    };
 
     (async () => {
-      const viewport = resolveViewport(current);
-      const needsCrop = crop && !isFullFrame(viewport, current);
-
-      const [fullBlob, viewportBlob] = await Promise.all([
-        renderScreenshot(withFullViewport(current)),
-        needsCrop ? renderScreenshot(current) : Promise.resolve(null),
-      ]);
-
-      const newFullUrl = URL.createObjectURL(fullBlob);
-      const newCroppedUrl = viewportBlob ? URL.createObjectURL(viewportBlob) : null;
+      const blob = await renderScreenshot(withFullViewport(current));
+      const newUrl = URL.createObjectURL(blob);
 
       if (cancelled) {
-        URL.revokeObjectURL(newFullUrl);
-        if (newCroppedUrl) URL.revokeObjectURL(newCroppedUrl);
+        URL.revokeObjectURL(newUrl);
         return;
       }
 
       processedKeyRef.current = cacheKey;
-      for (const u of urlsRef.current) URL.revokeObjectURL(u);
-
-      if (newCroppedUrl) {
-        urlsRef.current = [newFullUrl, newCroppedUrl];
-        setShowCropped(false);
-        setFullUrl(newFullUrl);
-        setCroppedUrl(newCroppedUrl);
-      } else {
-        urlsRef.current = [newFullUrl];
-        setShowCropped(true);
-        setFullUrl(newFullUrl);
-        setCroppedUrl(null);
-      }
+      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+      urlRef.current = newUrl;
+      setShowViewport(false);
+      setFullUrl(newUrl);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [baseScreenshot, crop, effectiveEdits]);
+  }, [baseScreenshot, annotationsForRender, targetForRender]);
 
   useEffect(() => {
-    if (!croppedUrl || showCropped) return;
+    if (!fullUrl || showViewport) return;
     if (!animate) {
-      setShowCropped(true);
+      setShowViewport(true);
       return;
     }
     let id = requestAnimationFrame(() => {
       id = requestAnimationFrame(() => {
-        setShowCropped(true);
+        setShowViewport(true);
       });
     });
     return () => cancelAnimationFrame(id);
-  }, [croppedUrl, showCropped, animate]);
+  }, [fullUrl, showViewport, animate]);
 
   useEffect(() => {
     return () => {
-      for (const u of urlsRef.current) URL.revokeObjectURL(u);
+      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     };
   }, []);
 
@@ -199,7 +181,7 @@ export default function ScreenshotView({
     scheduleSave(nextEdits);
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLImageElement>) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (readOnly || !crop) return;
     const viewport = resolveViewport(effectiveScreenshot);
     const zoomed =
@@ -216,11 +198,11 @@ export default function ScreenshotView({
     };
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLImageElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
-    const el = imgRef.current;
-    if (!el || el.clientWidth === 0) return;
+    const el = e.currentTarget;
+    if (el.clientWidth === 0) return;
     drag.moved = true;
     const scale = drag.startViewport.width / el.clientWidth;
     const dx = (e.clientX - drag.startX) * scale;
@@ -229,7 +211,7 @@ export default function ScreenshotView({
     setEditsOverride({ ...effectiveEdits, viewport: nextViewport });
   };
 
-  const handlePointerEnd = (e: React.PointerEvent<HTMLImageElement>) => {
+  const handlePointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
     dragRef.current = null;
@@ -335,30 +317,35 @@ export default function ScreenshotView({
   const showTopControls = !readOnly;
   const altText = effectiveEdits?.alt || alt;
 
+  const fullFrame: ScreenshotBounds = { x: 0, y: 0, width: baseScreenshot.width, height: baseScreenshot.height };
+  const displayedViewport = crop && showViewport ? currentViewport : fullFrame;
+  const imgStyle: React.CSSProperties = {
+    width: `${(baseScreenshot.width / displayedViewport.width) * 100}%`,
+    height: `${(baseScreenshot.height / displayedViewport.height) * 100}%`,
+    left: `${(-displayedViewport.x / displayedViewport.width) * 100}%`,
+    top: `${(-displayedViewport.y / displayedViewport.height) * 100}%`,
+    transition: animate ? FRAME_TRANSITION : undefined,
+  };
+
   return (
     <div className={`relative overflow-hidden rounded-lg border border-border ${className}`}>
-      <img
-        ref={imgRef}
-        src={croppedUrl || fullUrl}
-        alt={altText}
-        draggable={false}
-        className={`w-full block ${showZoomControls && isZoomed ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      <div
+        data-screenshot-frame=""
+        className="relative overflow-hidden w-full"
+        style={{ aspectRatio: `${displayedViewport.width} / ${displayedViewport.height}` }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
-      />
-      {croppedUrl && (
+      >
         <img
           src={fullUrl}
-          alt=""
-          className="absolute inset-0 w-full h-full block pointer-events-none"
-          style={{
-            opacity: showCropped ? 0 : 1,
-            transition: 'opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
-          }}
+          alt={altText}
+          draggable={false}
+          className={`absolute block max-w-none ${showZoomControls && isZoomed ? 'cursor-grab active:cursor-grabbing' : ''}`}
+          style={imgStyle}
         />
-      )}
+      </div>
       {showTopControls && (
         <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
           <Popover>
