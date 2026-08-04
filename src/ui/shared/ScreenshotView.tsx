@@ -237,13 +237,10 @@ export default function ScreenshotView({
   };
 
   const handleAddClickTarget = () => {
-    let nextEdits: ScreenshotEdits;
-    if (effectiveEdits?.target === null) {
-      nextEdits = { ...effectiveEdits };
-      delete nextEdits.target;
-    } else {
-      nextEdits = { ...effectiveEdits, target: defaultTargetRect(effectiveScreenshot) };
-    }
+    const nextEdits: ScreenshotEdits = {
+      ...effectiveEdits,
+      target: effectiveEdits?.target ?? effectiveScreenshot.bounds ?? defaultTargetRect(effectiveScreenshot),
+    };
     setEditsOverride(nextEdits);
     scheduleSave(nextEdits);
   };
