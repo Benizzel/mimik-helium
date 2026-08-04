@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import type { Screenshot, Step } from '@/core/guides/types';
 import { logger } from '@/lib/logger';
-import ZoomScreenshot from './ZoomScreenshot';
+import ScreenshotView from '@/ui/shared/ScreenshotView';
 
 interface DragHandleProps {
   onDragStart: (e: React.DragEvent) => void;
@@ -76,10 +76,11 @@ export default function StepCard({
       className={`rounded-xl mb-3 overflow-hidden transition-shadow border border-border bg-card ${dragOver ? 'ring-2 ring-accent' : ''}`}
     >
       {screenshot ? (
-        <ZoomScreenshot
+        <ScreenshotView
           screenshot={screenshot}
           alt={`Step ${step.index + 1} screenshot`}
           className="!rounded-none !border-0"
+          crop
         />
       ) : (
         <div className="w-full h-32 flex items-center justify-center text-sm bg-secondary text-purple">

@@ -7,7 +7,7 @@ import { getActiveTab } from '@/lib/browser-api';
 import { sendMessage } from '@/lib/messaging';
 import { extractDomain } from '@/lib/utils';
 import { Button } from '@/ui/components/ui/button';
-import ZoomScreenshot from './ZoomScreenshot';
+import ScreenshotView from '@/ui/shared/ScreenshotView';
 
 interface RecordingViewProps {
   guideId: string;
@@ -146,12 +146,13 @@ export default function RecordingView({ guideId, onStop }: RecordingViewProps) {
                 <div className="px-4 pb-4 group">
                   {liveStep.screenshot && (
                     <div className="mb-2">
-                      <ZoomScreenshot
+                      <ScreenshotView
                         screenshot={liveStep.screenshot}
                         alt={liveStep.step.description}
                         className="shadow-sm"
                         crop
                         animate
+                        readOnly
                       />
                     </div>
                   )}

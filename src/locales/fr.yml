@@ -161,6 +161,11 @@ blurPanel:
   doneResume: "Terminé \xB7 Reprendre l'enregistrement"
   resetAll: Tout réinitialiser
 
+screenshotView:
+  zoomIn: "Zoom avant"
+  zoomOut: "Zoom arrière"
+  saved: "Enregistré"
+
 exportMenu:
   html: HTML
   markdown: Markdown

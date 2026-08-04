@@ -161,6 +161,11 @@ blurPanel:
   doneResume: "Pronto \xB7 Continuar gravação"
   resetAll: Limpar tudo
 
+screenshotView:
+  zoomIn: Aumentar zoom
+  zoomOut: Diminuir zoom
+  saved: Salvo
+
 exportMenu:
   html: HTML
   markdown: Markdown

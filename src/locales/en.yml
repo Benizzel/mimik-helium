@@ -161,6 +161,11 @@ blurPanel:
   doneResume: "Done \xB7 Resume Recording"
   resetAll: Reset All
 
+screenshotView:
+  zoomIn: Zoom in
+  zoomOut: Zoom out
+  saved: Saved
+
 exportMenu:
   html: HTML
   markdown: Markdown
