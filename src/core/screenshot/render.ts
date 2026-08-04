@@ -24,7 +24,7 @@ function drawRoundedRect(
   ctx.closePath();
 }
 
-function drawAnnotation(ctx: OffscreenCanvasRenderingContext2D, a: Annotation) {
+function drawAnnotation(ctx: OffscreenCanvasRenderingContext2D, a: Annotation, originX: number, originY: number) {
   ctx.save();
   switch (a.type) {
     case 'box':
@@ -71,7 +71,7 @@ function drawAnnotation(ctx: OffscreenCanvasRenderingContext2D, a: Annotation) {
         ctx.fillRect(a.x, a.y, a.w, a.h);
       } else {
         ctx.filter = 'blur(12px)';
-        ctx.drawImage(ctx.canvas, a.x, a.y, a.w, a.h, a.x, a.y, a.w, a.h);
+        ctx.drawImage(ctx.canvas, a.x - originX, a.y - originY, a.w, a.h, a.x, a.y, a.w, a.h);
       }
       break;
   }
@@ -102,7 +102,7 @@ export async function renderScreenshot(screenshot: Screenshot, opts: RenderOptio
     ctx.restore();
   }
 
-  for (const a of screenshot.edits?.annotations ?? []) drawAnnotation(ctx, a);
+  for (const a of screenshot.edits?.annotations ?? []) drawAnnotation(ctx, a, viewport.x, viewport.y);
 
   return canvas.convertToBlob({ type: format, quality });
 }
