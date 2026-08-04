@@ -1,4 +1,5 @@
 import { i18n } from '#imports';
+import type { ScreenshotEdits } from '@/core/screenshot/types';
 import { db } from './db';
 import type { Guide, Screenshot, Step } from './types';
 
@@ -161,6 +162,10 @@ export async function saveScreenshot(screenshot: Screenshot): Promise<void> {
 
 export async function updateScreenshotBlob(screenshotId: string, blob: Blob): Promise<void> {
   await db.screenshots.update(screenshotId, { blob });
+}
+
+export async function updateScreenshotEdits(screenshotId: string, edits: ScreenshotEdits): Promise<void> {
+  await db.screenshots.update(screenshotId, { edits });
 }
 
 export async function getScreenshotsForSteps(stepIds: string[]): Promise<Map<string, Screenshot>> {
