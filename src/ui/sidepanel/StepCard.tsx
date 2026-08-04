@@ -2,6 +2,7 @@ import { Check, Copy, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import type { Screenshot, Step } from '@/core/guides/types';
+import { renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
 import ScreenshotView from '@/ui/shared/ScreenshotView';
 
@@ -49,8 +50,8 @@ export default function StepCard({
   const handleCopy = async () => {
     if (!screenshot) return;
     try {
-      const item = new ClipboardItem({ [screenshot.mimeType]: screenshot.blob });
-      await navigator.clipboard.write([item]);
+      const rendered = await renderScreenshot(screenshot, { format: 'image/png' });
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': rendered })]);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {
