@@ -185,7 +185,7 @@ annotationEditor:
   colorLabel: Color
   textPlaceholder: Escribe algo...
   targetColor: Color del objetivo
-  targetShape: Forma del objetivo
+  targetBorder: Estilo del borde
   done: Listo
 
 exportMenu:

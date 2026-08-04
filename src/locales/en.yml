@@ -185,7 +185,7 @@ annotationEditor:
   colorLabel: Colour
   textPlaceholder: Type something...
   targetColor: Target color
-  targetShape: Target shape
+  targetBorder: Border style
   done: Done
 
 exportMenu:

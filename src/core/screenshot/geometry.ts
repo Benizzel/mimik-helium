@@ -158,35 +158,20 @@ export function resizeAnnotation(a: Annotation, handle: Handle, dx: number, dy: 
   };
 }
 
-const DEFAULT_TARGET_CSS_SIZE = 44;
-
 export function resolveTarget(screenshot: Screenshot): ClickTarget | null {
   const explicit = screenshot.edits?.target;
   if (explicit !== undefined) return explicit;
 
-  const dpr = screenshot.pixelRatio || 1;
-  const size = DEFAULT_TARGET_CSS_SIZE * dpr;
-  const point = screenshot.clickPoint;
   const bounds = screenshot.bounds;
+  if (!bounds) return null;
 
-  let cx: number;
-  let cy: number;
-  if (point) {
-    cx = point.x * dpr;
-    cy = point.y * dpr;
-  } else if (bounds) {
-    cx = (bounds.x + bounds.width / 2) * dpr;
-    cy = (bounds.y + bounds.height / 2) * dpr;
-  } else {
-    return null;
-  }
-
+  const dpr = screenshot.pixelRatio || 1;
   return {
-    x: cx - size / 2,
-    y: cy - size / 2,
-    width: size,
-    height: size,
-    shape: 'circle',
+    x: bounds.x * dpr,
+    y: bounds.y * dpr,
+    width: bounds.width * dpr,
+    height: bounds.height * dpr,
+    border: 'dashed',
     color: DEFAULT_TARGET_COLOR,
   };
 }

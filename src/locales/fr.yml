@@ -185,7 +185,7 @@ annotationEditor:
   colorLabel: Couleur
   textPlaceholder: "Écrivez quelque chose..."
   targetColor: Couleur de la cible
-  targetShape: Forme de la cible
+  targetBorder: Style de bordure
   done: "Terminé"
 
 exportMenu:

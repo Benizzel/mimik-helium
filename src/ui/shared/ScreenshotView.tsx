@@ -57,7 +57,14 @@ function defaultTargetRect(screenshot: Screenshot): ClickTarget {
   const height = screenshot.height / dpr;
   const w = width * TARGET_WIDTH_RATIO;
   const h = height * TARGET_HEIGHT_RATIO;
-  return { x: (width - w) / 2, y: (height - h) / 2, width: w, height: h, shape: 'circle', color: DEFAULT_TARGET_COLOR };
+  return {
+    x: (width - w) / 2,
+    y: (height - h) / 2,
+    width: w,
+    height: h,
+    border: 'dashed',
+    color: DEFAULT_TARGET_COLOR,
+  };
 }
 
 export default function ScreenshotView({

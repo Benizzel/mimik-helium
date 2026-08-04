@@ -1,13 +1,12 @@
 import {
   ArrowUpRight,
   Check,
-  Circle,
   Crop,
   EyeOff,
   MousePointer2,
   PenTool,
-  RectangleHorizontal,
   Square,
+  SquareDashed,
   Trash2,
   Type,
   X,
@@ -26,7 +25,7 @@ import {
   resizeAnnotation,
   resolveTarget,
 } from '@/core/screenshot/geometry';
-import type { Annotation, ScreenshotEdits, TargetShape } from '@/core/screenshot/types';
+import type { Annotation, ScreenshotEdits, TargetBorder } from '@/core/screenshot/types';
 import { TARGET_COLORS } from '@/core/screenshot/types';
 
 type EditorTool = 'select' | 'box' | 'arrow' | 'text' | 'freehand' | 'redact' | 'crop';
@@ -113,16 +112,11 @@ function drawShape(ctx: CanvasRenderingContext2D, a: Annotation, alpha: number) 
       break;
     case 'target':
       ctx.strokeStyle = a.color;
-      ctx.lineWidth = 4;
-      if (a.shape === 'circle') {
-        ctx.beginPath();
-        ctx.ellipse(a.x + a.w / 2, a.y + a.h / 2, a.w / 2, a.h / 2, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      } else {
-        ctx.beginPath();
-        ctx.roundRect(a.x, a.y, a.w, a.h, 10);
-        ctx.stroke();
-      }
+      ctx.lineWidth = 3.5;
+      if (a.border === 'dashed') ctx.setLineDash([8, 5]);
+      ctx.beginPath();
+      ctx.roundRect(a.x, a.y, a.w, a.h, 12);
+      ctx.stroke();
       break;
     case 'arrow': {
       const head = 14;
@@ -178,7 +172,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     if (!t) return existing;
     return [
       ...existing,
-      { id: TARGET_ID, type: 'target', x: t.x, y: t.y, w: t.width, h: t.height, color: t.color, shape: t.shape },
+      { id: TARGET_ID, type: 'target', x: t.x, y: t.y, w: t.width, h: t.height, color: t.color, border: t.border },
     ];
   });
   const [viewport, setViewport] = useState<ScreenshotBounds | undefined>(screenshot.edits?.viewport);
@@ -195,7 +189,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const selected = annotations.find((a) => a.id === selectedId);
   const selectedTarget = selected?.type === 'target' ? selected : null;
 
-  const updateTarget = (patch: { color?: string; shape?: TargetShape }) => {
+  const updateTarget = (patch: { color?: string; border?: TargetBorder }) => {
     setAnnotations((prev) => prev.map((a) => (a.id === TARGET_ID && a.type === 'target' ? { ...a, ...patch } : a)));
   };
 
@@ -476,7 +470,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
               y: targetAnnotation.y,
               width: targetAnnotation.w,
               height: targetAnnotation.h,
-              shape: targetAnnotation.shape,
+              border: targetAnnotation.border,
               color: targetAnnotation.color,
             }
           : null,
@@ -596,11 +590,11 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                   />
                   <button
                     type="button"
-                    title={i18n.t('annotationEditor.targetShape')}
-                    onClick={() => updateTarget({ shape: selectedTarget.shape === 'circle' ? 'rect' : 'circle' })}
+                    title={i18n.t('annotationEditor.targetBorder')}
+                    onClick={() => updateTarget({ border: selectedTarget.border === 'dashed' ? 'solid' : 'dashed' })}
                     className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
                   >
-                    {selectedTarget.shape === 'circle' ? <Circle size={14} /> : <RectangleHorizontal size={14} />}
+                    {selectedTarget.border === 'dashed' ? <SquareDashed size={14} /> : <Square size={14} />}
                   </button>
                   <button
                     type="button"

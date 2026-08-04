@@ -2,8 +2,8 @@ import type { Screenshot } from '@/core/guides/types';
 import { resolveTarget, resolveViewport } from './geometry';
 import type { Annotation } from './types';
 
-const TARGET_STROKE = 4;
-const TARGET_RADIUS = 10;
+const TARGET_STROKE = 3.5;
+const TARGET_RADIUS = 12;
 
 interface RenderOptions {
   format?: 'image/webp' | 'image/jpeg' | 'image/png';
@@ -38,14 +38,9 @@ function drawAnnotation(ctx: OffscreenCanvasRenderingContext2D, a: Annotation, o
     case 'target':
       ctx.strokeStyle = a.color;
       ctx.lineWidth = TARGET_STROKE;
-      if (a.shape === 'circle') {
-        ctx.beginPath();
-        ctx.ellipse(a.x + a.w / 2, a.y + a.h / 2, a.w / 2, a.h / 2, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      } else {
-        drawRoundedRect(ctx, a.x, a.y, a.w, a.h, TARGET_RADIUS);
-        ctx.stroke();
-      }
+      if (a.border === 'dashed') ctx.setLineDash([8, 5]);
+      drawRoundedRect(ctx, a.x, a.y, a.w, a.h, TARGET_RADIUS);
+      ctx.stroke();
       break;
     case 'arrow': {
       const head = 14;
@@ -117,7 +112,7 @@ export async function renderScreenshot(screenshot: Screenshot, opts: RenderOptio
         w: target.width,
         h: target.height,
         color: target.color,
-        shape: target.shape,
+        border: target.border,
       },
       viewport.x,
       viewport.y,
