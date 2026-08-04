@@ -1,4 +1,5 @@
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
+import type { Annotation } from './types';
 
 const PAD_RATIO = 0.3;
 
@@ -45,6 +46,7 @@ export function resolveViewport(screenshot: Screenshot): ScreenshotBounds {
 }
 
 const MIN_VIEWPORT = 40;
+const MIN_ANNOTATION = 8;
 
 interface ImageSize {
   width: number;
@@ -86,5 +88,69 @@ export function cropTo(rect: ScreenshotBounds, img: ImageSize): ScreenshotBounds
     y,
     width: clamp(width0, 0, img.width - x),
     height: clamp(height0, 0, img.height - y),
+  };
+}
+
+const HIT_PAD = 8;
+
+export type Handle = 'nw' | 'ne' | 'sw' | 'se';
+
+export function annotationBounds(a: Annotation): ScreenshotBounds {
+  switch (a.type) {
+    case 'box':
+    case 'redact':
+      return { x: a.x, y: a.y, width: a.w, height: a.h };
+    case 'arrow':
+      return {
+        x: Math.min(a.x1, a.x2),
+        y: Math.min(a.y1, a.y2),
+        width: Math.abs(a.x2 - a.x1),
+        height: Math.abs(a.y2 - a.y1),
+      };
+    case 'text':
+      return { x: a.x, y: a.y - a.size, width: a.text.length * a.size * 0.6, height: a.size * 1.4 };
+    case 'freehand': {
+      const xs = a.points.filter((_, i) => i % 2 === 0);
+      const ys = a.points.filter((_, i) => i % 2 === 1);
+      const x = Math.min(...xs);
+      const y = Math.min(...ys);
+      return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+    }
+  }
+}
+
+export function hitTest(annotations: Annotation[], x: number, y: number): Annotation | null {
+  for (let i = annotations.length - 1; i >= 0; i--) {
+    const b = annotationBounds(annotations[i]);
+    if (x >= b.x - HIT_PAD && x <= b.x + b.width + HIT_PAD && y >= b.y - HIT_PAD && y <= b.y + b.height + HIT_PAD) {
+      return annotations[i];
+    }
+  }
+  return null;
+}
+
+export function moveAnnotation(a: Annotation, dx: number, dy: number): Annotation {
+  switch (a.type) {
+    case 'box':
+    case 'redact':
+    case 'text':
+      return { ...a, x: a.x + dx, y: a.y + dy };
+    case 'arrow':
+      return { ...a, x1: a.x1 + dx, y1: a.y1 + dy, x2: a.x2 + dx, y2: a.y2 + dy };
+    case 'freehand':
+      return { ...a, points: a.points.map((p, i) => (i % 2 === 0 ? p + dx : p + dy)) };
+  }
+}
+
+export function resizeAnnotation(a: Annotation, handle: Handle, dx: number, dy: number): Annotation {
+  if (a.type !== 'box' && a.type !== 'redact') return a;
+  const left = handle === 'nw' || handle === 'sw';
+  const top = handle === 'nw' || handle === 'ne';
+  return {
+    ...a,
+    x: left ? a.x + dx : a.x,
+    y: top ? a.y + dy : a.y,
+    w: Math.max(MIN_ANNOTATION, left ? a.w - dx : a.w + dx),
+    h: Math.max(MIN_ANNOTATION, top ? a.h - dy : a.h + dy),
   };
 }

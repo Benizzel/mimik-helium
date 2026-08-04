@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { Screenshot } from '@/core/guides/types';
-import { cropTo, panBy, resolveViewport, zoomBy } from '@/core/screenshot/geometry';
+import {
+  annotationBounds,
+  cropTo,
+  hitTest,
+  moveAnnotation,
+  panBy,
+  resizeAnnotation,
+  resolveViewport,
+  zoomBy,
+} from '@/core/screenshot/geometry';
+import type { Annotation } from '@/core/screenshot/types';
 
 function makeScreenshot(overrides: Partial<Screenshot> = {}): Screenshot {
   return {
@@ -117,5 +127,72 @@ describe('cropTo', () => {
       width: 100,
       height: 50,
     });
+  });
+});
+
+const box: Annotation = { id: 'a', type: 'box', x: 100, y: 100, w: 200, h: 100, color: '#4F46E5' };
+const arrow: Annotation = { id: 'b', type: 'arrow', x1: 10, y1: 10, x2: 110, y2: 60, color: '#4F46E5' };
+const stroke: Annotation = { id: 'c', type: 'freehand', points: [0, 0, 50, 80, 20, 40], color: '#4F46E5' };
+
+describe('annotationBounds', () => {
+  it('returns the rect for a box', () => {
+    expect(annotationBounds(box)).toEqual({ x: 100, y: 100, width: 200, height: 100 });
+  });
+
+  it('returns the span of an arrow regardless of direction', () => {
+    expect(annotationBounds({ ...arrow, x1: 110, y1: 60, x2: 10, y2: 10 })).toEqual({
+      x: 10,
+      y: 10,
+      width: 100,
+      height: 50,
+    });
+  });
+
+  it('returns the bounding box of a freehand stroke', () => {
+    expect(annotationBounds(stroke)).toEqual({ x: 0, y: 0, width: 50, height: 80 });
+  });
+});
+
+describe('hitTest', () => {
+  it('returns the topmost annotation under the point', () => {
+    const under: Annotation = { ...box, id: 'under' };
+    const over: Annotation = { ...box, id: 'over' };
+    expect(hitTest([under, over], 150, 150)?.id).toBe('over');
+  });
+
+  it('returns null when nothing is under the point', () => {
+    expect(hitTest([box], 5, 5)).toBeNull();
+  });
+
+  it('hits a thin arrow via its padded bounds', () => {
+    expect(hitTest([arrow], 60, 35)?.id).toBe('b');
+  });
+});
+
+describe('moveAnnotation', () => {
+  it('translates a box', () => {
+    expect(moveAnnotation(box, 10, -5)).toMatchObject({ x: 110, y: 95, w: 200, h: 100 });
+  });
+
+  it('translates both ends of an arrow', () => {
+    expect(moveAnnotation(arrow, 5, 5)).toMatchObject({ x1: 15, y1: 15, x2: 115, y2: 65 });
+  });
+
+  it('translates every point of a freehand stroke', () => {
+    expect(moveAnnotation(stroke, 10, 10)).toMatchObject({ points: [10, 10, 60, 90, 30, 50] });
+  });
+});
+
+describe('resizeAnnotation', () => {
+  it('resizes a box from the south-east handle', () => {
+    expect(resizeAnnotation(box, 'se', 50, 20)).toMatchObject({ x: 100, y: 100, w: 250, h: 120 });
+  });
+
+  it('resizes a box from the north-west handle by moving its origin', () => {
+    expect(resizeAnnotation(box, 'nw', 20, 10)).toMatchObject({ x: 120, y: 110, w: 180, h: 90 });
+  });
+
+  it('leaves a freehand stroke unchanged', () => {
+    expect(resizeAnnotation(stroke, 'se', 10, 10)).toEqual(stroke);
   });
 });
