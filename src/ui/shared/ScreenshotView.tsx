@@ -86,6 +86,7 @@ export default function ScreenshotView({
   const processedKeyRef = useRef<string | null>(null);
   const urlRef = useRef<string | null>(null);
   const idRef = useRef(screenshot.id);
+  const propEditsRef = useRef(screenshot.edits);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -103,6 +104,13 @@ export default function ScreenshotView({
       setDeleted(false);
     }
   }, [screenshot.id]);
+
+  useEffect(() => {
+    if (propEditsRef.current !== screenshot.edits) {
+      propEditsRef.current = screenshot.edits;
+      setEditsOverride(undefined);
+    }
+  }, [screenshot.edits]);
 
   useEffect(() => {
     setAltDraft(effectiveEdits?.alt ?? '');
