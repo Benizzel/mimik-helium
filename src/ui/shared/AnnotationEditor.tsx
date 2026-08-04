@@ -56,6 +56,7 @@ const MIN_SHAPE_SIZE = 6;
 const MIN_CROP_SIZE = 20;
 const HANDLE_DISPLAY_SIZE = 10;
 const HANDLE_HIT_PX = 10;
+const SELECTION_GAP = 6;
 const DRAFT_ID = 'draft';
 const TARGET_ID = 'click-target';
 
@@ -93,6 +94,12 @@ function handleCorners(b: ScreenshotBounds): [Handle, number, number][] {
 
 function isResizable(a: Annotation): boolean {
   return a.type === 'box' || a.type === 'redact' || a.type === 'target';
+}
+
+function selectionBounds(a: Annotation, scale: number): ScreenshotBounds {
+  const inset = SELECTION_GAP * scale;
+  const b = annotationBounds(a);
+  return { x: b.x - inset, y: b.y - inset, width: b.width + inset * 2, height: b.height + inset * 2 };
 }
 
 function hitHandle(b: ScreenshotBounds, x: number, y: number, radius: number): Handle | null {
@@ -271,13 +278,11 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
     const sel = annotations.find((a) => a.id === selectedId);
     if (sel) {
-      const b = annotationBounds(sel);
+      const b = selectionBounds(sel, scale);
       ctx.save();
       ctx.strokeStyle = '#4F46E5';
-      ctx.lineWidth = 2 * scale;
-      ctx.setLineDash([6 * scale, 4 * scale]);
+      ctx.lineWidth = 1.5 * scale;
       ctx.strokeRect(b.x, b.y, b.width, b.height);
-      ctx.setLineDash([]);
       if (isResizable(sel)) {
         const handleSize = HANDLE_DISPLAY_SIZE * scale;
         ctx.fillStyle = '#4F46E5';
@@ -296,8 +301,8 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     if (activeTool === 'select') {
       const selected = annotations.find((a) => a.id === selectedId);
       if (selected && isResizable(selected)) {
-        const b = annotationBounds(selected);
-        const handle = hitHandle(b, p.x, p.y, HANDLE_HIT_PX * getScale());
+        const scale = getScale();
+        const handle = hitHandle(selectionBounds(selected, scale), p.x, p.y, HANDLE_HIT_PX * scale);
         if (handle) {
           dragRef.current = { mode: 'resize', id: selected.id, handle, lastX: p.x, lastY: p.y };
           return;
