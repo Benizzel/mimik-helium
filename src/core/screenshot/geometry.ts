@@ -1,5 +1,6 @@
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
-import type { Annotation } from './types';
+import type { Annotation, ClickTarget } from './types';
+import { DEFAULT_TARGET_COLOR } from './types';
 
 const PAD_RATIO = 0.3;
 
@@ -99,6 +100,7 @@ export function annotationBounds(a: Annotation): ScreenshotBounds {
   switch (a.type) {
     case 'box':
     case 'redact':
+    case 'target':
       return { x: a.x, y: a.y, width: a.w, height: a.h };
     case 'arrow':
       return {
@@ -133,6 +135,7 @@ export function moveAnnotation(a: Annotation, dx: number, dy: number): Annotatio
   switch (a.type) {
     case 'box':
     case 'redact':
+    case 'target':
     case 'text':
       return { ...a, x: a.x + dx, y: a.y + dy };
     case 'arrow':
@@ -143,7 +146,7 @@ export function moveAnnotation(a: Annotation, dx: number, dy: number): Annotatio
 }
 
 export function resizeAnnotation(a: Annotation, handle: Handle, dx: number, dy: number): Annotation {
-  if (a.type !== 'box' && a.type !== 'redact') return a;
+  if (a.type !== 'box' && a.type !== 'redact' && a.type !== 'target') return a;
   const left = handle === 'nw' || handle === 'sw';
   const top = handle === 'nw' || handle === 'ne';
   return {
@@ -152,5 +155,38 @@ export function resizeAnnotation(a: Annotation, handle: Handle, dx: number, dy: 
     y: top ? a.y + dy : a.y,
     w: Math.max(MIN_ANNOTATION, left ? a.w - dx : a.w + dx),
     h: Math.max(MIN_ANNOTATION, top ? a.h - dy : a.h + dy),
+  };
+}
+
+const DEFAULT_TARGET_CSS_SIZE = 44;
+
+export function resolveTarget(screenshot: Screenshot): ClickTarget | null {
+  const explicit = screenshot.edits?.target;
+  if (explicit !== undefined) return explicit;
+
+  const dpr = screenshot.pixelRatio || 1;
+  const size = DEFAULT_TARGET_CSS_SIZE * dpr;
+  const point = screenshot.clickPoint;
+  const bounds = screenshot.bounds;
+
+  let cx: number;
+  let cy: number;
+  if (point) {
+    cx = point.x * dpr;
+    cy = point.y * dpr;
+  } else if (bounds) {
+    cx = (bounds.x + bounds.width / 2) * dpr;
+    cy = (bounds.y + bounds.height / 2) * dpr;
+  } else {
+    return null;
+  }
+
+  return {
+    x: cx - size / 2,
+    y: cy - size / 2,
+    width: size,
+    height: size,
+    shape: 'circle',
+    color: DEFAULT_TARGET_COLOR,
   };
 }

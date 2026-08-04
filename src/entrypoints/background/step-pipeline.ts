@@ -24,6 +24,7 @@ async function takeScreenshot(stepId: string, meta: ElementMeta): Promise<string
       height: img.height,
       bounds: { x: meta.rect.x, y: meta.rect.y, width: meta.rect.width, height: meta.rect.height },
       pixelRatio: meta.devicePixelRatio,
+      clickPoint: meta.clickPoint,
     };
     img.close();
     await saveScreenshot(screenshot);

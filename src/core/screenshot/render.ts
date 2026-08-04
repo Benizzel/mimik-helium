@@ -1,6 +1,9 @@
 import type { Screenshot } from '@/core/guides/types';
-import { resolveViewport } from './geometry';
+import { resolveTarget, resolveViewport } from './geometry';
 import type { Annotation } from './types';
+
+const TARGET_STROKE = 4;
+const TARGET_RADIUS = 10;
 
 interface RenderOptions {
   format?: 'image/webp' | 'image/jpeg' | 'image/png';
@@ -31,6 +34,18 @@ function drawAnnotation(ctx: OffscreenCanvasRenderingContext2D, a: Annotation, o
       ctx.strokeStyle = a.color;
       ctx.lineWidth = 3;
       ctx.strokeRect(a.x, a.y, a.w, a.h);
+      break;
+    case 'target':
+      ctx.strokeStyle = a.color;
+      ctx.lineWidth = TARGET_STROKE;
+      if (a.shape === 'circle') {
+        ctx.beginPath();
+        ctx.ellipse(a.x + a.w / 2, a.y + a.h / 2, a.w / 2, a.h / 2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        drawRoundedRect(ctx, a.x, a.y, a.w, a.h, TARGET_RADIUS);
+        ctx.stroke();
+      }
       break;
     case 'arrow': {
       const head = 14;
@@ -90,16 +105,23 @@ export async function renderScreenshot(screenshot: Screenshot, opts: RenderOptio
 
   ctx.translate(-viewport.x, -viewport.y);
 
-  const target = screenshot.edits?.target === undefined ? screenshot.bounds : screenshot.edits.target;
+  const target = resolveTarget(screenshot);
   if (target) {
-    const dpr = screenshot.pixelRatio || 1;
-    ctx.save();
-    ctx.strokeStyle = '#4F46E5';
-    ctx.lineWidth = 3.5;
-    ctx.setLineDash([8, 5]);
-    drawRoundedRect(ctx, target.x * dpr, target.y * dpr, target.width * dpr, target.height * dpr, 12);
-    ctx.stroke();
-    ctx.restore();
+    drawAnnotation(
+      ctx,
+      {
+        id: 'target',
+        type: 'target',
+        x: target.x,
+        y: target.y,
+        w: target.width,
+        h: target.height,
+        color: target.color,
+        shape: target.shape,
+      },
+      viewport.x,
+      viewport.y,
+    );
   }
 
   for (const a of screenshot.edits?.annotations ?? []) drawAnnotation(ctx, a, viewport.x, viewport.y);

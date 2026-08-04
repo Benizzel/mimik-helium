@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { deleteScreenshot, updateScreenshotBlob, updateScreenshotEdits } from '@/core/guides/service';
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
-import { panBy, resolveViewport, zoomBy } from '@/core/screenshot/geometry';
+import { panBy, resolveTarget, resolveViewport, zoomBy } from '@/core/screenshot/geometry';
 import { renderScreenshot } from '@/core/screenshot/render';
-import type { ScreenshotEdits } from '@/core/screenshot/types';
+import type { ClickTarget, ScreenshotEdits } from '@/core/screenshot/types';
+import { DEFAULT_TARGET_COLOR } from '@/core/screenshot/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,13 +51,13 @@ function withFullViewport(screenshot: Screenshot): Screenshot {
   };
 }
 
-function defaultTargetRect(screenshot: Screenshot): ScreenshotBounds {
+function defaultTargetRect(screenshot: Screenshot): ClickTarget {
   const dpr = screenshot.pixelRatio || 1;
   const width = screenshot.width / dpr;
   const height = screenshot.height / dpr;
   const w = width * TARGET_WIDTH_RATIO;
   const h = height * TARGET_HEIGHT_RATIO;
-  return { x: (width - w) / 2, y: (height - h) / 2, width: w, height: h };
+  return { x: (width - w) / 2, y: (height - h) / 2, width: w, height: h, shape: 'circle', color: DEFAULT_TARGET_COLOR };
 }
 
 export default function ScreenshotView({
@@ -221,7 +222,7 @@ export default function ScreenshotView({
   const handleAddClickTarget = () => {
     const nextEdits: ScreenshotEdits = {
       ...effectiveEdits,
-      target: effectiveEdits?.target ?? effectiveScreenshot.bounds ?? defaultTargetRect(effectiveScreenshot),
+      target: resolveTarget(effectiveScreenshot) ?? defaultTargetRect(effectiveScreenshot),
     };
     setEditsOverride(nextEdits);
     scheduleSave(nextEdits);
