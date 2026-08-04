@@ -83,6 +83,8 @@ settings:
   model: Model
   apiKey: API Key
   aiLanguage: Description Language
+  targetColor: "Click target color"
+  targetColorHint: "Default for newly captured steps"
   saveSettings: Save Settings
   saved: Saved
   smartBlur: Smart Blur

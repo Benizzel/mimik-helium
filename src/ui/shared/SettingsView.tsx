@@ -1,9 +1,10 @@
-import { ArrowLeft, Bug, Check, ChevronRight, EyeOff, Globe, Shield, Sparkles, Star } from 'lucide-react';
+import { ArrowLeft, Bug, Check, ChevronRight, EyeOff, Globe, Shield, Sparkles, Star, Target } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
 import { AI_PROVIDERS, type AIProviderKey } from '@/core/capture/ai/models';
 import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
+import { DEFAULT_TARGET_COLOR, TARGET_COLORS } from '@/core/screenshot/types';
 import { localStorage } from '@/lib/browser-api';
 import { Button } from '@/ui/components/ui/button';
 import { Input } from '@/ui/components/ui/input';
@@ -18,6 +19,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
   const [aiLanguage, setAiLanguage] = useState<AILanguageCode>('en');
+  const [targetColor, setTargetColor] = useState<string>(DEFAULT_TARGET_COLOR);
   const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>({
     email: true,
     phone: true,
@@ -28,14 +30,17 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   });
 
   useEffect(() => {
-    localStorage.get(['aiApiKey', 'aiProvider', 'aiModel', 'aiLanguage', 'blurPresets']).then((result) => {
-      const p = (result.aiProvider as AIProviderKey) || 'openai';
-      setProvider(p);
-      setModel((result.aiModel as string) || AI_PROVIDERS[p].defaultModel);
-      if (result.aiApiKey) setApiKey(result.aiApiKey as string);
-      if (result.aiLanguage) setAiLanguage(result.aiLanguage as AILanguageCode);
-      if (result.blurPresets) setBlurPresets(result.blurPresets as Record<PresetKey, boolean>);
-    });
+    localStorage
+      .get(['aiApiKey', 'aiProvider', 'aiModel', 'aiLanguage', 'blurPresets', 'targetColor'])
+      .then((result) => {
+        const p = (result.aiProvider as AIProviderKey) || 'openai';
+        setProvider(p);
+        setModel((result.aiModel as string) || AI_PROVIDERS[p].defaultModel);
+        if (result.aiApiKey) setApiKey(result.aiApiKey as string);
+        if (result.aiLanguage) setAiLanguage(result.aiLanguage as AILanguageCode);
+        if (result.blurPresets) setBlurPresets(result.blurPresets as Record<PresetKey, boolean>);
+        if (result.targetColor) setTargetColor(result.targetColor as string);
+      });
   }, []);
 
   const handleProviderChange = (newProvider: AIProviderKey) => {
@@ -44,7 +49,14 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   };
 
   const handleSave = async () => {
-    await localStorage.set({ aiApiKey: apiKey, aiProvider: provider, aiModel: model, aiLanguage, blurPresets });
+    await localStorage.set({
+      aiApiKey: apiKey,
+      aiProvider: provider,
+      aiModel: model,
+      aiLanguage,
+      blurPresets,
+      targetColor,
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -136,6 +148,35 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
                 </option>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div className="border border-border rounded-[10px] p-3.5">
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+              <Target size={14} className="text-accent" />
+            </div>
+            <div>
+              <div className="text-[13px] font-semibold text-foreground">{i18n.t('settings.targetColor')}</div>
+              <div className="text-[11px] text-muted-foreground">{i18n.t('settings.targetColorHint')}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {TARGET_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-label={c}
+                onClick={() => setTargetColor(c)}
+                className={`w-6 h-6 rounded-full transition-transform ${targetColor === c ? 'ring-2 ring-accent ring-offset-2' : 'hover:scale-110'}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+            <Input
+              value={targetColor}
+              onChange={(e) => setTargetColor(e.target.value)}
+              className="w-24 h-7 text-[11px] ml-1"
+            />
           </div>
         </div>
 

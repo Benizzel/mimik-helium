@@ -83,6 +83,8 @@ settings:
   model: Modelo
   apiKey: Chave da API
   aiLanguage: "Idioma das descrições"
+  targetColor: "Cor do alvo de clique"
+  targetColorHint: "Padrão para novas etapas"
   saveSettings: Salvar ajustes
   saved: Salvo
   smartBlur: Desfoque inteligente

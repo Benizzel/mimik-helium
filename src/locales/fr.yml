@@ -83,6 +83,8 @@ settings:
   model: "Modèle"
   apiKey: "Clé API"
   aiLanguage: Langue des descriptions
+  targetColor: "Couleur de la cible de clic"
+  targetColorHint: "Par défaut pour les nouvelles étapes"
   saveSettings: "Enregistrer"
   saved: "Enregistré"
   smartBlur: Flou intelligent
