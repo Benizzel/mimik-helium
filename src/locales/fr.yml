@@ -140,18 +140,12 @@ editor:
   backToLibrary: "Retour à la bibliothèque"
   guideMe: "Guidez-moi !"
   deleteThisStep: "Supprimer cette étape ?"
-  blurSensitiveArea: Flouter une zone sensible
   copyScreenshot: "Copier la capture"
   noScreenshot: "Pas de capture"
 
 emptyGuide:
   title: Ce guide est vide
   subtitle: "Enregistrez quelques étapes pour lui donner vie"
-
-blurCanvas:
-  drawInstructions: "Dessinez des rectangles pour flouter"
-  regionCount: "$1 zone"
-  regionCountPlural: "$1 zones"
 
 blurPanel:
   title: Flou intelligent
@@ -178,6 +172,19 @@ screenshotView:
   altButton: "ALT"
   altLabel: "Texte alternatif"
   altPlaceholder: "Décrivez cette image pour les lecteurs d'écran"
+
+annotationEditor:
+  title: "Modifier la capture"
+  toolSelect: "Sélection"
+  toolBox: Rectangle
+  toolArrow: "Flèche"
+  toolText: Texte
+  toolFreehand: "Dessin libre"
+  toolRedact: Masquer
+  toolCrop: Recadrer
+  colorLabel: Couleur
+  textPlaceholder: "Écrivez quelque chose..."
+  done: "Terminé"
 
 exportMenu:
   html: HTML

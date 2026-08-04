@@ -140,18 +140,12 @@ editor:
   backToLibrary: Back to library
   guideMe: Guide Me
   deleteThisStep: "Delete this step?"
-  blurSensitiveArea: Blur sensitive area
   copyScreenshot: Copy screenshot
   noScreenshot: No screenshot
 
 emptyGuide:
   title: This guide is empty
   subtitle: Wake it up by recording some steps
-
-blurCanvas:
-  drawInstructions: Draw rectangles to blur
-  regionCount: "$1 region"
-  regionCountPlural: "$1 regions"
 
 blurPanel:
   title: Smart Blur
@@ -178,6 +172,19 @@ screenshotView:
   altButton: ALT
   altLabel: Alt text
   altPlaceholder: Describe this image for screen readers
+
+annotationEditor:
+  title: Edit screenshot
+  toolSelect: Select
+  toolBox: Box
+  toolArrow: Arrow
+  toolText: Text
+  toolFreehand: Freehand
+  toolRedact: Redact
+  toolCrop: Crop
+  colorLabel: Colour
+  textPlaceholder: Type something...
+  done: Done
 
 exportMenu:
   html: HTML

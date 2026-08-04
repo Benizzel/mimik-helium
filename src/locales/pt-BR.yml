@@ -140,18 +140,12 @@ editor:
   backToLibrary: Voltar pra biblioteca
   guideMe: "Me guia!"
   deleteThisStep: "Excluir esse passo?"
-  blurSensitiveArea: Desfocar área sensível
   copyScreenshot: Copiar captura
   noScreenshot: Sem captura
 
 emptyGuide:
   title: Esse guia tá vazio
   subtitle: Grava alguns passos pra dar vida a ele
-
-blurCanvas:
-  drawInstructions: Desenhe retângulos pra desfocar
-  regionCount: "$1 região"
-  regionCountPlural: "$1 regiões"
 
 blurPanel:
   title: Desfoque inteligente
@@ -178,6 +172,19 @@ screenshotView:
   altButton: ALT
   altLabel: Texto alternativo
   altPlaceholder: Descreva essa imagem pra leitores de tela
+
+annotationEditor:
+  title: Editar captura
+  toolSelect: Selecionar
+  toolBox: Retângulo
+  toolArrow: Seta
+  toolText: Texto
+  toolFreehand: Desenho livre
+  toolRedact: Ocultar
+  toolCrop: Recortar
+  colorLabel: Cor
+  textPlaceholder: Digite algo...
+  done: Pronto
 
 exportMenu:
   html: HTML
