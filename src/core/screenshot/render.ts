@@ -1,6 +1,7 @@
 import type { Screenshot } from '@/core/guides/types';
 import { resolveTarget, resolveViewport } from './geometry';
-import type { Annotation } from './types';
+import type { Annotation, ArrowEnd } from './types';
+import { LINE_WIDTHS } from './types';
 
 const TARGET_STROKE = 3.5;
 const TARGET_RADIUS = 12;
@@ -27,13 +28,85 @@ function drawRoundedRect(
   ctx.closePath();
 }
 
+function drawArrowEnd(
+  ctx: OffscreenCanvasRenderingContext2D,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  width: number,
+  end: ArrowEnd,
+) {
+  if (end === 'none') return;
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const size = width * 4;
+  ctx.save();
+  ctx.translate(x2, y2);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  switch (end) {
+    case 'bar':
+      ctx.moveTo(0, -size / 2);
+      ctx.lineTo(0, size / 2);
+      ctx.stroke();
+      break;
+    case 'arrow':
+      ctx.moveTo(-size, -size / 2);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(-size, size / 2);
+      ctx.stroke();
+      break;
+    case 'arrow-solid':
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-size, -size / 2);
+      ctx.lineTo(-size, size / 2);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    case 'circle':
+      ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+      ctx.stroke();
+      break;
+    case 'circle-solid':
+      ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case 'square':
+      ctx.rect(-size / 2, -size / 2, size, size);
+      ctx.stroke();
+      break;
+    case 'square-solid':
+      ctx.rect(-size / 2, -size / 2, size, size);
+      ctx.fill();
+      break;
+  }
+  ctx.restore();
+}
+
 function drawAnnotation(ctx: OffscreenCanvasRenderingContext2D, a: Annotation, originX: number, originY: number) {
   ctx.save();
   switch (a.type) {
     case 'box':
+      ctx.lineWidth = LINE_WIDTHS[a.lineWidth ?? 'small'];
+      if (a.fill && a.fill !== 'transparent') {
+        ctx.fillStyle = a.fill;
+        drawRoundedRect(ctx, a.x, a.y, a.w, a.h, a.radius ?? 0);
+        ctx.fill();
+      }
       ctx.strokeStyle = a.color;
-      ctx.lineWidth = 3;
-      ctx.strokeRect(a.x, a.y, a.w, a.h);
+      drawRoundedRect(ctx, a.x, a.y, a.w, a.h, a.radius ?? 0);
+      ctx.stroke();
+      break;
+    case 'ellipse':
+      ctx.lineWidth = LINE_WIDTHS[a.lineWidth ?? 'small'];
+      ctx.beginPath();
+      ctx.ellipse(a.x + a.w / 2, a.y + a.h / 2, Math.abs(a.w / 2), Math.abs(a.h / 2), 0, 0, Math.PI * 2);
+      if (a.fill && a.fill !== 'transparent') {
+        ctx.fillStyle = a.fill;
+        ctx.fill();
+      }
+      ctx.strokeStyle = a.color;
+      ctx.stroke();
       break;
     case 'target':
       ctx.strokeStyle = a.color;
@@ -43,31 +116,26 @@ function drawAnnotation(ctx: OffscreenCanvasRenderingContext2D, a: Annotation, o
       ctx.stroke();
       break;
     case 'arrow': {
-      const head = 14;
-      const angle = Math.atan2(a.y2 - a.y1, a.x2 - a.x1);
+      const w = LINE_WIDTHS[a.lineWidth ?? 'small'];
       ctx.strokeStyle = a.color;
       ctx.fillStyle = a.color;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = w;
+      ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(a.x1, a.y1);
       ctx.lineTo(a.x2, a.y2);
       ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(a.x2, a.y2);
-      ctx.lineTo(a.x2 - head * Math.cos(angle - Math.PI / 6), a.y2 - head * Math.sin(angle - Math.PI / 6));
-      ctx.lineTo(a.x2 - head * Math.cos(angle + Math.PI / 6), a.y2 - head * Math.sin(angle + Math.PI / 6));
-      ctx.closePath();
-      ctx.fill();
+      drawArrowEnd(ctx, a.x1, a.y1, a.x2, a.y2, w, a.end ?? 'arrow-solid');
       break;
     }
     case 'text':
       ctx.fillStyle = a.color;
-      ctx.font = `600 ${a.size}px Poppins, sans-serif`;
+      ctx.font = `${a.weight ?? 600} ${a.size}px Poppins, sans-serif`;
       ctx.fillText(a.text, a.x, a.y);
       break;
     case 'freehand':
       ctx.strokeStyle = a.color;
-      ctx.lineWidth = 4;
+      ctx.lineWidth = LINE_WIDTHS[a.lineWidth ?? 'medium'];
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
       ctx.beginPath();

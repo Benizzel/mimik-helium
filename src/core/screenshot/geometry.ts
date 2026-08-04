@@ -99,6 +99,7 @@ export type Handle = 'nw' | 'ne' | 'sw' | 'se';
 export function annotationBounds(a: Annotation): ScreenshotBounds {
   switch (a.type) {
     case 'box':
+    case 'ellipse':
     case 'redact':
     case 'target':
       return { x: a.x, y: a.y, width: a.w, height: a.h };
@@ -134,6 +135,7 @@ export function hitTest(annotations: Annotation[], x: number, y: number): Annota
 export function moveAnnotation(a: Annotation, dx: number, dy: number): Annotation {
   switch (a.type) {
     case 'box':
+    case 'ellipse':
     case 'redact':
     case 'target':
     case 'text':
@@ -146,7 +148,7 @@ export function moveAnnotation(a: Annotation, dx: number, dy: number): Annotatio
 }
 
 export function resizeAnnotation(a: Annotation, handle: Handle, dx: number, dy: number): Annotation {
-  if (a.type !== 'box' && a.type !== 'redact' && a.type !== 'target') return a;
+  if (a.type !== 'box' && a.type !== 'ellipse' && a.type !== 'redact' && a.type !== 'target') return a;
   const left = handle === 'nw' || handle === 'sw';
   const top = handle === 'nw' || handle === 'ne';
   return {

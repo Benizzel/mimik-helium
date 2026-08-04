@@ -188,6 +188,29 @@ annotationEditor:
   textPlaceholder: Digite algo...
   targetColor: Cor do alvo
   targetBorder: Estilo da borda
+  modeAnnotate: "Anotar"
+  toolEraser: "Borracha"
+  toolEllipse: "Elipse"
+  lineColor: "cor da linha"
+  fillColor: "preenchimento"
+  noFill: "nenhum"
+  lineWidth: "espessura"
+  width_small: "Fina"
+  width_medium: "Média"
+  width_large: "Grossa"
+  cornerRadius: "raio"
+  arrowEnd: "ponta"
+  fontSize: "tamanho"
+  undo: "Desfazer"
+  redo: "Refazer"
+  end_none: "Nenhuma"
+  end_bar: "Barra"
+  end_arrow: "Seta"
+  end_arrow_solid: "Seta sólida"
+  end_circle: "Círculo"
+  end_circle_solid: "Círculo sólido"
+  end_square: "Quadrado"
+  end_square_solid: "Quadrado sólido"
   done: Pronto
 
 exportMenu:

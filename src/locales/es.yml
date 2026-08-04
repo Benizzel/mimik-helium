@@ -188,6 +188,29 @@ annotationEditor:
   textPlaceholder: Escribe algo...
   targetColor: Color del objetivo
   targetBorder: Estilo del borde
+  modeAnnotate: "Anotar"
+  toolEraser: "Borrador"
+  toolEllipse: "Elipse"
+  lineColor: "color de línea"
+  fillColor: "relleno"
+  noFill: "ninguno"
+  lineWidth: "grosor"
+  width_small: "Fino"
+  width_medium: "Medio"
+  width_large: "Grueso"
+  cornerRadius: "radio"
+  arrowEnd: "punta"
+  fontSize: "tamaño"
+  undo: "Deshacer"
+  redo: "Rehacer"
+  end_none: "Ninguna"
+  end_bar: "Barra"
+  end_arrow: "Flecha"
+  end_arrow_solid: "Flecha sólida"
+  end_circle: "Círculo"
+  end_circle_solid: "Círculo sólido"
+  end_square: "Cuadrado"
+  end_square_solid: "Cuadrado sólido"
   done: Listo
 
 exportMenu:

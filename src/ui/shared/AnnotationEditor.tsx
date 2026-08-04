@@ -1,14 +1,19 @@
 import {
   ArrowUpRight,
   Check,
+  Circle as CircleIcon,
   Crop,
+  Eraser,
   EyeOff,
   MousePointer2,
+  Pencil,
   PenTool,
+  Redo2,
   Square,
   SquareDashed,
   Trash2,
   Type,
+  Undo2,
   X,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -25,10 +30,11 @@ import {
   resizeAnnotation,
   resolveTarget,
 } from '@/core/screenshot/geometry';
-import type { Annotation, ScreenshotEdits, TargetBorder } from '@/core/screenshot/types';
-import { TARGET_COLORS } from '@/core/screenshot/types';
+import type { Annotation, ArrowEnd, LineWidth, ScreenshotEdits, TargetBorder } from '@/core/screenshot/types';
+import { ARROW_ENDS, SHAPE_COLORS, TARGET_COLORS } from '@/core/screenshot/types';
 
-type EditorTool = 'select' | 'box' | 'arrow' | 'text' | 'freehand' | 'redact' | 'crop';
+type EditorMode = 'crop' | 'annotate' | 'redact';
+type EditorTool = 'select' | 'eraser' | 'box' | 'ellipse' | 'arrow' | 'text' | 'freehand';
 
 interface AnnotationEditorProps {
   screenshot: Screenshot;
@@ -56,29 +62,44 @@ const MIN_SHAPE_SIZE = 6;
 const MIN_CROP_SIZE = 20;
 const HANDLE_DISPLAY_SIZE = 10;
 const HANDLE_HIT_PX = 10;
+const HISTORY_LIMIT = 49;
 const SELECTION_GAP = 6;
 const DRAFT_ID = 'draft';
 const TARGET_ID = 'click-target';
 
-const TOOLS: { id: EditorTool; icon: ComponentType<{ size?: number }>; labelKey: string }[] = [
-  { id: 'select', icon: MousePointer2, labelKey: 'annotationEditor.toolSelect' },
-  { id: 'box', icon: Square, labelKey: 'annotationEditor.toolBox' },
-  { id: 'arrow', icon: ArrowUpRight, labelKey: 'annotationEditor.toolArrow' },
-  { id: 'text', icon: Type, labelKey: 'annotationEditor.toolText' },
-  { id: 'freehand', icon: PenTool, labelKey: 'annotationEditor.toolFreehand' },
-  { id: 'redact', icon: EyeOff, labelKey: 'annotationEditor.toolRedact' },
+const MODES: { id: EditorMode; icon: ComponentType<{ size?: number }>; labelKey: string }[] = [
   { id: 'crop', icon: Crop, labelKey: 'annotationEditor.toolCrop' },
+  { id: 'annotate', icon: Pencil, labelKey: 'annotationEditor.modeAnnotate' },
+  { id: 'redact', icon: EyeOff, labelKey: 'annotationEditor.toolRedact' },
 ];
 
-function initialToolFor(tool: 'annotate' | 'redact' | 'crop' | 'target'): EditorTool {
+const TOOLS: { id: EditorTool; icon: ComponentType<{ size?: number }>; labelKey: string }[] = [
+  { id: 'select', icon: MousePointer2, labelKey: 'annotationEditor.toolSelect' },
+  { id: 'eraser', icon: Eraser, labelKey: 'annotationEditor.toolEraser' },
+  { id: 'arrow', icon: ArrowUpRight, labelKey: 'annotationEditor.toolArrow' },
+  { id: 'box', icon: Square, labelKey: 'annotationEditor.toolBox' },
+  { id: 'ellipse', icon: CircleIcon, labelKey: 'annotationEditor.toolEllipse' },
+  { id: 'text', icon: Type, labelKey: 'annotationEditor.toolText' },
+  { id: 'freehand', icon: PenTool, labelKey: 'annotationEditor.toolFreehand' },
+];
+
+const LINE_WIDTH_OPTIONS: LineWidth[] = ['small', 'medium', 'large'];
+
+function initialModeFor(tool: 'annotate' | 'redact' | 'crop' | 'target'): EditorMode {
   if (tool === 'redact') return 'redact';
   if (tool === 'crop') return 'crop';
+  return 'annotate';
+}
+
+function initialToolFor(tool: 'annotate' | 'redact' | 'crop' | 'target'): EditorTool {
   if (tool === 'target') return 'select';
   return 'box';
 }
 
-function cursorFor(tool: EditorTool): string {
+function cursorFor(mode: EditorMode, tool: EditorTool): string {
+  if (mode !== 'annotate') return 'crosshair';
   if (tool === 'select') return 'default';
+  if (tool === 'eraser') return 'pointer';
   if (tool === 'text') return 'text';
   return 'crosshair';
 }
@@ -193,6 +214,36 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const [bitmap, setBitmap] = useState<ImageBitmap | null>(null);
   const [saving, setSaving] = useState(false);
   const [targetPicker, setTargetPicker] = useState(false);
+  const [mode, setMode] = useState<EditorMode>(initialModeFor(tool));
+  const [fill, setFill] = useState('transparent');
+  const [lineWidth, setLineWidth] = useState<LineWidth>('small');
+  const [radius, setRadius] = useState(0);
+  const [arrowEnd, setArrowEnd] = useState<ArrowEnd>('arrow-solid');
+  const [textSize, setTextSize] = useState(DEFAULT_TEXT_SIZE);
+  const [past, setPast] = useState<Annotation[][]>([]);
+  const [future, setFuture] = useState<Annotation[][]>([]);
+
+  const annotationsRef = useRef(annotations);
+  annotationsRef.current = annotations;
+
+  const pushHistory = useCallback(() => {
+    setPast((p) => [...p.slice(-HISTORY_LIMIT), annotationsRef.current]);
+    setFuture([]);
+  }, []);
+
+  const undo = () => {
+    if (!past.length) return;
+    setFuture((f) => [annotationsRef.current, ...f]);
+    setAnnotations(past[past.length - 1]);
+    setPast((p) => p.slice(0, -1));
+  };
+
+  const redo = () => {
+    if (!future.length) return;
+    setPast((p) => [...p, annotationsRef.current]);
+    setAnnotations(future[0]);
+    setFuture((f) => f.slice(1));
+  };
 
   const selected = annotations.find((a) => a.id === selectedId);
   const selectedTarget = selected?.type === 'target' ? selected : null;
@@ -246,13 +297,14 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
         setSelectedId(null);
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
         e.preventDefault();
+        pushHistory();
         setAnnotations((prev) => prev.filter((a) => a.id !== selectedId));
         setSelectedId(null);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedId]);
+  }, [selectedId, pushHistory]);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -304,12 +356,14 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
         const scale = getScale();
         const handle = hitHandle(selectionBounds(selected, scale), p.x, p.y, HANDLE_HIT_PX * scale);
         if (handle) {
+          pushHistory();
           dragRef.current = { mode: 'resize', id: selected.id, handle, lastX: p.x, lastY: p.y };
           return;
         }
       }
       const hit = hitTest(annotations, p.x, p.y);
       if (hit) {
+        pushHistory();
         setSelectedId(hit.id);
         dragRef.current = { mode: 'move', id: hit.id, lastX: p.x, lastY: p.y };
       } else {
@@ -318,10 +372,26 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       return;
     }
 
-    if (activeTool === 'crop') {
+    if (mode === 'crop') {
       const rect: ScreenshotBounds = { x: p.x, y: p.y, width: 0, height: 0 };
       dragRef.current = { mode: 'crop', start: p, rect };
       setCropDraft(rect);
+      return;
+    }
+
+    if (mode === 'redact') {
+      const shape: Annotation = { id: DRAFT_ID, type: 'redact', x: p.x, y: p.y, w: 0, h: 0, style: 'blur' };
+      dragRef.current = { mode: 'draw', start: p, shape };
+      setDraft(shape);
+      return;
+    }
+
+    if (activeTool === 'eraser') {
+      const hit = hitTest(annotations, p.x, p.y);
+      if (hit && hit.id !== TARGET_ID) {
+        pushHistory();
+        setAnnotations((prev) => prev.filter((a) => a.id !== hit.id));
+      }
       return;
     }
 
@@ -329,7 +399,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       const rect = canvasRef.current?.getBoundingClientRect();
       setTextEditor({
         x: p.x,
-        y: p.y + DEFAULT_TEXT_SIZE,
+        y: p.y + textSize,
         left: rect ? e.clientX - rect.left : 0,
         top: rect ? e.clientY - rect.top : 0,
       });
@@ -339,13 +409,13 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
     let shape: Annotation;
     if (activeTool === 'box') {
-      shape = { id: DRAFT_ID, type: 'box', x: p.x, y: p.y, w: 0, h: 0, color };
+      shape = { id: DRAFT_ID, type: 'box', x: p.x, y: p.y, w: 0, h: 0, color, fill, lineWidth, radius };
+    } else if (activeTool === 'ellipse') {
+      shape = { id: DRAFT_ID, type: 'ellipse', x: p.x, y: p.y, w: 0, h: 0, color, fill, lineWidth };
     } else if (activeTool === 'arrow') {
-      shape = { id: DRAFT_ID, type: 'arrow', x1: p.x, y1: p.y, x2: p.x, y2: p.y, color };
-    } else if (activeTool === 'freehand') {
-      shape = { id: DRAFT_ID, type: 'freehand', points: [p.x, p.y], color };
+      shape = { id: DRAFT_ID, type: 'arrow', x1: p.x, y1: p.y, x2: p.x, y2: p.y, color, lineWidth, end: arrowEnd };
     } else {
-      shape = { id: DRAFT_ID, type: 'redact', x: p.x, y: p.y, w: 0, h: 0, style: 'blur' };
+      shape = { id: DRAFT_ID, type: 'freehand', points: [p.x, p.y], color, lineWidth };
     }
     dragRef.current = { mode: 'draw', start: p, shape };
     setDraft(shape);
@@ -388,7 +458,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
     const shape = drag.shape;
     let next: Annotation = shape;
-    if (shape.type === 'box' || shape.type === 'redact') {
+    if (shape.type === 'box' || shape.type === 'ellipse' || shape.type === 'redact') {
       next = {
         ...shape,
         x: Math.min(drag.start.x, p.x),
@@ -455,7 +525,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
           y: textEditor.y,
           text: textValue.trim(),
           color,
-          size: DEFAULT_TEXT_SIZE,
+          size: textSize,
         },
       ]);
     }
@@ -493,6 +563,25 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
         <div className="flex items-center gap-1.5">
           <button
             type="button"
+            onClick={undo}
+            disabled={past.length === 0}
+            title={i18n.t('annotationEditor.undo')}
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-primary-foreground hover:bg-primary-foreground/15 disabled:opacity-30"
+          >
+            <Undo2 size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={redo}
+            disabled={future.length === 0}
+            title={i18n.t('annotationEditor.redo')}
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-primary-foreground hover:bg-primary-foreground/15 disabled:opacity-30"
+          >
+            <Redo2 size={13} />
+          </button>
+          <div className="w-px h-5 bg-primary-foreground/15 mx-1" />
+          <button
+            type="button"
             onClick={onCancel}
             className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold text-primary-foreground rounded-lg border border-primary-foreground/10 bg-primary-foreground/[0.06] hover:bg-destructive/15 hover:text-destructive transition-colors"
           >
@@ -511,39 +600,6 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
         </div>
       </div>
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-14 shrink-0 bg-card border-r border-border flex flex-col items-center gap-1.5 py-3 overflow-y-auto">
-          {TOOLS.map(({ id, icon: Icon, labelKey }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveTool(id)}
-              title={i18n.t(labelKey)}
-              className={`flex items-center justify-center w-9 h-9 rounded-md transition-colors ${
-                activeTool === id
-                  ? 'bg-accent text-primary-foreground'
-                  : 'text-foreground hover:bg-secondary hover:text-accent'
-              }`}
-            >
-              <Icon size={16} />
-            </button>
-          ))}
-          <div className="w-8 h-px bg-border my-1.5" />
-          <fieldset
-            className="flex flex-col items-center gap-1.5 border-0 p-0 m-0"
-            aria-label={i18n.t('annotationEditor.colorLabel')}
-          >
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => handleColorSelect(c)}
-                title={c}
-                className={`w-6 h-6 rounded-full border-2 transition-colors ${color === c ? 'border-accent' : 'border-transparent'}`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
-          </fieldset>
-        </div>
         <div className="flex-1 flex items-center justify-center overflow-auto p-6">
           <div className="relative inline-block">
             <canvas
@@ -551,7 +607,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
               width={screenshot.width}
               height={screenshot.height}
               className="block max-w-full max-h-[calc(100vh-140px)] rounded-lg shadow-2xl touch-none"
-              style={{ cursor: cursorFor(activeTool) }}
+              style={{ cursor: cursorFor(mode, activeTool) }}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
@@ -636,6 +692,135 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
               </div>
             )}
           </div>
+        </div>
+      </div>
+      <div className="shrink-0 bg-card border-t border-border px-4 py-3 flex flex-col items-center gap-2.5">
+        {mode === 'annotate' && (
+          <div className="flex items-end gap-5 min-h-[46px]">
+            <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+              {i18n.t('annotationEditor.lineColor')}
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => handleColorSelect(e.target.value)}
+                className="w-7 h-7 rounded-full border border-border bg-transparent p-0 cursor-pointer"
+              />
+            </label>
+            {(activeTool === 'box' || activeTool === 'ellipse') && (
+              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                {i18n.t('annotationEditor.fillColor')}
+                <select
+                  value={fill}
+                  onChange={(e) => setFill(e.target.value)}
+                  className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
+                  style={{ color: fill === 'transparent' ? undefined : fill }}
+                >
+                  {SHAPE_COLORS.map((c) => (
+                    <option key={c} value={c}>
+                      {c === 'transparent' ? i18n.t('annotationEditor.noFill') : c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {activeTool !== 'text' && (
+              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                {i18n.t('annotationEditor.lineWidth')}
+                <select
+                  value={lineWidth}
+                  onChange={(e) => setLineWidth(e.target.value as LineWidth)}
+                  className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none capitalize"
+                >
+                  {LINE_WIDTH_OPTIONS.map((w) => (
+                    <option key={w} value={w}>
+                      {i18n.t(`annotationEditor.width_${w}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {activeTool === 'box' && (
+              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                {i18n.t('annotationEditor.cornerRadius')}
+                <input
+                  type="range"
+                  min={0}
+                  max={60}
+                  value={radius}
+                  onChange={(e) => setRadius(Number(e.target.value))}
+                  className="w-24 h-7 accent-accent"
+                />
+              </label>
+            )}
+            {activeTool === 'arrow' && (
+              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                {i18n.t('annotationEditor.arrowEnd')}
+                <select
+                  value={arrowEnd}
+                  onChange={(e) => setArrowEnd(e.target.value as ArrowEnd)}
+                  className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
+                >
+                  {ARROW_ENDS.map((end) => (
+                    <option key={end} value={end}>
+                      {i18n.t(`annotationEditor.end_${end.replace('-', '_')}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {activeTool === 'text' && (
+              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                {i18n.t('annotationEditor.fontSize')}
+                <input
+                  type="range"
+                  min={12}
+                  max={96}
+                  value={textSize}
+                  onChange={(e) => setTextSize(Number(e.target.value))}
+                  className="w-24 h-7 accent-accent"
+                />
+              </label>
+            )}
+          </div>
+        )}
+
+        {mode === 'annotate' && (
+          <div className="flex items-center gap-1">
+            {TOOLS.map(({ id, icon: Icon, labelKey }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveTool(id)}
+                className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-[12px] font-medium transition-colors ${
+                  activeTool === id ? 'bg-secondary text-accent' : 'text-foreground hover:bg-secondary/60'
+                }`}
+              >
+                <Icon size={14} />
+                {i18n.t(labelKey)}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          {MODES.map(({ id, icon: Icon, labelKey }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => {
+                setMode(id);
+                setSelectedId(null);
+              }}
+              className={`flex flex-col items-center justify-center gap-1 w-[74px] h-[60px] rounded-xl border transition-colors ${
+                mode === id
+                  ? 'bg-secondary border-accent text-accent'
+                  : 'bg-card border-border text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <Icon size={17} />
+              <span className="text-[11px] font-semibold">{i18n.t(labelKey)}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>

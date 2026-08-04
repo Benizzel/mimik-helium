@@ -20,11 +20,80 @@ export interface ClickTarget extends ScreenshotBounds {
   color: string;
 }
 
+export type LineWidth = 'small' | 'medium' | 'large';
+
+export const LINE_WIDTHS: Record<LineWidth, number> = { small: 3, medium: 6, large: 10 };
+
+export type ArrowEnd = 'none' | 'bar' | 'arrow' | 'arrow-solid' | 'circle' | 'circle-solid' | 'square' | 'square-solid';
+
+export const ARROW_ENDS: ArrowEnd[] = [
+  'none',
+  'bar',
+  'arrow',
+  'arrow-solid',
+  'circle',
+  'circle-solid',
+  'square',
+  'square-solid',
+];
+
+export const SHAPE_COLORS = [
+  'transparent',
+  '#FFFFFF',
+  '#D4D4D8',
+  '#71717A',
+  '#000000',
+  '#1E1B4B',
+  '#2563EB',
+  '#7DD3FC',
+  '#2DD4BF',
+  '#059669',
+  '#22C55E',
+  '#FACC15',
+  '#F97316',
+  '#EF4444',
+  '#831843',
+  '#EC4899',
+  '#A855F7',
+] as const;
+
 export type Annotation =
-  | { id: string; type: 'box'; x: number; y: number; w: number; h: number; color: string }
-  | { id: string; type: 'arrow'; x1: number; y1: number; x2: number; y2: number; color: string }
-  | { id: string; type: 'text'; x: number; y: number; text: string; color: string; size: number }
-  | { id: string; type: 'freehand'; points: number[]; color: string }
+  | {
+      id: string;
+      type: 'box';
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      color: string;
+      fill?: string;
+      lineWidth?: LineWidth;
+      radius?: number;
+    }
+  | {
+      id: string;
+      type: 'ellipse';
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      color: string;
+      fill?: string;
+      lineWidth?: LineWidth;
+    }
+  | {
+      id: string;
+      type: 'arrow';
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      color: string;
+      lineWidth?: LineWidth;
+      end?: ArrowEnd;
+    }
+  | { id: string; type: 'text'; x: number; y: number; text: string; color: string; size: number; weight?: number }
+  | { id: string; type: 'freehand'; points: number[]; color: string; lineWidth?: LineWidth }
   | { id: string; type: 'redact'; x: number; y: number; w: number; h: number; style: 'blur' | 'solid' }
   | { id: string; type: 'target'; x: number; y: number; w: number; h: number; color: string; border: TargetBorder };
 
