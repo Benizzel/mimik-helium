@@ -216,20 +216,11 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
               {i18n.t('guideme.prev')}
             </button>
             <button
-              onClick={() => {
-                if (viewedStepIndex === activeStepIndex) {
-                  sendMessage('guideMeStepCompleted', { stepIndex: activeStepIndex }).catch(() => {});
-                }
-                if (viewedStepIndex < totalSteps - 1) {
-                  setViewedStepIndex((i) => i + 1);
-                }
-              }}
-              disabled={viewedStepIndex === totalSteps - 1 && viewedStepIndex !== activeStepIndex}
+              onClick={() => setViewedStepIndex((i) => Math.min(totalSteps - 1, i + 1))}
+              disabled={viewedStepIndex === totalSteps - 1}
               className="flex items-center gap-1 text-xs font-medium text-purple hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              {viewedStepIndex === totalSteps - 1 && viewedStepIndex === activeStepIndex
-                ? i18n.t('guideme.finish')
-                : i18n.t('guideme.next')}
+              {i18n.t('guideme.next')}
               <ChevronRight size={14} />
             </button>
           </div>

@@ -51,7 +51,6 @@ guideme:
   noDescription: Sin descripción
   prev: Anterior
   next: Siguiente
-  finish: Terminar
   exitTitle: "¿Ya te vas?"
   exitMessage: Se detendrá el recorrido y se quitará la guía de la página.
   stay: Quedarme

@@ -51,7 +51,6 @@ guideme:
   noDescription: No description
   prev: Prev
   next: Next
-  finish: Finish
   exitTitle: Heading out?
   exitMessage: Your walkthrough will stop and the page overlay will be removed.
   stay: Stay

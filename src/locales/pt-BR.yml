@@ -51,7 +51,6 @@ guideme:
   noDescription: Sem descrição
   prev: Anterior
   next: Próximo
-  finish: Terminar
   exitTitle: "Vai sair?"
   exitMessage: O passo a passo vai parar e o destaque vai sumir da página.
   stay: Ficar

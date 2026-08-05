@@ -51,7 +51,6 @@ guideme:
   noDescription: Aucune description
   prev: "Préc."
   next: Suiv.
-  finish: Terminer
   exitTitle: "Vous partez déjà ?"
   exitMessage: "La visite guidée va s'arrêter et le calque sera retiré de la page."
   stay: Rester
