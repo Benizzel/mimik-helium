@@ -514,21 +514,21 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     }
     const p = toImageSpace(e);
 
-    if (drag.mode === 'move') {
+    if (drag.mode === 'move' || drag.mode === 'resize') {
       const dx = p.x - drag.lastX;
       const dy = p.y - drag.lastY;
       drag.lastX = p.x;
       drag.lastY = p.y;
-      setAnnotations((prev) => prev.map((a) => (a.id === drag.id ? moveAnnotation(a, dx, dy) : a)));
-      return;
-    }
-
-    if (drag.mode === 'resize') {
-      const dx = p.x - drag.lastX;
-      const dy = p.y - drag.lastY;
-      drag.lastX = p.x;
-      drag.lastY = p.y;
-      setAnnotations((prev) => prev.map((a) => (a.id === drag.id ? resizeAnnotation(a, drag.handle, dx, dy) : a)));
+      const next = annotationsRef.current.map((a) => {
+        if (a.id !== drag.id) return a;
+        return drag.mode === 'move' ? moveAnnotation(a, dx, dy) : resizeAnnotation(a, drag.handle, dx, dy);
+      });
+      setAnnotations(next);
+      const moved = next.find((a) => a.id === drag.id);
+      if (moved) {
+        const b = annotationBounds(moved);
+        setAnchor({ x: b.x + b.width / 2, y: b.y + b.height });
+      }
       return;
     }
 
