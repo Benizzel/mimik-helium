@@ -46,11 +46,11 @@ guideme:
   live: En vivo
   roadblock: "Nos encontramos con un obstáculo. Actúa en la pantalla para avanzar."
   manualStep: "Este paso fue editado, así que no se puede detectar automáticamente. Márcalo como completado cuando termines."
-  markComplete: "Marcar como completado"
   stepOf: "Paso $1 de $2"
   noDescription: Sin descripción
   prev: Anterior
   next: Siguiente
+  finish: "Finalizar"
   exitTitle: "¿Ya te vas?"
   exitMessage: Se detendrá el recorrido y se quitará la guía de la página.
   stay: Quedarme

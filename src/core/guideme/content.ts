@@ -17,7 +17,6 @@ export class GuideMeController {
   private currentTarget: HTMLElement | null = null;
   private currentStepIndex = -1;
   private watchTimer: ReturnType<typeof setInterval> | null = null;
-  private blocked: number | null = null;
 
   constructor() {
     if (window.self !== window.top) return;
@@ -58,7 +57,6 @@ export class GuideMeController {
       this.stopWatching();
       this.removeActionDetection();
       this.destroyOverlay();
-      this.blocked = null;
       return;
     }
 
@@ -97,8 +95,6 @@ export class GuideMeController {
   }
 
   private setBlocked(stepIndex: number | null) {
-    if (this.blocked === stepIndex) return;
-    this.blocked = stepIndex;
     browser.storage.local
       .set({ [BLOCKED_KEY]: stepIndex })
       .catch((err) => logger.warn('Failed to flag guide me roadblock', err));

@@ -191,19 +191,10 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
           )}
 
           {isBlocked && (
-            <div className="mx-4 mb-3 rounded-lg bg-secondary p-3">
-              <p className="flex items-start gap-2 text-[12px] leading-relaxed text-foreground">
-                <TriangleAlert size={14} className="shrink-0 mt-0.5 text-accent" />
-                {isManualStep ? i18n.t('guideme.manualStep') : i18n.t('guideme.roadblock')}
-              </p>
-              <button
-                onClick={() => sendMessage('guideMeStepCompleted', { stepIndex: activeStepIndex }).catch(() => {})}
-                className="mt-2.5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-[12px] font-semibold text-foreground hover:border-accent hover:text-accent transition-colors"
-              >
-                <Check size={13} strokeWidth={3} />
-                {i18n.t('guideme.markComplete')}
-              </button>
-            </div>
+            <p className="mx-4 mb-3 flex items-start gap-2 rounded-lg bg-secondary p-3 text-[12px] leading-relaxed text-foreground">
+              <TriangleAlert size={14} className="shrink-0 mt-0.5 text-accent" />
+              {isManualStep ? i18n.t('guideme.manualStep') : i18n.t('guideme.roadblock')}
+            </p>
           )}
 
           <div className="flex items-center justify-between px-4 pb-3">
@@ -216,11 +207,20 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
               {i18n.t('guideme.prev')}
             </button>
             <button
-              onClick={() => setViewedStepIndex((i) => Math.min(totalSteps - 1, i + 1))}
-              disabled={viewedStepIndex === totalSteps - 1}
+              onClick={() => {
+                if (viewedStepIndex === activeStepIndex) {
+                  sendMessage('guideMeStepCompleted', { stepIndex: activeStepIndex }).catch(() => {});
+                }
+                if (viewedStepIndex < totalSteps - 1) {
+                  setViewedStepIndex((i) => i + 1);
+                }
+              }}
+              disabled={viewedStepIndex === totalSteps - 1 && viewedStepIndex !== activeStepIndex}
               className="flex items-center gap-1 text-xs font-medium text-purple hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              {i18n.t('guideme.next')}
+              {viewedStepIndex === totalSteps - 1 && viewedStepIndex === activeStepIndex
+                ? i18n.t('guideme.finish')
+                : i18n.t('guideme.next')}
               <ChevronRight size={14} />
             </button>
           </div>
