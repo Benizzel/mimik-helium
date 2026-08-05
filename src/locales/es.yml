@@ -229,6 +229,7 @@ annotationEditor:
   done: Listo
 
 exportMenu:
+  docx: DOCX
   html: HTML
   markdown: Markdown
   pdf: PDF

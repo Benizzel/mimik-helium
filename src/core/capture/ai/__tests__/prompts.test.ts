@@ -34,8 +34,8 @@ describe('getLanguageSuffix', () => {
 });
 
 describe('AI_LANGUAGES', () => {
-  it('has 4 supported languages', () => {
-    expect(AI_LANGUAGES).toHaveLength(4);
+  it('has 5 supported languages', () => {
+    expect(AI_LANGUAGES).toHaveLength(5);
   });
 
   it('includes English as first entry', () => {

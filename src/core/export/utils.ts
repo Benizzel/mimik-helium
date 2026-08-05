@@ -22,6 +22,10 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
+export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  return await blob.arrayBuffer();
+}
+
 export function extractDomain(steps: Step[]): string | null {
   const stepWithUrl = steps.find((s) => s.url);
   if (!stepWithUrl) return null;
@@ -32,7 +36,7 @@ export function extractDomain(steps: Step[]): string | null {
   }
 }
 
-const LOCALE_MAP: Record<string, string> = { en: 'en-US', es: 'es', 'pt-BR': 'pt-BR', fr: 'fr' };
+const LOCALE_MAP: Record<string, string> = { en: 'en-US', es: 'es', 'pt-BR': 'pt-BR', fr: 'fr', de: 'de-DE' };
 
 export function formatDate(timestamp: number): string {
   let locale = 'en-US';

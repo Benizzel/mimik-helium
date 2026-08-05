@@ -4,6 +4,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/es';
 import 'dayjs/locale/pt-br';
 import 'dayjs/locale/fr';
+import 'dayjs/locale/de';
 import { twMerge } from 'tailwind-merge';
 import { i18n } from '#imports';
 
@@ -14,6 +15,7 @@ const DAYJS_LOCALE_MAP: Record<string, string> = {
   'pt-BR': 'pt-br',
   pt: 'pt-br',
   fr: 'fr',
+  de: 'de',
 };
 
 function getDayjsLocale(): string | undefined {
