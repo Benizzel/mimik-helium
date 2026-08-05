@@ -62,7 +62,10 @@ async function stepRequiresManual(step: Step): Promise<boolean> {
   if (!step.elementMeta) return true;
   if (!step.screenshotId) return false;
   const screenshots = await getScreenshotsForSteps([step.screenshotId]);
-  return screenshots.get(step.id)?.edits?.requiresManual === true;
+  const screenshot = screenshots.get(step.id);
+  if (!screenshot) return false;
+  if (screenshot.edits?.requiresManual === true) return true;
+  return screenshot.edits?.target === null && Boolean(screenshot.bounds);
 }
 
 export default defineBackground(() => {
