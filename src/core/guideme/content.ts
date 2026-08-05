@@ -72,7 +72,10 @@ export class GuideMeController {
     this.currentStepIndex = stepIndex;
 
     const meta = step.elementMeta;
-    if (!meta) return;
+    if (!meta) {
+      this.setBlocked(stepIndex);
+      return;
+    }
 
     let attempts = 0;
     const attach = () => {
