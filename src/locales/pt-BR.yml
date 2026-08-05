@@ -44,6 +44,8 @@ library:
 
 guideme:
   live: Ao vivo
+  roadblock: "Encontramos um obstáculo. Aja na tela para avançar."
+  markComplete: "Marcar como concluído"
   stepOf: "Passo $1 de $2"
   noDescription: Sem descrição
   prev: Anterior

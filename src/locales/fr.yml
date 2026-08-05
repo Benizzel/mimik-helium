@@ -44,6 +44,8 @@ library:
 
 guideme:
   live: En direct
+  roadblock: "Nous avons rencontré un obstacle. Agissez à l'écran pour continuer."
+  markComplete: "Marquer comme terminé"
   stepOf: "Étape $1 sur $2"
   noDescription: Aucune description
   prev: "Préc."

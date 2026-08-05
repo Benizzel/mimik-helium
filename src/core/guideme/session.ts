@@ -10,10 +10,11 @@ export interface GuideMeSession {
 
 const SESSION_KEY = 'guideMeSession';
 const STEP_KEY = 'guideMeStep';
+const BLOCKED_KEY = 'guideMeBlocked';
 
 export async function startSession(guideId: string, totalSteps: number, firstStep: Step): Promise<void> {
   const session: GuideMeSession = { guideId, activeStepIndex: 0, totalSteps, active: true };
-  await localStorage.set({ [SESSION_KEY]: session, [STEP_KEY]: firstStep });
+  await localStorage.set({ [SESSION_KEY]: session, [STEP_KEY]: firstStep, [BLOCKED_KEY]: null });
 }
 
 export async function advanceSession(nextStep: Step, nextIndex: number): Promise<void> {
@@ -23,6 +24,7 @@ export async function advanceSession(nextStep: Step, nextIndex: number): Promise
   await localStorage.set({
     [SESSION_KEY]: { ...session, activeStepIndex: nextIndex },
     [STEP_KEY]: nextStep,
+    [BLOCKED_KEY]: null,
   });
 }
 
@@ -33,11 +35,12 @@ export async function completeSession(): Promise<void> {
   await localStorage.set({
     [SESSION_KEY]: { ...session, active: false },
     [STEP_KEY]: null,
+    [BLOCKED_KEY]: null,
   });
 }
 
 export async function cancelSession(): Promise<void> {
-  await localStorage.set({ [SESSION_KEY]: null, [STEP_KEY]: null });
+  await localStorage.set({ [SESSION_KEY]: null, [STEP_KEY]: null, [BLOCKED_KEY]: null });
 }
 
 export async function getSession(): Promise<GuideMeSession | null> {
@@ -45,4 +48,4 @@ export async function getSession(): Promise<GuideMeSession | null> {
   return (data[SESSION_KEY] as GuideMeSession) || null;
 }
 
-export { SESSION_KEY, STEP_KEY };
+export { BLOCKED_KEY, SESSION_KEY, STEP_KEY };

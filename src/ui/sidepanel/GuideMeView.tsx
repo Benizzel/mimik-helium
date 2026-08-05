@@ -1,8 +1,8 @@
-import { ArrowLeft, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { browser, i18n } from '#imports';
 import type { GuideMeSession } from '@/core/guideme/session';
-import { SESSION_KEY } from '@/core/guideme/session';
+import { BLOCKED_KEY, SESSION_KEY } from '@/core/guideme/session';
 import { getGuide } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { sendMessage } from '@/lib/messaging';
@@ -68,6 +68,7 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [viewedStepIndex, setViewedStepIndex] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [blockedStepIndex, setBlockedStepIndex] = useState<number | null>(null);
   const objectUrlsRef = useRef<Map<string, string>>(new Map());
 
   const loadGuide = useCallback(async () => {
@@ -86,6 +87,9 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
 
   useEffect(() => {
     const handler = (changes: Record<string, { newValue?: unknown }>) => {
+      if (changes[BLOCKED_KEY]) {
+        setBlockedStepIndex((changes[BLOCKED_KEY].newValue as number | null) ?? null);
+      }
       if (!changes[SESSION_KEY]) return;
       const session = changes[SESSION_KEY].newValue as GuideMeSession | null;
       if (!session) return;
@@ -102,12 +106,13 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
   }, [guideId, onComplete]);
 
   useEffect(() => {
-    browser.storage.local.get([SESSION_KEY]).then((result: Record<string, unknown>) => {
+    browser.storage.local.get([SESSION_KEY, BLOCKED_KEY]).then((result: Record<string, unknown>) => {
       const session = result[SESSION_KEY] as GuideMeSession | null;
       if (session?.active) {
         setActiveStepIndex(session.activeStepIndex);
         setViewedStepIndex(session.activeStepIndex);
       }
+      setBlockedStepIndex((result[BLOCKED_KEY] as number | null) ?? null);
     });
   }, []);
 
@@ -157,6 +162,8 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
   if (!data) return <p className="text-sm text-purple p-4">{i18n.t('guideme.guideNotFound')}</p>;
 
   const totalSteps = data.steps.length;
+  const isBlocked =
+    blockedStepIndex !== null && blockedStepIndex === activeStepIndex && viewedStepIndex === activeStepIndex;
 
   return (
     <div className="min-h-screen bg-card flex flex-col relative">
@@ -219,6 +226,22 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
                   style={highlightStyle}
                 />
               )}
+            </div>
+          )}
+
+          {isBlocked && (
+            <div className="mx-4 mb-3 rounded-lg bg-secondary p-3">
+              <p className="flex items-start gap-2 text-[12px] leading-relaxed text-foreground">
+                <TriangleAlert size={14} className="shrink-0 mt-0.5 text-accent" />
+                {i18n.t('guideme.roadblock')}
+              </p>
+              <button
+                onClick={() => sendMessage('guideMeStepCompleted', { stepIndex: activeStepIndex }).catch(() => {})}
+                className="mt-2.5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-[12px] font-semibold text-foreground hover:border-accent hover:text-accent transition-colors"
+              >
+                <Check size={13} strokeWidth={3} />
+                {i18n.t('guideme.markComplete')}
+              </button>
             </div>
           )}
 

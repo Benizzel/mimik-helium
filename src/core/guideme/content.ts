@@ -5,7 +5,7 @@ import { sendMessage } from '@/lib/messaging';
 import { findElement } from './finder';
 import { GuideMeOverlay } from './overlay';
 import type { GuideMeSession } from './session';
-import { SESSION_KEY, STEP_KEY } from './session';
+import { BLOCKED_KEY, SESSION_KEY, STEP_KEY } from './session';
 
 const MAX_RETRIES = 5;
 const RETRY_INTERVAL_MS = 1000;
@@ -16,6 +16,8 @@ export class GuideMeController {
   private clickHandler: ((e: Event) => void) | null = null;
   private currentTarget: HTMLElement | null = null;
   private currentStepIndex = -1;
+  private watchTimer: ReturnType<typeof setInterval> | null = null;
+  private blocked: number | null = null;
 
   constructor() {
     if (window.self !== window.top) return;
@@ -33,6 +35,7 @@ export class GuideMeController {
       browser.storage.local.onChanged.removeListener(this.storageListener);
       this.storageListener = null;
     }
+    this.stopWatching();
     this.removeActionDetection();
     this.destroyOverlay();
   }
@@ -52,38 +55,55 @@ export class GuideMeController {
     const step = data[STEP_KEY] as Step | null;
 
     if (!session?.active || !step) {
+      this.stopWatching();
       this.removeActionDetection();
       this.destroyOverlay();
+      this.blocked = null;
       return;
     }
 
     this.showStep(step, session.activeStepIndex);
   }
 
-  private async showStep(step: Step, stepIndex: number) {
+  private showStep(step: Step, stepIndex: number) {
     this.removeActionDetection();
     this.destroyOverlay();
+    this.stopWatching();
     this.currentStepIndex = stepIndex;
 
-    if (!step.elementMeta) return;
+    const meta = step.elementMeta;
+    if (!meta) return;
 
-    let element: HTMLElement | null = null;
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-      const result = findElement(step.elementMeta);
-      if (result.element) {
-        element = result.element;
-        break;
+    let attempts = 0;
+    const attach = () => {
+      const { element } = findElement(meta);
+      if (!element) {
+        attempts += 1;
+        if (attempts === MAX_RETRIES) this.setBlocked(stepIndex);
+        return;
       }
-      if (attempt < MAX_RETRIES - 1) {
-        await new Promise((r) => setTimeout(r, RETRY_INTERVAL_MS));
-      }
-    }
+      this.stopWatching();
+      this.setBlocked(null);
+      this.overlay = new GuideMeOverlay();
+      this.overlay.show(step.description, stepIndex + 1, element);
+      this.setupActionDetection(step, element);
+    };
 
-    if (!element) return;
+    attach();
+    if (!this.overlay) this.watchTimer = setInterval(attach, RETRY_INTERVAL_MS);
+  }
 
-    this.overlay = new GuideMeOverlay();
-    this.overlay.show(step.description, stepIndex + 1, element);
-    this.setupActionDetection(step, element);
+  private setBlocked(stepIndex: number | null) {
+    if (this.blocked === stepIndex) return;
+    this.blocked = stepIndex;
+    browser.storage.local
+      .set({ [BLOCKED_KEY]: stepIndex })
+      .catch((err) => logger.warn('Failed to flag guide me roadblock', err));
+  }
+
+  private stopWatching() {
+    if (this.watchTimer) clearInterval(this.watchTimer);
+    this.watchTimer = null;
   }
 
   private setupActionDetection(step: Step, target: HTMLElement) {
