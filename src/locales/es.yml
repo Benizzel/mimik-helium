@@ -45,7 +45,7 @@ library:
 guideme:
   live: En vivo
   roadblock: "Nos encontramos con un obstáculo. Actúa en la pantalla para avanzar."
-  manualStep: "Este paso fue editado, así que no se puede detectar automáticamente. Márcalo como completado cuando termines."
+  manualStep: "Este paso fue editado, así que no se puede detectar automáticamente: usa Siguiente cuando lo hayas hecho."
   stepOf: "Paso $1 de $2"
   noDescription: Sin descripción
   prev: Anterior

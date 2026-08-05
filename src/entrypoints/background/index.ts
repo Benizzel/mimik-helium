@@ -1,5 +1,6 @@
 import { browser, defineBackground, i18n } from '#imports';
 import { generateGuideTitle } from '@/core/capture/ai/title';
+import { stepRequiresManual } from '@/core/guideme/manual';
 import { advanceSession, cancelSession, completeSession, getSession, startSession } from '@/core/guideme/session';
 import {
   createGuide,
@@ -58,14 +59,10 @@ async function generateTitleInBackground(guideId: string) {
   }
 }
 
-async function stepRequiresManual(step: Step): Promise<boolean> {
-  if (!step.elementMeta) return true;
-  if (!step.screenshotId) return false;
+async function resolveManual(step: Step): Promise<boolean> {
+  if (!step.screenshotId) return stepRequiresManual(step, null);
   const screenshots = await getScreenshotsForSteps([step.screenshotId]);
-  const screenshot = screenshots.get(step.id);
-  if (!screenshot) return false;
-  if (screenshot.edits?.requiresManual === true) return true;
-  return screenshot.edits?.target === null && Boolean(screenshot.bounds);
+  return stepRequiresManual(step, screenshots.get(step.id));
 }
 
 export default defineBackground(() => {
@@ -201,7 +198,7 @@ export default defineBackground(() => {
     const firstStep = steps.find((s) => s.elementMeta) ?? steps[0];
     if (!steps.some((s) => s.elementMeta)) return { started: false, error: 'Guide lacks element metadata' };
 
-    await startSession(data.guideId, steps.length, firstStep, await stepRequiresManual(firstStep));
+    await startSession(data.guideId, steps.length, firstStep, await resolveManual(firstStep));
 
     const activeTab = await getActiveTab();
     if (activeTab?.id && firstStep.url) {
@@ -229,7 +226,7 @@ export default defineBackground(() => {
       await completeSession();
       return { advanced: true, completed: true };
     }
-    await advanceSession(nextStep, nextIndex, await stepRequiresManual(nextStep));
+    await advanceSession(nextStep, nextIndex, await resolveManual(nextStep));
 
     const currentTab = await getActiveTab();
     if (currentTab?.id && nextStep.url && nextStep.url !== currentTab.url) {
@@ -255,7 +252,7 @@ export default defineBackground(() => {
     const prevIndex = data.stepIndex - 1;
     const prevStep = steps[prevIndex];
     if (!prevStep) return { moved: false };
-    await advanceSession(prevStep, prevIndex, await stepRequiresManual(prevStep));
+    await advanceSession(prevStep, prevIndex, await resolveManual(prevStep));
 
     const currentTab = await getActiveTab();
     if (currentTab?.id && prevStep.url && prevStep.url !== currentTab.url) {

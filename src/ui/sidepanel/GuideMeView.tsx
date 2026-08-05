@@ -1,8 +1,9 @@
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
+import { stepRequiresManual } from '@/core/guideme/manual';
 import type { GuideMeSession } from '@/core/guideme/session';
-import { BLOCKED_KEY, MANUAL_KEY, SESSION_KEY } from '@/core/guideme/session';
+import { BLOCKED_KEY, SESSION_KEY } from '@/core/guideme/session';
 import { getGuide } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { sendMessage } from '@/lib/messaging';
@@ -70,7 +71,6 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
   const [viewedStepIndex, setViewedStepIndex] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [blockedStepIndex, setBlockedStepIndex] = useState<number | null>(null);
-  const [isManualStep, setIsManualStep] = useState(false);
 
   const loadGuide = useCallback(async () => {
     const result = await getGuide(guideId);
@@ -91,9 +91,6 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
       if (changes[BLOCKED_KEY]) {
         setBlockedStepIndex((changes[BLOCKED_KEY].newValue as number | null) ?? null);
       }
-      if (changes[MANUAL_KEY]) {
-        setIsManualStep(changes[MANUAL_KEY].newValue === true);
-      }
       if (!changes[SESSION_KEY]) return;
       const session = changes[SESSION_KEY].newValue as GuideMeSession | null;
       if (!session) return;
@@ -110,14 +107,13 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
   }, [guideId, onComplete]);
 
   useEffect(() => {
-    browser.storage.local.get([SESSION_KEY, BLOCKED_KEY, MANUAL_KEY]).then((result: Record<string, unknown>) => {
+    browser.storage.local.get([SESSION_KEY, BLOCKED_KEY]).then((result: Record<string, unknown>) => {
       const session = result[SESSION_KEY] as GuideMeSession | null;
       if (session?.active) {
         setActiveStepIndex(session.activeStepIndex);
         setViewedStepIndex(session.activeStepIndex);
       }
       setBlockedStepIndex((result[BLOCKED_KEY] as number | null) ?? null);
-      setIsManualStep(result[MANUAL_KEY] === true);
     });
   }, []);
 
@@ -128,8 +124,12 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
   if (!data) return <p className="text-sm text-purple p-4">{i18n.t('guideme.guideNotFound')}</p>;
 
   const totalSteps = data.steps.length;
-  const isBlocked =
-    blockedStepIndex !== null && blockedStepIndex === activeStepIndex && viewedStepIndex === activeStepIndex;
+  const viewedIsManual = viewedStep ? stepRequiresManual(viewedStep, viewedScreenshot) : false;
+  const showRoadblock =
+    !viewedIsManual &&
+    blockedStepIndex !== null &&
+    blockedStepIndex === activeStepIndex &&
+    viewedStepIndex === activeStepIndex;
 
   return (
     <div className="min-h-screen bg-card flex flex-col relative">
@@ -190,10 +190,10 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
             />
           )}
 
-          {isBlocked && (
+          {(viewedIsManual || showRoadblock) && (
             <p className="mx-4 mb-3 flex items-start gap-2 rounded-lg bg-secondary p-3 text-[12px] leading-relaxed text-foreground">
               <TriangleAlert size={14} className="shrink-0 mt-0.5 text-accent" />
-              {isManualStep ? i18n.t('guideme.manualStep') : i18n.t('guideme.roadblock')}
+              {viewedIsManual ? i18n.t('guideme.manualStep') : i18n.t('guideme.roadblock')}
             </p>
           )}
 
