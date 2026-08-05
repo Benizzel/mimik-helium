@@ -113,8 +113,10 @@ function initialModeFor(tool: 'annotate' | 'redact' | 'crop' | 'target'): Editor
   return 'annotate';
 }
 
-function cursorFor(mode: EditorMode, tool: EditorTool): string {
+function cursorFor(mode: EditorMode, tool: EditorTool, hovering: boolean, grabbing: boolean): string {
+  if (grabbing) return 'grabbing';
   if (mode !== 'annotate') return 'crosshair';
+  if (hovering) return 'grab';
   if (tool === 'eraser') return 'pointer';
   if (tool === 'text') return 'text';
   return 'crosshair';
@@ -230,6 +232,8 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const [bitmap, setBitmap] = useState<ImageBitmap | null>(null);
   const [saving, setSaving] = useState(false);
   const [targetPicker, setTargetPicker] = useState(false);
+  const [hovering, setHovering] = useState(false);
+  const [grabbing, setGrabbing] = useState(false);
   const [mode, setMode] = useState<EditorMode>(initialModeFor(tool));
   const [fill, setFill] = useState('transparent');
   const [lineWidth, setLineWidth] = useState<LineWidth>('ms');
@@ -435,6 +439,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       pushHistory();
       setSelectedId(hit.id);
       dragRef.current = { mode: 'move', id: hit.id, lastX: p.x, lastY: p.y };
+      setGrabbing(true);
       return;
     }
     setSelectedId(null);
@@ -487,7 +492,13 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const drag = dragRef.current;
-    if (!drag) return;
+    if (!drag) {
+      if (mode === 'annotate') {
+        const p = toImageSpace(e);
+        setHovering(Boolean(hitTest(annotations, p.x, p.y)));
+      }
+      return;
+    }
     const p = toImageSpace(e);
 
     if (drag.mode === 'move') {
@@ -572,6 +583,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   };
 
   const handlePointerUp = () => {
+    setGrabbing(false);
     const drag = dragRef.current;
     dragRef.current = null;
     if (!drag) return;
@@ -608,6 +620,27 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     patchSelected({ [key]: value });
   };
 
+  const setTextProp = (patch: {
+    fontFamily?: FontFamily;
+    fontStyle?: FontStyleName;
+    fontSize?: FontSizeName;
+    lineHeight?: LineHeightName;
+  }) => {
+    if (patch.fontFamily) setFontFamily(patch.fontFamily);
+    if (patch.fontStyle) setFontStyle(patch.fontStyle);
+    if (patch.fontSize) setFontSize(patch.fontSize);
+    if (patch.lineHeight) setLineHeight(patch.lineHeight);
+    if (!selected || selected.type !== 'text') return;
+    const next = {
+      fontFamily: patch.fontFamily ?? selected.fontFamily ?? 'sans-serif',
+      fontStyle: patch.fontStyle ?? selected.fontStyle ?? 'normal',
+      fontSize: patch.fontSize ?? selected.fontSize ?? 'md',
+      lineHeight: patch.lineHeight ?? selected.lineHeight ?? 'md',
+    };
+    const px = FONT_SIZES[next.fontSize];
+    patchSelected({ ...next, size: px, ...measureText(selected.text, px, next.fontFamily, next.fontStyle) });
+  };
+
   const handleColorSelect = (c: string) => {
     setColor(c);
     setAnnotations((prev) => prev.map((a) => (a.id === selectedId && a.type !== 'redact' ? { ...a, color: c } : a)));
@@ -627,10 +660,12 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
   const commitText = () => {
     if (textEditor && textValue.trim()) {
+      const id = crypto.randomUUID();
+      setSelectedId(id);
       setAnnotations((prev) => [
         ...prev,
         {
-          id: crypto.randomUUID(),
+          id,
           type: 'text',
           x: textEditor.x,
           y: textEditor.y,
@@ -723,7 +758,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
               width={screenshot.width}
               height={screenshot.height}
               className="block max-w-full max-h-[calc(100vh-280px)] rounded-lg shadow-2xl touch-none"
-              style={{ cursor: cursorFor(mode, activeTool) }}
+              style={{ cursor: cursorFor(mode, activeTool, hovering, grabbing) }}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
@@ -789,6 +824,54 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                     >
                       <CopyPlus size={14} />
                     </button>
+                  )}
+                  {selected.type === 'text' && (
+                    <>
+                      <select
+                        value={selected.fontFamily ?? 'sans-serif'}
+                        onChange={(e) => setTextProp({ fontFamily: e.target.value as FontFamily })}
+                        className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
+                      >
+                        {FONT_FAMILY_ORDER.map((f) => (
+                          <option key={f} value={f}>
+                            {f}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={selected.fontStyle ?? 'normal'}
+                        onChange={(e) => setTextProp({ fontStyle: e.target.value as FontStyleName })}
+                        className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
+                      >
+                        {FONT_STYLE_ORDER.map((f) => (
+                          <option key={f} value={f}>
+                            {i18n.t(`annotationEditor.style_${f}`)}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={selected.fontSize ?? 'md'}
+                        onChange={(e) => setTextProp({ fontSize: e.target.value as FontSizeName })}
+                        className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
+                      >
+                        {FONT_SIZE_ORDER.map((f) => (
+                          <option key={f} value={f}>
+                            {i18n.t(`annotationEditor.size_${f}`)}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={selected.lineHeight ?? 'md'}
+                        onChange={(e) => setTextProp({ lineHeight: e.target.value as LineHeightName })}
+                        className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
+                      >
+                        {LINE_HEIGHT_ORDER.map((f) => (
+                          <option key={f} value={f}>
+                            {i18n.t(`annotationEditor.height_${f}`)}
+                          </option>
+                        ))}
+                      </select>
+                    </>
                   )}
                   <button
                     type="button"
@@ -938,10 +1021,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                   {i18n.t('annotationEditor.font')}
                   <select
                     value={fontFamily}
-                    onChange={(e) => {
-                      setFontFamily(e.target.value as FontFamily);
-                      setProp('fontFamily', e.target.value);
-                    }}
+                    onChange={(e) => setTextProp({ fontFamily: e.target.value as FontFamily })}
                     className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
                   >
                     {FONT_FAMILY_ORDER.map((f) => (
@@ -955,10 +1035,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                   {i18n.t('annotationEditor.fontStyle')}
                   <select
                     value={fontStyle}
-                    onChange={(e) => {
-                      setFontStyle(e.target.value as FontStyleName);
-                      setProp('fontStyle', e.target.value);
-                    }}
+                    onChange={(e) => setTextProp({ fontStyle: e.target.value as FontStyleName })}
                     className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
                   >
                     {FONT_STYLE_ORDER.map((f) => (
@@ -972,10 +1049,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                   {i18n.t('annotationEditor.fontSize')}
                   <select
                     value={fontSize}
-                    onChange={(e) => {
-                      setFontSize(e.target.value as FontSizeName);
-                      setProp('fontSize', e.target.value);
-                    }}
+                    onChange={(e) => setTextProp({ fontSize: e.target.value as FontSizeName })}
                     className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
                   >
                     {FONT_SIZE_ORDER.map((f) => (
@@ -989,10 +1063,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                   {i18n.t('annotationEditor.lineHeight')}
                   <select
                     value={lineHeight}
-                    onChange={(e) => {
-                      setLineHeight(e.target.value as LineHeightName);
-                      setProp('lineHeight', e.target.value);
-                    }}
+                    onChange={(e) => setTextProp({ lineHeight: e.target.value as LineHeightName })}
                     className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
                   >
                     {LINE_HEIGHT_ORDER.map((f) => (
