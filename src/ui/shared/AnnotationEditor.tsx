@@ -4,11 +4,10 @@ import {
   Circle as CircleIcon,
   CopyPlus,
   Crop,
-  Eraser,
   EyeOff,
   Minus,
+  MousePointer2,
   MoveVertical,
-  PenTool,
   Redo2,
   RotateCcw,
   Square,
@@ -65,7 +64,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/c
 import ColorPicker, { swatchStyle } from './ColorPicker';
 
 type EditorMode = 'crop' | 'annotate' | 'redact';
-type EditorTool = 'crop' | 'box' | 'ellipse' | 'arrow' | 'line' | 'freehand' | 'text' | 'redact' | 'eraser';
+type EditorTool = 'select' | 'crop' | 'box' | 'ellipse' | 'arrow' | 'line' | 'text' | 'redact';
 
 interface AnnotationEditorProps {
   screenshot: Screenshot;
@@ -225,6 +224,12 @@ function ArrowEndGlyph({ end }: { end: ArrowEnd }) {
   );
 }
 
+const TARGET_DASH = [8, 5];
+const TARGET_MARCH = [26, 10];
+const DASH_PERIOD = 13;
+const MARCH_PERIOD = 36;
+const TARGET_MARCH_CYCLES = 4;
+
 const TARGET_SWEEP: [number, number, number][] = [
   [0, 0.35, 0.9],
   [0.2, 1, 0.75],
@@ -239,15 +244,14 @@ const DRAFT_ID = 'draft';
 const TARGET_ID = 'click-target';
 
 const TOOLS: { id: EditorTool; icon: ComponentType<{ size?: number }>; labelKey: string }[] = [
+  { id: 'select', icon: MousePointer2, labelKey: 'annotationEditor.toolSelect' },
   { id: 'crop', icon: Crop, labelKey: 'annotationEditor.toolCrop' },
   { id: 'box', icon: Square, labelKey: 'annotationEditor.toolBox' },
   { id: 'ellipse', icon: CircleIcon, labelKey: 'annotationEditor.toolEllipse' },
   { id: 'arrow', icon: ArrowUpRight, labelKey: 'annotationEditor.toolArrow' },
   { id: 'line', icon: Minus, labelKey: 'annotationEditor.toolLine' },
-  { id: 'freehand', icon: PenTool, labelKey: 'annotationEditor.toolFreehand' },
   { id: 'text', icon: Type, labelKey: 'annotationEditor.toolText' },
   { id: 'redact', icon: EyeOff, labelKey: 'annotationEditor.toolRedact' },
-  { id: 'eraser', icon: Eraser, labelKey: 'annotationEditor.toolEraser' },
 ];
 
 function modeForTool(tool: EditorTool): EditorMode {
@@ -260,7 +264,7 @@ function cursorFor(mode: EditorMode, tool: EditorTool, hovering: boolean, grabbi
   if (grabbing) return 'grabbing';
   if (mode !== 'annotate') return 'crosshair';
   if (hovering) return 'grab';
-  if (tool === 'eraser') return 'pointer';
+  if (tool === 'select') return 'default';
   if (tool === 'text') return 'text';
   return 'crosshair';
 }
@@ -461,7 +465,8 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
         ctx.lineWidth = TARGET_STROKE + 1;
         ctx.shadowColor = a.color;
         ctx.shadowBlur = 14;
-        if (a.border === 'dashed') ctx.setLineDash([8, 5]);
+        ctx.setLineDash(a.border === 'dashed' ? TARGET_DASH : TARGET_MARCH);
+        ctx.lineDashOffset = -pulse * TARGET_MARCH_CYCLES * (a.border === 'dashed' ? DASH_PERIOD : MARCH_PERIOD);
         drawRoundedRect(ctx, a.x, a.y, a.w, a.h, TARGET_RADIUS);
         ctx.stroke();
         ctx.restore();
@@ -565,14 +570,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     }
     setSelectedId(null);
 
-    if (activeTool === 'eraser') {
-      const hit = hitTest(annotations, p.x, p.y);
-      if (hit && hit.id !== TARGET_ID) {
-        pushHistory();
-        setAnnotations((prev) => prev.filter((a) => a.id !== hit.id));
-      }
-      return;
-    }
+    if (activeTool === 'select') return;
 
     if (activeTool === 'text') {
       e.preventDefault();
@@ -588,9 +586,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     }
 
     let shape: Annotation;
-    if (activeTool === 'box') {
-      shape = { id: DRAFT_ID, type: 'box', x: p.x, y: p.y, w: 0, h: 0, color, fill, lineWidth, radius };
-    } else if (activeTool === 'ellipse') {
+    if (activeTool === 'ellipse') {
       shape = { id: DRAFT_ID, type: 'ellipse', x: p.x, y: p.y, w: 0, h: 0, color, fill, lineWidth };
     } else if (activeTool === 'arrow' || activeTool === 'line') {
       shape = {
@@ -605,7 +601,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
         end: activeTool === 'line' ? 'none' : arrowEnd,
       };
     } else {
-      shape = { id: DRAFT_ID, type: 'freehand', points: [p.x, p.y], color, lineWidth };
+      shape = { id: DRAFT_ID, type: 'box', x: p.x, y: p.y, w: 0, h: 0, color, fill, lineWidth, radius };
     }
     dragRef.current = { mode: 'draw', start: p, shape };
     setDraft(shape);
@@ -968,7 +964,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                     fontWeight: bold ? 700 : 500,
                     fontStyle: italic ? 'italic' : 'normal',
                     lineHeight,
-                    width: `${Math.max(6, textValue.length + 4)}ch`,
+                    width: `${Math.max(i18n.t('annotationEditor.textPlaceholder').length + 1, textValue.length + 4)}ch`,
                   }}
                 />
               )}

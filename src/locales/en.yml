@@ -181,7 +181,7 @@ annotationEditor:
   toolBox: Box
   toolArrow: Arrow
   toolText: Text
-  toolFreehand: Freehand
+  toolSelect: "Select"
   toolRedact: Redact
   toolCrop: Crop
   colorLabel: Colour
@@ -189,7 +189,6 @@ annotationEditor:
   targetColor: Target color
   targetBorder: Border style
   modeAnnotate: "Annotate"
-  toolEraser: "Eraser"
   toolLine: "Line"
   duplicate: "Duplicate"
   toolEllipse: "Ellipse"

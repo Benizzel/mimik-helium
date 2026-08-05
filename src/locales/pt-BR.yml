@@ -181,7 +181,7 @@ annotationEditor:
   toolBox: Retângulo
   toolArrow: Seta
   toolText: Texto
-  toolFreehand: Desenho livre
+  toolSelect: "Selecionar"
   toolRedact: Ocultar
   toolCrop: Recortar
   colorLabel: Cor
@@ -189,7 +189,6 @@ annotationEditor:
   targetColor: Cor do alvo
   targetBorder: Estilo da borda
   modeAnnotate: "Anotar"
-  toolEraser: "Borracha"
   toolLine: "Linha"
   duplicate: "Duplicar"
   toolEllipse: "Elipse"

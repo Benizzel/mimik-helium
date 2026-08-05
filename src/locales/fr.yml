@@ -181,7 +181,7 @@ annotationEditor:
   toolBox: Rectangle
   toolArrow: "Flèche"
   toolText: Texte
-  toolFreehand: "Dessin libre"
+  toolSelect: "Sélectionner"
   toolRedact: Masquer
   toolCrop: Recadrer
   colorLabel: Couleur
@@ -189,7 +189,6 @@ annotationEditor:
   targetColor: Couleur de la cible
   targetBorder: Style de bordure
   modeAnnotate: "Annoter"
-  toolEraser: "Gomme"
   toolLine: "Ligne"
   duplicate: "Dupliquer"
   toolEllipse: "Ellipse"

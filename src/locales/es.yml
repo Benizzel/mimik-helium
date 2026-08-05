@@ -181,7 +181,7 @@ annotationEditor:
   toolBox: Rectángulo
   toolArrow: Flecha
   toolText: Texto
-  toolFreehand: Dibujo libre
+  toolSelect: "Seleccionar"
   toolRedact: Ocultar
   toolCrop: Recortar
   colorLabel: Color
@@ -189,7 +189,6 @@ annotationEditor:
   targetColor: Color del objetivo
   targetBorder: Estilo del borde
   modeAnnotate: "Anotar"
-  toolEraser: "Borrador"
   toolLine: "Línea"
   duplicate: "Duplicar"
   toolEllipse: "Elipse"
