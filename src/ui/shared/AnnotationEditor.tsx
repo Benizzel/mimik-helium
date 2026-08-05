@@ -744,6 +744,194 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
+      <div className="shrink-0 bg-card border-b border-border px-4 py-2.5 flex flex-col gap-2">
+        <div className="flex items-center gap-3 w-full justify-between">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={undo}
+              disabled={past.length === 0}
+              title={i18n.t('annotationEditor.undo')}
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground hover:bg-secondary disabled:opacity-30"
+            >
+              <Undo2 size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={redo}
+              disabled={future.length === 0}
+              title={i18n.t('annotationEditor.redo')}
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground hover:bg-secondary disabled:opacity-30"
+            >
+              <Redo2 size={15} />
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            {MODES.map(({ id, icon: Icon, labelKey }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => {
+                  setMode(id);
+                  setSelectedId(null);
+                }}
+                className={`flex flex-col items-center justify-center gap-1 w-[74px] h-[60px] rounded-xl border transition-colors ${
+                  mode === id
+                    ? 'bg-secondary border-accent text-accent'
+                    : 'bg-card border-border text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                <Icon size={17} />
+                <span className="text-[11px] font-semibold">{i18n.t(labelKey)}</span>
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex items-center gap-1 px-3 h-8 text-[12px] font-semibold text-foreground rounded-lg border border-border hover:bg-secondary"
+            >
+              <X size={13} />
+              {i18n.t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={handleDone}
+              disabled={saving}
+              className="flex items-center gap-1 px-3.5 h-8 text-[12px] font-bold text-primary-foreground bg-accent rounded-lg hover:bg-accent/90 disabled:opacity-50"
+            >
+              <Check size={13} />
+              {i18n.t('annotationEditor.done')}
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-4 flex-wrap min-h-[38px]">
+          {mode === 'annotate' && (
+            <div className="flex items-center gap-1">
+              {TOOLS.map(({ id, icon: Icon, labelKey }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setActiveTool(id)}
+                  className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-[12px] font-medium transition-colors ${
+                    activeTool === id ? 'bg-secondary text-accent' : 'text-foreground hover:bg-secondary/60'
+                  }`}
+                >
+                  <Icon size={14} />
+                  {i18n.t(labelKey)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {mode === 'annotate' && (
+            <div className="flex items-end gap-5 min-h-[46px]">
+              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                {i18n.t('annotationEditor.lineColor')}
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => handleColorSelect(e.target.value)}
+                  className="w-7 h-7 rounded-full border border-border bg-transparent p-0 cursor-pointer"
+                />
+              </label>
+              {(activeTool === 'box' || activeTool === 'ellipse') && (
+                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                  {i18n.t('annotationEditor.fillColor')}
+                  <select
+                    value={fill}
+                    onChange={(e) => {
+                      setFill(e.target.value);
+                      setProp('fill', e.target.value);
+                    }}
+                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
+                    style={{ color: fill === 'transparent' ? undefined : fill }}
+                  >
+                    {SHAPE_COLORS.map((c) => (
+                      <option key={c} value={c}>
+                        {c === 'transparent' ? i18n.t('annotationEditor.noFill') : c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {activeTool !== 'text' && (
+                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                  {i18n.t('annotationEditor.lineWidth')}
+                  <select
+                    value={lineWidth}
+                    onChange={(e) => {
+                      setLineWidth(e.target.value as LineWidth);
+                      setProp('lineWidth', e.target.value);
+                    }}
+                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none capitalize"
+                  >
+                    {LINE_WIDTH_ORDER.map((w) => (
+                      <option key={w} value={w}>
+                        {i18n.t(`annotationEditor.width_${w}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {activeTool === 'box' && (
+                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                  {i18n.t('annotationEditor.cornerRadius')}
+                  <input
+                    type="range"
+                    min={0}
+                    max={60}
+                    value={radius}
+                    onChange={(e) => {
+                      setRadius(Number(e.target.value));
+                      setProp('radius', Number(e.target.value));
+                    }}
+                    className="w-24 h-7 accent-accent"
+                  />
+                </label>
+              )}
+              {activeTool === 'arrow' && (
+                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                  {i18n.t('annotationEditor.arrowEnd')}
+                  <select
+                    value={arrowEnd}
+                    onChange={(e) => {
+                      setArrowEnd(e.target.value as ArrowEnd);
+                      setProp('end', e.target.value);
+                    }}
+                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
+                  >
+                    {ARROW_ENDS.map((end) => (
+                      <option key={end} value={end}>
+                        {i18n.t(`annotationEditor.end_${end.replace('-', '_')}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
+
+          {mode === 'crop' && (
+            <div className="flex items-center gap-3 min-h-[46px]">
+              <span className="text-[11px] text-muted-foreground">{i18n.t('annotationEditor.cropHint')}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setViewport(undefined);
+                  setCropDraft(null);
+                }}
+                disabled={!viewport}
+                className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-border text-[12px] font-semibold text-foreground hover:bg-secondary disabled:opacity-40"
+              >
+                <RotateCcw size={13} />
+                {i18n.t('annotationEditor.resetCrop')}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex items-center justify-center overflow-auto p-6">
           <div className="relative inline-block">
@@ -751,7 +939,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
               ref={canvasRef}
               width={screenshot.width}
               height={screenshot.height}
-              className="block max-w-full max-h-[calc(100vh-280px)] rounded-lg shadow-2xl touch-none"
+              className="block max-w-full max-h-[calc(100vh-190px)] rounded-lg shadow-2xl touch-none"
               style={{ cursor: cursorFor(mode, activeTool, hovering, grabbing) }}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
@@ -934,192 +1122,6 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 )}
               </div>
             )}
-          </div>
-        </div>
-      </div>
-      <div className="shrink-0 bg-card border-t border-border px-4 py-3 flex flex-col items-center gap-2.5">
-        {mode === 'crop' && (
-          <div className="flex items-center gap-3 min-h-[46px]">
-            <span className="text-[11px] text-muted-foreground">{i18n.t('annotationEditor.cropHint')}</span>
-            <button
-              type="button"
-              onClick={() => {
-                setViewport(undefined);
-                setCropDraft(null);
-              }}
-              disabled={!viewport}
-              className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-border text-[12px] font-semibold text-foreground hover:bg-secondary disabled:opacity-40"
-            >
-              <RotateCcw size={13} />
-              {i18n.t('annotationEditor.resetCrop')}
-            </button>
-          </div>
-        )}
-        {mode === 'annotate' && (
-          <div className="flex items-end gap-5 min-h-[46px]">
-            <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-              {i18n.t('annotationEditor.lineColor')}
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => handleColorSelect(e.target.value)}
-                className="w-7 h-7 rounded-full border border-border bg-transparent p-0 cursor-pointer"
-              />
-            </label>
-            {(activeTool === 'box' || activeTool === 'ellipse') && (
-              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-                {i18n.t('annotationEditor.fillColor')}
-                <select
-                  value={fill}
-                  onChange={(e) => {
-                    setFill(e.target.value);
-                    setProp('fill', e.target.value);
-                  }}
-                  className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
-                  style={{ color: fill === 'transparent' ? undefined : fill }}
-                >
-                  {SHAPE_COLORS.map((c) => (
-                    <option key={c} value={c}>
-                      {c === 'transparent' ? i18n.t('annotationEditor.noFill') : c}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {activeTool !== 'text' && (
-              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-                {i18n.t('annotationEditor.lineWidth')}
-                <select
-                  value={lineWidth}
-                  onChange={(e) => {
-                    setLineWidth(e.target.value as LineWidth);
-                    setProp('lineWidth', e.target.value);
-                  }}
-                  className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none capitalize"
-                >
-                  {LINE_WIDTH_ORDER.map((w) => (
-                    <option key={w} value={w}>
-                      {i18n.t(`annotationEditor.width_${w}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {activeTool === 'box' && (
-              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-                {i18n.t('annotationEditor.cornerRadius')}
-                <input
-                  type="range"
-                  min={0}
-                  max={60}
-                  value={radius}
-                  onChange={(e) => {
-                    setRadius(Number(e.target.value));
-                    setProp('radius', Number(e.target.value));
-                  }}
-                  className="w-24 h-7 accent-accent"
-                />
-              </label>
-            )}
-            {activeTool === 'arrow' && (
-              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-                {i18n.t('annotationEditor.arrowEnd')}
-                <select
-                  value={arrowEnd}
-                  onChange={(e) => {
-                    setArrowEnd(e.target.value as ArrowEnd);
-                    setProp('end', e.target.value);
-                  }}
-                  className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
-                >
-                  {ARROW_ENDS.map((end) => (
-                    <option key={end} value={end}>
-                      {i18n.t(`annotationEditor.end_${end.replace('-', '_')}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-          </div>
-        )}
-
-        {mode === 'annotate' && (
-          <div className="flex items-center gap-1">
-            {TOOLS.map(({ id, icon: Icon, labelKey }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setActiveTool(id)}
-                className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-[12px] font-medium transition-colors ${
-                  activeTool === id ? 'bg-secondary text-accent' : 'text-foreground hover:bg-secondary/60'
-                }`}
-              >
-                <Icon size={14} />
-                {i18n.t(labelKey)}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center gap-3 w-full justify-between">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={undo}
-              disabled={past.length === 0}
-              title={i18n.t('annotationEditor.undo')}
-              className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground hover:bg-secondary disabled:opacity-30"
-            >
-              <Undo2 size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={redo}
-              disabled={future.length === 0}
-              title={i18n.t('annotationEditor.redo')}
-              className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground hover:bg-secondary disabled:opacity-30"
-            >
-              <Redo2 size={15} />
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            {MODES.map(({ id, icon: Icon, labelKey }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => {
-                  setMode(id);
-                  setSelectedId(null);
-                }}
-                className={`flex flex-col items-center justify-center gap-1 w-[74px] h-[60px] rounded-xl border transition-colors ${
-                  mode === id
-                    ? 'bg-secondary border-accent text-accent'
-                    : 'bg-card border-border text-foreground hover:bg-secondary/50'
-                }`}
-              >
-                <Icon size={17} />
-                <span className="text-[11px] font-semibold">{i18n.t(labelKey)}</span>
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex items-center gap-1 px-3 h-8 text-[12px] font-semibold text-foreground rounded-lg border border-border hover:bg-secondary"
-            >
-              <X size={13} />
-              {i18n.t('common.cancel')}
-            </button>
-            <button
-              type="button"
-              onClick={handleDone}
-              disabled={saving}
-              className="flex items-center gap-1 px-3.5 h-8 text-[12px] font-bold text-primary-foreground bg-accent rounded-lg hover:bg-accent/90 disabled:opacity-50"
-            >
-              <Check size={13} />
-              {i18n.t('annotationEditor.done')}
-            </button>
           </div>
         </div>
       </div>
