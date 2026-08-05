@@ -238,6 +238,7 @@ export default function ScreenshotView({
 
     const nextEdits: ScreenshotEdits = { ...effectiveEdits, target: null };
     delete nextEdits.viewport;
+    delete nextEdits.alt;
     const nextScreenshot: Screenshot = { ...baseScreenshot, blob: file, mimeType: file.type, width, height };
 
     setScreenshotOverride(nextScreenshot);
