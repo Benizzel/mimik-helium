@@ -36,7 +36,6 @@ import {
 import type {
   Annotation,
   ArrowEnd,
-  ClickTarget,
   FontFamily,
   LineWidth,
   ScreenshotEdits,
@@ -286,18 +285,6 @@ function handleCorners(b: ScreenshotBounds): [Handle, number, number][] {
   ];
 }
 
-function sameTarget(a: ClickTarget | null, b: ClickTarget | null): boolean {
-  if (!a || !b) return a === b;
-  return (
-    Math.round(a.x) === Math.round(b.x) &&
-    Math.round(a.y) === Math.round(b.y) &&
-    Math.round(a.width) === Math.round(b.width) &&
-    Math.round(a.height) === Math.round(b.height) &&
-    a.color === b.color &&
-    a.border === b.border
-  );
-}
-
 function selectionBounds(a: Annotation, scale: number): ScreenshotBounds {
   const inset = SELECTION_GAP * scale;
   const b = annotationBounds(a);
@@ -409,7 +396,6 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     setAnnotations((prev) => prev.map((a) => (a.id === TARGET_ID && a.type === 'target' ? { ...a, ...patch } : a)));
   };
 
-  const initialTargetRef = useRef<ClickTarget | null>(resolveTarget(screenshot));
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -891,7 +877,6 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       ...screenshot.edits,
       annotations: annotations.filter((a) => a.id !== TARGET_ID),
       target: nextTarget,
-      requiresManual: screenshot.edits?.requiresManual || !sameTarget(initialTargetRef.current, nextTarget),
     };
     if (viewport) nextEdits.viewport = viewport;
     await updateScreenshotEdits(screenshot.id, nextEdits);

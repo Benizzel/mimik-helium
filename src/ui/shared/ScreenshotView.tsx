@@ -235,7 +235,7 @@ export default function ScreenshotView({
     const { width, height } = bitmap;
     bitmap.close();
 
-    const nextEdits: ScreenshotEdits = { ...effectiveEdits, target: null, requiresManual: true };
+    const nextEdits: ScreenshotEdits = { ...effectiveEdits, target: null };
     delete nextEdits.viewport;
     const nextScreenshot: Screenshot = { ...baseScreenshot, blob: file, mimeType: file.type, width, height };
 

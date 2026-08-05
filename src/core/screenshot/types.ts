@@ -143,5 +143,4 @@ export interface ScreenshotEdits {
   target?: ClickTarget | null;
   annotations?: Annotation[];
   alt?: string;
-  requiresManual?: boolean;
 }
