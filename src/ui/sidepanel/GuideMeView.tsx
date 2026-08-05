@@ -1,5 +1,5 @@
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import type { GuideMeSession } from '@/core/guideme/session';
 import { BLOCKED_KEY, SESSION_KEY } from '@/core/guideme/session';
@@ -8,6 +8,7 @@ import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { sendMessage } from '@/lib/messaging';
 import { extractDomain } from '@/lib/utils';
 import FaviconImg from '@/ui/shared/FaviconImg';
+import ScreenshotView from '@/ui/shared/ScreenshotView';
 
 interface GuideMeViewProps {
   guideId: string;
@@ -69,7 +70,6 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
   const [viewedStepIndex, setViewedStepIndex] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [blockedStepIndex, setBlockedStepIndex] = useState<number | null>(null);
-  const objectUrlsRef = useRef<Map<string, string>>(new Map());
 
   const loadGuide = useCallback(async () => {
     const result = await getGuide(guideId);
@@ -116,47 +116,8 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
     });
   }, []);
 
-  const getObjectUrl = useCallback((stepId: string, blob: Blob) => {
-    const existing = objectUrlsRef.current.get(stepId);
-    if (existing) return existing;
-    const url = URL.createObjectURL(blob);
-    objectUrlsRef.current.set(stepId, url);
-    return url;
-  }, []);
-
-  useEffect(() => {
-    const urls = objectUrlsRef.current;
-    return () => {
-      for (const url of urls.values()) URL.revokeObjectURL(url);
-      urls.clear();
-    };
-  }, []);
-
   const viewedStep = data?.steps[viewedStepIndex] ?? null;
   const viewedScreenshot = viewedStep ? data?.screenshots.get(viewedStep.id) : undefined;
-
-  const highlightStyle = useMemo(() => {
-    if (!viewedStep?.elementMeta?.rect || !viewedScreenshot?.bounds) return null;
-    const rect = viewedStep.elementMeta.rect;
-    const bounds = viewedScreenshot.bounds;
-    const ratio = viewedStep.elementMeta.devicePixelRatio || 1;
-
-    const imgW = bounds.width;
-    const imgH = bounds.height;
-    if (!imgW || !imgH) return null;
-
-    const left = ((rect.x * ratio - bounds.x) / imgW) * 100;
-    const top = ((rect.y * ratio - bounds.y) / imgH) * 100;
-    const width = ((rect.width * ratio) / imgW) * 100;
-    const height = ((rect.height * ratio) / imgH) * 100;
-
-    return {
-      left: `${left}%`,
-      top: `${top}%`,
-      width: `${width}%`,
-      height: `${height}%`,
-    };
-  }, [viewedStep, viewedScreenshot]);
 
   if (loading) return <p className="text-sm text-purple p-4">{i18n.t('common.loading')}</p>;
   if (!data) return <p className="text-sm text-purple p-4">{i18n.t('guideme.guideNotFound')}</p>;
@@ -214,19 +175,14 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
           </div>
 
           {viewedScreenshot && (
-            <div className="relative mx-4 mb-3 rounded-lg overflow-hidden border border-border">
-              <img
-                src={getObjectUrl(viewedStep!.id, viewedScreenshot.blob)}
-                alt={`Step ${viewedStepIndex + 1}`}
-                className="w-full block"
-              />
-              {highlightStyle && (
-                <div
-                  className="absolute border-2 border-accent rounded-sm pointer-events-none"
-                  style={highlightStyle}
-                />
-              )}
-            </div>
+            <ScreenshotView
+              key={viewedScreenshot.id}
+              screenshot={viewedScreenshot}
+              alt={i18n.t('guideme.stepOf', [String(viewedStepIndex + 1), String(totalSteps)])}
+              crop
+              readOnly
+              className="mx-4 mb-3"
+            />
           )}
 
           {isBlocked && (
