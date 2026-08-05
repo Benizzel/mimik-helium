@@ -881,16 +881,6 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 </button>
               </Tip>
             ))}
-            <span className="w-px h-5 bg-border mx-1.5" />
-            <ColorPopover label={i18n.t('annotationEditor.lineColor')} value={color} onChange={handleColorSelect}>
-              <button
-                type="button"
-                className="flex items-center gap-1 h-8 pl-1 pr-1.5 rounded-lg bg-card text-foreground/70 hover:text-foreground"
-              >
-                <span className="w-5 h-5 rounded-full border border-foreground/20" style={{ backgroundColor: color }} />
-                <ChevronDown size={11} />
-              </button>
-            </ColorPopover>
           </div>
 
           <div className="flex-1 flex items-center justify-end gap-1.5">
