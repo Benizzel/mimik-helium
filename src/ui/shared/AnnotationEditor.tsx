@@ -619,11 +619,12 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       const shape = drag.shape;
       if (shape.type === 'freehand') {
         if (shape.points.length < 4) return;
-      } else if (shape.type === 'box' || shape.type === 'redact') {
+      } else if (shape.type === 'box' || shape.type === 'ellipse' || shape.type === 'redact') {
         if (shape.w < MIN_SHAPE_SIZE || shape.h < MIN_SHAPE_SIZE) return;
       } else if (shape.type === 'arrow') {
         if (Math.hypot(shape.x2 - shape.x1, shape.y2 - shape.y1) < MIN_SHAPE_SIZE) return;
       }
+      pushHistory();
       setAnnotations((prev) => [...prev, { ...shape, id: crypto.randomUUID() }]);
     }
   };
@@ -679,6 +680,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const commitText = () => {
     if (textEditor && textValue.trim()) {
       const id = crypto.randomUUID();
+      pushHistory();
       setSelectedId(id);
       setAnnotations((prev) => [
         ...prev,
