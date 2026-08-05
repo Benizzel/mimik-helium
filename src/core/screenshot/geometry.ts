@@ -153,9 +153,11 @@ export function moveAnnotation(a: Annotation, dx: number, dy: number): Annotatio
 }
 
 export function resizeAnnotation(a: Annotation, handle: Handle, dx: number, dy: number): Annotation {
+  const left = handle === 'nw' || handle === 'sw';
+  const top = handle === 'nw' || handle === 'ne';
+
   if (a.type === 'text') {
     const b = annotationBounds(a);
-    const top = handle === 'nw' || handle === 'ne';
     const height = Math.max(MIN_ANNOTATION, top ? b.height - dy : b.height + dy);
     const scale = height / b.height;
     return {
@@ -166,9 +168,23 @@ export function resizeAnnotation(a: Annotation, handle: Handle, dx: number, dy: 
       h: height,
     };
   }
-  if (a.type !== 'box' && a.type !== 'ellipse' && a.type !== 'redact' && a.type !== 'target') return a;
-  const left = handle === 'nw' || handle === 'sw';
-  const top = handle === 'nw' || handle === 'ne';
+
+  if (a.type === 'arrow' || a.type === 'freehand') {
+    const b = annotationBounds(a);
+    const width = Math.max(MIN_ANNOTATION, left ? b.width - dx : b.width + dx);
+    const height = Math.max(MIN_ANNOTATION, top ? b.height - dy : b.height + dy);
+    const sx = b.width ? width / b.width : 1;
+    const sy = b.height ? height / b.height : 1;
+    const ax = left ? b.x + b.width : b.x;
+    const ay = top ? b.y + b.height : b.y;
+    const mapX = (x: number) => ax + (x - ax) * sx;
+    const mapY = (y: number) => ay + (y - ay) * sy;
+    if (a.type === 'arrow') {
+      return { ...a, x1: mapX(a.x1), y1: mapY(a.y1), x2: mapX(a.x2), y2: mapY(a.y2) };
+    }
+    return { ...a, points: a.points.map((p, i) => (i % 2 === 0 ? mapX(p) : mapY(p))) };
+  }
+
   return {
     ...a,
     x: left ? a.x + dx : a.x,

@@ -192,7 +192,11 @@ describe('resizeAnnotation', () => {
     expect(resizeAnnotation(box, 'nw', 20, 10)).toMatchObject({ x: 120, y: 110, w: 180, h: 90 });
   });
 
-  it('leaves a freehand stroke unchanged', () => {
-    expect(resizeAnnotation(stroke, 'se', 10, 10)).toEqual(stroke);
+  it('scales a freehand stroke about the anchored corner', () => {
+    expect(resizeAnnotation(stroke, 'se', 10, 10)).toMatchObject({ points: [0, 0, 60, 90, 24, 45] });
+  });
+
+  it('scales an arrow about the anchored corner', () => {
+    expect(resizeAnnotation(arrow, 'se', 20, 0)).toMatchObject({ x1: 10, y1: 10, x2: 130, y2: 60 });
   });
 });

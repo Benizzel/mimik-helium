@@ -83,7 +83,6 @@ settings:
   model: Model
   apiKey: API Key
   aiLanguage: Description Language
-  targetColor: "Click target color"
   targetColorHint: "Default for newly captured steps"
   saveSettings: Save Settings
   saved: Saved
@@ -196,7 +195,6 @@ annotationEditor:
   toolEllipse: "Ellipse"
   lineColor: "line color"
   fillColor: "fill color"
-  noFill: "none"
   lineWidth: "line width"
   cornerRadius: "corner radius"
   font: "font"

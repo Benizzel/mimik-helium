@@ -83,7 +83,6 @@ settings:
   model: Modelo
   apiKey: Chave da API
   aiLanguage: "Idioma das descrições"
-  targetColor: "Cor do alvo de clique"
   targetColorHint: "Padrão para novas etapas"
   saveSettings: Salvar ajustes
   saved: Salvo
@@ -196,7 +195,6 @@ annotationEditor:
   toolEllipse: "Elipse"
   lineColor: "cor da linha"
   fillColor: "preenchimento"
-  noFill: "nenhum"
   lineWidth: "espessura"
   cornerRadius: "raio"
   font: "fonte"

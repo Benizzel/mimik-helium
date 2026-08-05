@@ -83,7 +83,6 @@ settings:
   model: "Modèle"
   apiKey: "Clé API"
   aiLanguage: Langue des descriptions
-  targetColor: "Couleur de la cible de clic"
   targetColorHint: "Par défaut pour les nouvelles étapes"
   saveSettings: "Enregistrer"
   saved: "Enregistré"
@@ -196,7 +195,6 @@ annotationEditor:
   toolEllipse: "Ellipse"
   lineColor: "couleur"
   fillColor: "remplissage"
-  noFill: "aucun"
   lineWidth: "épaisseur"
   cornerRadius: "rayon"
   font: "police"

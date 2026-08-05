@@ -8,6 +8,7 @@ import { DEFAULT_TARGET_COLOR, TARGET_COLORS } from '@/core/screenshot/types';
 import { localStorage } from '@/lib/browser-api';
 import { Button } from '@/ui/components/ui/button';
 import { Input } from '@/ui/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
 
 interface SettingsViewProps {
   onBack?: () => void;
@@ -99,32 +100,34 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
             <label className="block text-[11px] font-semibold text-foreground mb-1">
               {i18n.t('settings.provider')}
             </label>
-            <select
-              value={provider}
-              onChange={(e) => handleProviderChange(e.target.value as AIProviderKey)}
-              className="w-full border border-border rounded-lg px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-ring focus:ring-2 focus:ring-ring/10"
-            >
-              {Object.entries(AI_PROVIDERS).map(([key, cfg]) => (
-                <option key={key} value={key}>
-                  {cfg.label}
-                </option>
-              ))}
-            </select>
+            <Select value={provider} onValueChange={(v) => handleProviderChange(v as AIProviderKey)}>
+              <SelectTrigger className="w-full rounded-lg px-3 py-2 text-[13px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(AI_PROVIDERS).map(([key, cfg]) => (
+                  <SelectItem key={key} value={key}>
+                    {cfg.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="block text-[11px] font-semibold text-foreground mb-1">{i18n.t('settings.model')}</label>
-            <select
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="w-full border border-border rounded-lg px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-ring focus:ring-2 focus:ring-ring/10"
-            >
-              {providerConfig.models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
+            <Select value={model} onValueChange={(v) => setModel(v)}>
+              <SelectTrigger className="w-full rounded-lg px-3 py-2 text-[13px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {providerConfig.models.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -137,17 +140,18 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
               <Globe size={11} className="inline mr-1 -mt-px" />
               {i18n.t('settings.aiLanguage')}
             </label>
-            <select
-              value={aiLanguage}
-              onChange={(e) => setAiLanguage(e.target.value as AILanguageCode)}
-              className="w-full border border-border rounded-lg px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-ring focus:ring-2 focus:ring-ring/10"
-            >
-              {AI_LANGUAGES.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.label}
-                </option>
-              ))}
-            </select>
+            <Select value={aiLanguage} onValueChange={(v) => setAiLanguage(v as AILanguageCode)}>
+              <SelectTrigger className="w-full rounded-lg px-3 py-2 text-[13px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AI_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

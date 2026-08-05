@@ -8,6 +8,7 @@ import {
   EyeOff,
   Minus,
   MoveVertical,
+  PaintBucket,
   PenTool,
   Redo2,
   RotateCcw,
@@ -22,7 +23,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { i18n } from '#imports';
 import { updateScreenshotEdits } from '@/core/guides/service';
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
-import { drawAnnotation } from '@/core/screenshot/draw';
+import { drawAnnotation, drawRoundedRect, TARGET_RADIUS, TARGET_STROKE } from '@/core/screenshot/draw';
 import {
   annotationBounds,
   cropTo,
@@ -47,12 +48,12 @@ import {
   FONT_FAMILIES,
   FONT_FAMILY_ORDER,
   LINE_WIDTH_ORDER,
+  LINE_WIDTHS,
   MAX_FONT_SIZE,
   MAX_LINE_HEIGHT,
   MIN_FONT_SIZE,
   MIN_LINE_HEIGHT,
   SHAPE_COLORS,
-  TARGET_COLORS,
 } from '@/core/screenshot/types';
 import {
   DropdownMenu,
@@ -60,6 +61,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/ui/components/ui/dropdown-menu';
+import { Input } from '@/ui/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
 
 type EditorMode = 'crop' | 'annotate' | 'redact';
 type EditorTool = 'crop' | 'box' | 'ellipse' | 'arrow' | 'line' | 'freehand' | 'text' | 'redact' | 'eraser';
@@ -143,6 +147,76 @@ function Stepper({ title, value, min, max, step, decimals = 0, width, prefix, su
     </div>
   );
 }
+
+const NO_FILL = 'linear-gradient(45deg, #FFFFFF 44%, #EF4444 44%, #EF4444 56%, #FFFFFF 56%)';
+const TOOLBAR_TRIGGER =
+  'h-6 w-auto gap-1 rounded-md border-0 bg-primary-foreground/10 px-1.5 py-0 text-[10px] text-primary-foreground hover:bg-primary-foreground/20 focus:ring-0';
+
+function swatchStyle(color: string | undefined) {
+  return !color || color === 'transparent' ? { backgroundImage: NO_FILL } : { backgroundColor: color };
+}
+
+interface PalettePopoverProps {
+  value: string;
+  allowNone?: boolean;
+  onChange: (color: string) => void;
+  children: ReactNode;
+}
+
+function PalettePopover({ value, allowNone, onChange, children }: PalettePopoverProps) {
+  const colors = allowNone ? SHAPE_COLORS : SHAPE_COLORS.filter((c) => c !== 'transparent');
+  return (
+    <Popover>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverContent align="center" className="w-auto p-2.5">
+        <div className="grid grid-cols-8 gap-1.5">
+          {colors.map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-label={c}
+              onClick={() => onChange(c)}
+              className={`w-6 h-6 rounded-full border border-border transition-transform ${
+                value === c ? 'ring-2 ring-accent ring-offset-1' : 'hover:scale-110'
+              }`}
+              style={swatchStyle(c)}
+            />
+          ))}
+        </div>
+        <Input value={value} onChange={(e) => onChange(e.target.value)} className="mt-2 h-7 w-full text-[11px]" />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+const ARROW_END_MARKS: Record<ArrowEnd, ReactNode> = {
+  none: null,
+  bar: <line x1="25" y1="2" x2="25" y2="10" />,
+  arrow: <polyline points="19,2 25,6 19,10" fill="none" />,
+  'arrow-solid': <polygon points="26,6 18,2 18,10" stroke="none" />,
+  circle: <circle cx="22" cy="6" r="3.5" fill="none" />,
+  'circle-solid': <circle cx="22" cy="6" r="3.5" stroke="none" />,
+  square: <rect x="18.5" y="2.5" width="7" height="7" fill="none" />,
+  'square-solid': <rect x="18.5" y="2.5" width="7" height="7" stroke="none" />,
+};
+
+function ArrowEndGlyph({ end }: { end: ArrowEnd }) {
+  return (
+    <svg
+      width="30"
+      height="12"
+      viewBox="0 0 30 12"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <line x1="3" y1="6" x2={end === 'none' ? 27 : 19} y2="6" />
+      {ARROW_END_MARKS[end]}
+    </svg>
+  );
+}
+
 const SELECTION_GAP = 6;
 const DRAFT_ID = 'draft';
 const TARGET_ID = 'click-target';
@@ -183,10 +257,6 @@ function handleCorners(b: ScreenshotBounds): [Handle, number, number][] {
   ];
 }
 
-function isResizable(a: Annotation): boolean {
-  return a.type === 'box' || a.type === 'redact' || a.type === 'target';
-}
-
 function selectionBounds(a: Annotation, scale: number): ScreenshotBounds {
   const inset = SELECTION_GAP * scale;
   const b = annotationBounds(a);
@@ -222,10 +292,9 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const [textValue, setTextValue] = useState('');
   const [bitmap, setBitmap] = useState<ImageBitmap | null>(null);
   const [saving, setSaving] = useState(false);
-  const [targetPicker, setTargetPicker] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
-  const [hue, setHue] = useState(0);
+  const [pulse, setPulse] = useState(0);
   const [grabbing, setGrabbing] = useState(false);
 
   const [fill] = useState('transparent');
@@ -345,7 +414,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let raf = 0;
     const loop = () => {
-      setHue((h) => (h + 3) % 360);
+      setPulse((p) => (p + 0.015) % 1);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -367,8 +436,18 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
     for (const a of annotations) {
-      const pulsing = a.type === 'target' && a.id !== selectedId;
-      drawAnnotation(ctx, pulsing ? { ...a, color: `hsl(${hue} 85% 58%)` } : a, 0, 0);
+      if (a.type === 'target' && a.id !== selectedId) {
+        const t = 0.5 - 0.5 * Math.cos(pulse * Math.PI * 2);
+        const spread = 3 + 16 * t;
+        ctx.save();
+        ctx.globalAlpha = 0.4 * (1 - t);
+        ctx.strokeStyle = a.color;
+        ctx.lineWidth = TARGET_STROKE * 2;
+        drawRoundedRect(ctx, a.x - spread, a.y - spread, a.w + spread * 2, a.h + spread * 2, TARGET_RADIUS + spread);
+        ctx.stroke();
+        ctx.restore();
+      }
+      drawAnnotation(ctx, a, 0, 0);
     }
     if (draft) {
       ctx.save();
@@ -405,16 +484,14 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       ctx.strokeStyle = '#4F46E5';
       ctx.lineWidth = 1.5 * scale;
       ctx.strokeRect(b.x, b.y, b.width, b.height);
-      if (isResizable(sel)) {
-        const handleSize = HANDLE_DISPLAY_SIZE * scale;
-        ctx.fillStyle = '#4F46E5';
-        for (const [, hx, hy] of handleCorners(b)) {
-          ctx.fillRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
-        }
+      const handleSize = HANDLE_DISPLAY_SIZE * scale;
+      ctx.fillStyle = '#4F46E5';
+      for (const [, hx, hy] of handleCorners(b)) {
+        ctx.fillRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
       }
       ctx.restore();
     }
-  }, [annotations, draft, cropDraft, selectedId, bitmap, getScale, mode, viewport, hue]);
+  }, [annotations, draft, cropDraft, selectedId, bitmap, getScale, mode, viewport, pulse]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -448,7 +525,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     }
 
     const current = annotations.find((a) => a.id === selectedId);
-    if (current && isResizable(current)) {
+    if (current) {
       const scale = getScale();
       const handle = hitHandle(selectionBounds(current, scale), p.x, p.y, HANDLE_HIT_PX * scale);
       if (handle) {
@@ -675,6 +752,8 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
   const handleColorSelect = (c: string) => {
     setColor(c);
+    if (!annotations.some((a) => a.id === selectedId && a.type !== 'redact')) return;
+    pushHistory();
     setAnnotations((prev) => prev.map((a) => (a.id === selectedId && a.type !== 'redact' ? { ...a, color: c } : a)));
   };
 
@@ -783,13 +862,19 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
             </button>
           ))}
           <span className="w-px h-5 bg-primary-foreground/20 mx-1.5" />
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => handleColorSelect(e.target.value)}
-            title={i18n.t('annotationEditor.lineColor')}
-            className="w-7 h-7 rounded-full border-2 border-primary-foreground/25 bg-transparent p-0 cursor-pointer"
-          />
+          <PalettePopover value={color} onChange={handleColorSelect}>
+            <button
+              type="button"
+              title={i18n.t('annotationEditor.lineColor')}
+              className="flex items-center gap-1 h-8 pl-1 pr-1.5 rounded-lg text-primary-foreground/70 hover:bg-primary-foreground/10 hover:text-primary-foreground"
+            >
+              <span
+                className="w-5 h-5 rounded-full border-2 border-primary-foreground/25"
+                style={{ backgroundColor: color }}
+              />
+              <ChevronDown size={11} />
+            </button>
+          </PalettePopover>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -877,13 +962,16 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 }}
               >
                 <div className="mt-2 flex items-center gap-1 rounded-xl bg-primary px-2 py-1.5 shadow-xl">
-                  <button
-                    type="button"
-                    title={i18n.t('annotationEditor.targetColor')}
-                    onClick={() => setTargetPicker((v) => !v)}
-                    className="w-6 h-6 rounded-full border-2 border-primary-foreground/20"
-                    style={{ backgroundColor: selected.type === 'redact' ? '#1E1B4B' : selected.color }}
-                  />
+                  {selected.type !== 'redact' && (
+                    <PalettePopover value={selected.color} onChange={handleColorSelect}>
+                      <button
+                        type="button"
+                        title={i18n.t('annotationEditor.lineColor')}
+                        className="w-6 h-6 rounded-full border-2 border-primary-foreground/25"
+                        style={{ backgroundColor: selected.color }}
+                      />
+                    </PalettePopover>
+                  )}
                   {selectedTarget ? (
                     <button
                       type="button"
@@ -909,32 +997,45 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                     </button>
                   )}
                   {(selected.type === 'box' || selected.type === 'ellipse') && (
-                    <select
+                    <PalettePopover
+                      allowNone
                       value={selected.fill ?? 'transparent'}
-                      onChange={(e) => setProp('fill', e.target.value)}
-                      title={i18n.t('annotationEditor.fillColor')}
-                      className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
+                      onChange={(c) => setProp('fill', c)}
                     >
-                      {SHAPE_COLORS.map((c) => (
-                        <option key={c} value={c}>
-                          {c === 'transparent' ? i18n.t('annotationEditor.noFill') : c}
-                        </option>
-                      ))}
-                    </select>
+                      <button
+                        type="button"
+                        title={i18n.t('annotationEditor.fillColor')}
+                        className="w-6 h-6 flex flex-col items-center justify-center gap-px rounded-md text-primary-foreground hover:bg-primary-foreground/15"
+                      >
+                        <PaintBucket size={13} />
+                        <span className="w-3.5 h-[3px] rounded-[1px]" style={swatchStyle(selected.fill)} />
+                      </button>
+                    </PalettePopover>
                   )}
-                  {selected.type !== 'text' && selected.type !== 'redact' && (
-                    <select
-                      value={selected.type === 'target' ? 'ms' : (selected.lineWidth ?? 'ms')}
-                      onChange={(e) => setProp('lineWidth', e.target.value)}
-                      title={i18n.t('annotationEditor.lineWidth')}
-                      className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
+                  {selected.type !== 'text' && selected.type !== 'redact' && selected.type !== 'target' && (
+                    <Select
+                      value={selected.lineWidth ?? 'ms'}
+                      onValueChange={(v) => setProp('lineWidth', v as LineWidth)}
                     >
-                      {LINE_WIDTH_ORDER.map((w) => (
-                        <option key={w} value={w}>
-                          {i18n.t(`annotationEditor.width_${w}`)}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger title={i18n.t('annotationEditor.lineWidth')} className={TOOLBAR_TRIGGER}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LINE_WIDTH_ORDER.map((w) => (
+                          <SelectItem key={w} value={w}>
+                            <span className="flex items-center gap-2">
+                              <span
+                                className={`w-9 rounded-full ${LINE_WIDTHS[w] ? 'bg-foreground' : 'bg-foreground/20'}`}
+                                style={{ height: LINE_WIDTHS[w] || 2 }}
+                              />
+                              <span className="text-[11px] text-muted-foreground">
+                                {i18n.t(`annotationEditor.width_${w}`)}
+                              </span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                   {selected.type === 'box' && (
                     <Stepper
@@ -948,18 +1049,23 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                     />
                   )}
                   {selected.type === 'arrow' && (
-                    <select
-                      value={selected.end ?? 'arrow-solid'}
-                      onChange={(e) => setProp('end', e.target.value)}
-                      title={i18n.t('annotationEditor.arrowEnd')}
-                      className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
-                    >
-                      {ARROW_ENDS.map((end) => (
-                        <option key={end} value={end}>
-                          {i18n.t(`annotationEditor.end_${end.replace('-', '_')}`)}
-                        </option>
-                      ))}
-                    </select>
+                    <Select value={selected.end ?? 'arrow-solid'} onValueChange={(v) => setProp('end', v as ArrowEnd)}>
+                      <SelectTrigger title={i18n.t('annotationEditor.arrowEnd')} className={TOOLBAR_TRIGGER}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ARROW_ENDS.map((end) => (
+                          <SelectItem key={end} value={end}>
+                            <span className="flex items-center gap-2">
+                              <ArrowEndGlyph end={end} />
+                              <span className="text-[11px] text-muted-foreground">
+                                {i18n.t(`annotationEditor.end_${end.replace('-', '_')}`)}
+                              </span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                   {selected.type === 'text' && (
                     <>
@@ -1037,33 +1143,12 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                       pushHistory();
                       setAnnotations((prev) => prev.filter((a) => a.id !== selected.id));
                       setSelectedId(null);
-                      setTargetPicker(false);
                     }}
                     className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-destructive/25"
                   >
                     <Trash2 size={14} />
                   </button>
                 </div>
-                {targetPicker && (
-                  <div className="flex items-center gap-1.5 rounded-xl bg-primary px-2.5 py-2 shadow-xl">
-                    {TARGET_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => (selectedTarget ? updateTarget({ color: c }) : handleColorSelect(c))}
-                        className={`w-5 h-5 rounded-full ${(selectedTarget ? selectedTarget.color : selected.type !== 'redact' && selected.color) === c ? 'ring-2 ring-primary-foreground ring-offset-2 ring-offset-primary' : ''}`}
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
-                    <input
-                      value={selectedTarget ? selectedTarget.color : selected.type === 'redact' ? '' : selected.color}
-                      onChange={(e) =>
-                        selectedTarget ? updateTarget({ color: e.target.value }) : handleColorSelect(e.target.value)
-                      }
-                      className="w-20 rounded-md bg-primary-foreground/10 px-1.5 py-0.5 text-[11px] text-primary-foreground outline-none"
-                    />
-                  </div>
-                )}
               </div>
             )}
           </div>
