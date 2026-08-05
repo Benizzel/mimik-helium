@@ -16,6 +16,10 @@ interface ExportMenuProps {
 
 function downloadFile(content: string, filename: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType });
+  downloadBlob(blob, filename);
+}
+
+function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -23,6 +27,8 @@ function downloadFile(content: string, filename: string, mimeType: string) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+type ExportType = 'docx' | 'html' | 'markdown' | 'pdf';
 
 export default function ExportMenu({ guide, steps, screenshots }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
@@ -37,24 +43,23 @@ export default function ExportMenu({ guide, steps, screenshots }: ExportMenuProp
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  async function handleExport(type: 'html' | 'markdown' | 'pdf') {
+  async function handleExport(type: ExportType) {
     setOpen(false);
     setExporting(true);
     try {
       if (type === 'html') {
         const html = await exportGuideAsHTML(guide, steps, screenshots);
         downloadFile(html, `${guide.title}.html`, 'text/html');
+      } else if (type === 'docx') {
+        const { exportGuideAsDOCX } = await import('@/core/export/docx-export');
+        const blob = await exportGuideAsDOCX(guide, steps, screenshots);
+        downloadBlob(blob, `${guide.title}.docx`);
       } else if (type === 'markdown') {
         const md = await exportGuideAsMarkdown(guide, steps, screenshots);
         downloadFile(md, `${guide.title}.md`, 'text/markdown');
       } else {
         const blob = await exportGuideAsPDF(guide, steps, screenshots);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${guide.title}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
+        downloadBlob(blob, `${guide.title}.pdf`);
       }
     } finally {
       setExporting(false);
@@ -62,6 +67,7 @@ export default function ExportMenu({ guide, steps, screenshots }: ExportMenuProp
   }
 
   const items = [
+    { type: 'docx' as const, icon: FileText, label: i18n.t('exportMenu.docx') },
     { type: 'html' as const, icon: FileCode, label: i18n.t('exportMenu.html') },
     { type: 'markdown' as const, icon: FileText, label: i18n.t('exportMenu.markdown') },
     { type: 'pdf' as const, icon: FileDown, label: i18n.t('exportMenu.pdf') },
