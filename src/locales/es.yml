@@ -85,8 +85,20 @@ settings:
   model: Modelo
   apiKey: Clave API
   aiLanguage: Idioma de descripciones
-  targetColor: "Color del objetivo de clic"
-  targetColorHint: "Predeterminado para pasos nuevos"
+  targetColor: "Color de marca"
+  targetColorHint: "Resaltados de clic y acentos de exportación"
+  branding: "Marca en exportaciones"
+  brandLogo: "Logotipo"
+  brandLogoHint: "Aparece en la portada de cada exportación. Se recomienda PNG transparente."
+  uploadLogo: "Subir logotipo"
+  replaceLogo: "Reemplazar"
+  removeLogo: "Quitar logotipo"
+  footerLine: "Línea de pie de página"
+  footerLinePlaceholder: "p. ej. Confidencial — solo uso interno"
+  footerPresetConfidential: "Confidencial — solo uso interno"
+  footerPresetNoDistribute: "No distribuir"
+  attribution: 'Mostrar "Made with Mimik"'
+  attributionHint: "En el pie de cada exportación"
   saveSettings: Guardar ajustes
   saved: Guardado
   smartBlur: Desenfoque inteligente
@@ -228,6 +240,21 @@ annotationEditor:
   end_square_solid: "Cuadrado sólido"
   done: Listo
 
+exportPreview:
+  title: "Vista previa de exportación"
+  cover: "Portada"
+  coverHint: "Una primera hoja con el título y los detalles"
+  screenshots: "Capturas"
+  screenshotsHint: "Desactiva para un documento compacto solo de texto"
+  stepUrls: "Enlaces de pasos"
+  stepUrlsHint: "Muestra la dirección de cada paso"
+  imageScale: "Tamaño de captura"
+  scale_small: "Pequeño"
+  scale_medium: "Medio"
+  scale_large: "Grande"
+  download: "Exportar $1"
+  rendering: "Actualizando vista previa"
+  truncated: "La vista previa muestra los primeros $1 de $2 pasos"
 exportMenu:
   docx: DOCX
   html: HTML
@@ -284,6 +311,10 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  guideLabel: "GUÍA"
+  stepsRange: "Pasos $1–$2 de $3"
+  stepOf: "Paso $1 de $2"
+  madeWith: "Made with Mimik"
   created: Creado
   source: Fuente
   step: Paso

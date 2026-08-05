@@ -2,16 +2,25 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  ExternalHyperlink,
+  Footer,
+  Header,
   ImageRun,
   Packer,
+  PageNumber,
   Paragraph,
   Table,
   TableCell,
+  TableLayoutType,
   TableRow,
   TextRun,
+  UnderlineType,
+  VerticalAlign,
   WidthType,
 } from 'docx';
 import { i18n } from '#imports';
+import { type Branding, dataUrlToBytes, fitLogo, loadBranding } from '@/core/export/branding';
+import { type ExportOptions, IMAGE_SCALE_FACTORS, loadExportOptions } from '@/core/export/options';
 import { blobToArrayBuffer, extractDomain, formatDate } from '@/core/export/utils';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { logger } from '@/lib/logger';
@@ -22,6 +31,28 @@ const DOCX_MAX_IMAGE_WIDTH = 520;
 const DOCX_MAX_IMAGE_HEIGHT = 640; // px @ 96dpi, fits one page after margins
 const DOCX_STEP_INDENT = 900;
 const DOCX_FONT_FAMILY = 'Helvetica';
+
+const MM = 56.7;
+const dxa = (mm: number) => Math.round(mm * MM);
+const px = (mm: number) => Math.round((mm / 25.4) * 96);
+
+const MARGIN_MM = 18.5;
+const CONTENT_MM = 210 - MARGIN_MM * 2;
+const NUM_COL_MM = 22;
+const COL_GAP_MM = 8;
+const TEXT_COL_MM = CONTENT_MM - NUM_COL_MM - COL_GAP_MM;
+const META_COL_MM = 43;
+const LOGO_MAX_W = px(34);
+const LOGO_MAX_H = px(15);
+
+const INK = '1E1B4B';
+const MUTED = '6B7280';
+const HAIR = 'E5E7EB';
+
+const NONE = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+const NO_BORDERS = { top: NONE, right: NONE, bottom: NONE, left: NONE };
+
+const bare = (hex: string) => hex.slice(1).toUpperCase();
 
 /** Scale screenshot to fit page bounds without upscaling or distorting. */
 export function fitDocxImageSize(
@@ -37,98 +68,146 @@ export function fitDocxImageSize(
   };
 }
 
-function buildGradientDividerParagraph(): Paragraph {
-  const gradientSegments = ['4F46E5', '635BED', '8178F4', 'A4A1F9', 'C7D2FE', '9BD2FE', '60C8FB', '38BDF8'];
+function stepUrlLabel(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const label = `${parsed.hostname.replace(/^www\./, '')}${parsed.pathname === '/' ? '' : parsed.pathname}`;
+    return label.length > 64 ? `${label.slice(0, 63)}…` : label;
+  } catch {
+    return url;
+  }
+}
 
-  return new Paragraph({
-    alignment: AlignmentType.CENTER,
-    spacing: { after: 260 },
-    children: gradientSegments.map(
-      (color) =>
-        new TextRun({
-          text: '--------',
-          font: DOCX_FONT_FAMILY,
-          color,
-          bold: true,
-          size: 16,
-        }),
-    ),
+function plainCell(children: Paragraph[], widthMm: number, rightGapMm = 0, bottom = false): TableCell {
+  return new TableCell({
+    borders: NO_BORDERS,
+    width: { size: dxa(widthMm), type: WidthType.DXA },
+    margins: { top: 0, bottom: 0, left: 0, right: dxa(rightGapMm) },
+    ...(bottom ? { verticalAlign: VerticalAlign.BOTTOM } : {}),
+    children,
   });
 }
 
-function buildMetaTable(guide: Guide, domain: string | null): Table {
-  const baseCell = {
-    borders: {
-      top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-      right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-      bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-      left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-    },
-    margins: { top: 0, bottom: 0, left: 80, right: 80 },
-  };
+function label(text: string): Paragraph {
+  return new Paragraph({
+    children: [new TextRun({ text, bold: true, color: MUTED, size: 15, font: DOCX_FONT_FAMILY })],
+  });
+}
 
-  return new Table({
-    width: { size: 70, type: WidthType.PERCENTAGE },
-    alignment: AlignmentType.CENTER,
+function buildLogoCell(brand: Branding): TableCell {
+  const children: Paragraph[] = [];
+  if (brand.logo) {
+    try {
+      const { width, height } = fitLogo(brand.logo, LOGO_MAX_W, LOGO_MAX_H);
+      children.push(
+        new Paragraph({
+          alignment: AlignmentType.RIGHT,
+          children: [
+            new ImageRun({ type: 'png', data: dataUrlToBytes(brand.logo.dataUrl), transformation: { width, height } }),
+          ],
+        }),
+      );
+    } catch (err) {
+      logger.warn('DOCX: failed to embed brand logo', err);
+    }
+  }
+  if (!children.length) children.push(new Paragraph({ children: [] }));
+  return plainCell(children, 40);
+}
+
+function buildCover(guide: Guide, steps: Step[], domain: string | null, brand: Branding): Array<Paragraph | Table> {
+  const accent = bare(brand.accent);
+
+  const head = new Table({
+    width: { size: dxa(CONTENT_MM), type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [dxa(CONTENT_MM - 40), dxa(40)],
     rows: [
       new TableRow({
+        cantSplit: true,
         children: [
-          new TableCell({
-            ...baseCell,
-            width: { size: domain ? 50 : 100, type: WidthType.PERCENTAGE },
-            children: [
+          plainCell(
+            [
               new Paragraph({
-                alignment: AlignmentType.LEFT,
-                spacing: { after: 40 },
+                spacing: { after: 360 },
                 children: [
                   new TextRun({
-                    text: i18n.t('export.created').toUpperCase(),
-                    font: DOCX_FONT_FAMILY,
+                    text: i18n.t('export.guideLabel'),
                     bold: true,
-                    color: '6B7280',
-                    size: 14,
+                    color: MUTED,
+                    size: 16,
+                    font: DOCX_FONT_FAMILY,
                   }),
                 ],
               }),
               new Paragraph({
-                alignment: AlignmentType.LEFT,
                 children: [
-                  new TextRun({ text: formatDate(guide.createdAt), font: DOCX_FONT_FAMILY, color: '1E1B4B', size: 24 }),
+                  new TextRun({ text: guide.title, bold: true, color: INK, size: 60, font: DOCX_FONT_FAMILY }),
                 ],
               }),
             ],
-          }),
-          ...(domain
-            ? [
-                new TableCell({
-                  ...baseCell,
-                  width: { size: 50, type: WidthType.PERCENTAGE },
-                  children: [
-                    new Paragraph({
-                      alignment: AlignmentType.LEFT,
-                      spacing: { after: 40 },
-                      children: [
-                        new TextRun({
-                          text: i18n.t('export.source').toUpperCase(),
-                          font: DOCX_FONT_FAMILY,
-                          bold: true,
-                          color: '6B7280',
-                          size: 14,
-                        }),
-                      ],
-                    }),
-                    new Paragraph({
-                      alignment: AlignmentType.LEFT,
-                      children: [new TextRun({ text: domain, font: DOCX_FONT_FAMILY, color: '4F46E5', size: 24 })],
-                    }),
-                  ],
-                }),
-              ]
-            : []),
+            CONTENT_MM - 40,
+          ),
+          buildLogoCell(brand),
         ],
       }),
     ],
   });
+
+  const rule = new Paragraph({
+    spacing: { before: 200, after: 280 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 10, color: INK, space: 4 } },
+    children: [],
+  });
+
+  const metaKeys = [i18n.t('export.steps').toUpperCase(), i18n.t('export.created').toUpperCase()];
+  const metaValues: Paragraph[][] = [
+    [
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: String(steps.length).padStart(2, '0'),
+            bold: true,
+            color: accent,
+            size: 60,
+            font: DOCX_FONT_FAMILY,
+          }),
+        ],
+      }),
+    ],
+    [
+      new Paragraph({
+        children: [new TextRun({ text: formatDate(guide.createdAt), color: INK, size: 22, font: DOCX_FONT_FAMILY })],
+      }),
+    ],
+  ];
+
+  if (domain) {
+    metaKeys.push(i18n.t('export.source').toUpperCase());
+    metaValues.push([
+      new Paragraph({
+        children: [
+          new ExternalHyperlink({
+            link: `https://${domain}`,
+            children: [new TextRun({ text: domain, color: accent, size: 22, font: DOCX_FONT_FAMILY })],
+          }),
+        ],
+      }),
+    ]);
+  }
+
+  const widths = metaKeys.map(() => META_COL_MM);
+  const meta = new Table({
+    width: { size: dxa(CONTENT_MM), type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: widths.map((w) => dxa(w)),
+    rows: [
+      new TableRow({ cantSplit: true, children: metaKeys.map((k) => plainCell([label(k)], META_COL_MM, 4, true)) }),
+      new TableRow({ cantSplit: true, children: metaValues.map((v) => plainCell(v, META_COL_MM, 4, true)) }),
+    ],
+  });
+
+  return [head, rule, meta];
 }
 
 function getDocxImageType(mimeType: string): SupportedDocxImageType | null {
@@ -150,7 +229,7 @@ function getDocxImageType(mimeType: string): SupportedDocxImageType | null {
 async function buildImageParagraph(
   screenshot: Screenshot,
   stepIndex: number,
-  leftIndent = 0,
+  scale: number,
 ): Promise<Paragraph | null> {
   const imageType = getDocxImageType(screenshot.mimeType);
   if (!imageType) {
@@ -160,18 +239,14 @@ async function buildImageParagraph(
 
   try {
     const arrayBuffer = await blobToArrayBuffer(screenshot.blob);
-    const { width, height } = fitDocxImageSize(screenshot.width, screenshot.height, leftIndent);
+    const fitted = fitDocxImageSize(screenshot.width, screenshot.height, DOCX_STEP_INDENT / 2);
+    const width = Math.max(1, Math.round(fitted.width * scale));
+    const height = Math.max(1, Math.round(fitted.height * scale));
 
     return new Paragraph({
       alignment: AlignmentType.LEFT,
-      indent: { left: leftIndent },
-      spacing: { after: 280 },
       children: [
-        new ImageRun({
-          type: imageType,
-          data: new Uint8Array(arrayBuffer),
-          transformation: { width, height },
-        }),
+        new ImageRun({ type: imageType, data: new Uint8Array(arrayBuffer), transformation: { width, height } }),
       ],
     });
   } catch (err) {
@@ -180,95 +255,207 @@ async function buildImageParagraph(
   }
 }
 
+async function buildStepTable(
+  step: Step,
+  screenshot: Screenshot | undefined,
+  brand: Branding,
+  opts: ExportOptions,
+): Promise<Table> {
+  const accent = bare(brand.accent);
+  const stepNumber = String(step.index + 1).padStart(2, '0');
+
+  const textChildren: Paragraph[] = [
+    new Paragraph({
+      spacing: { after: 140 },
+      children: [
+        new TextRun({ text: step.description, bold: true, color: INK, size: 22, font: DOCX_FONT_FAMILY }),
+        ...(step.url && opts.stepUrls
+          ? [
+              new TextRun({ text: '   ·   ', color: MUTED, size: 18, font: DOCX_FONT_FAMILY }),
+              new ExternalHyperlink({
+                link: step.url,
+                children: [
+                  new TextRun({
+                    text: stepUrlLabel(step.url),
+                    color: accent,
+                    underline: { type: UnderlineType.SINGLE, color: accent },
+                    size: 18,
+                    font: DOCX_FONT_FAMILY,
+                  }),
+                ],
+              }),
+            ]
+          : []),
+      ],
+    }),
+  ];
+
+  if (screenshot) {
+    const imageParagraph = await buildImageParagraph(screenshot, step.index, IMAGE_SCALE_FACTORS[opts.imageScale]);
+    if (imageParagraph) textChildren.push(imageParagraph);
+  }
+
+  return new Table({
+    width: { size: dxa(CONTENT_MM), type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [dxa(NUM_COL_MM + COL_GAP_MM), dxa(TEXT_COL_MM)],
+    rows: [
+      new TableRow({
+        cantSplit: true,
+        children: [
+          plainCell(
+            [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: stepNumber, bold: true, color: accent, size: 60, font: DOCX_FONT_FAMILY }),
+                ],
+              }),
+            ],
+            NUM_COL_MM + COL_GAP_MM,
+          ),
+          new TableCell({
+            borders: { ...NO_BORDERS, top: { style: BorderStyle.SINGLE, size: 6, color: INK } },
+            width: { size: dxa(TEXT_COL_MM), type: WidthType.DXA },
+            margins: { top: dxa(2), bottom: 0, left: 0, right: 0 },
+            children: textChildren,
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
+function buildFooter(brand: Branding): Footer {
+  const children: TextRun[] = [
+    new TextRun({ text: brand.footer, color: MUTED, size: 16, font: DOCX_FONT_FAMILY }),
+    new TextRun({
+      text: `\t${brand.attribution ? i18n.t('export.madeWith') : ''}\t`,
+      color: MUTED,
+      size: 16,
+      font: DOCX_FONT_FAMILY,
+    }),
+    new TextRun({
+      children: [PageNumber.CURRENT, ' / ', PageNumber.TOTAL_PAGES],
+      color: MUTED,
+      size: 16,
+      font: DOCX_FONT_FAMILY,
+    }),
+  ];
+
+  return new Footer({
+    children: [
+      new Paragraph({
+        border: { top: { style: BorderStyle.SINGLE, size: 4, color: HAIR, space: 6 } },
+        tabStops: [
+          { type: 'center', position: dxa(CONTENT_MM / 2) },
+          { type: 'right', position: dxa(CONTENT_MM) },
+        ],
+        children,
+      }),
+    ],
+  });
+}
+
+function buildHeader(guide: Guide, brand: Branding, withLogo: boolean): Header {
+  const titleRun = new TextRun({ text: guide.title, bold: true, color: INK, size: 16, font: DOCX_FONT_FAMILY });
+
+  if (!withLogo || !brand.logo) {
+    return new Header({
+      children: [
+        new Paragraph({
+          border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: HAIR, space: 4 } },
+          children: [titleRun],
+        }),
+      ],
+    });
+  }
+
+  const { width, height } = fitLogo(brand.logo, px(18), px(7));
+  return new Header({
+    children: [
+      new Table({
+        width: { size: dxa(CONTENT_MM), type: WidthType.DXA },
+        layout: TableLayoutType.FIXED,
+        columnWidths: [dxa(CONTENT_MM - 22), dxa(22)],
+        borders: {
+          top: NONE,
+          right: NONE,
+          left: NONE,
+          insideHorizontal: NONE,
+          insideVertical: NONE,
+          bottom: { style: BorderStyle.SINGLE, size: 4, color: HAIR },
+        },
+        rows: [
+          new TableRow({
+            cantSplit: true,
+            children: [
+              plainCell([new Paragraph({ children: [titleRun] })], CONTENT_MM - 22),
+              plainCell(
+                [
+                  new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [
+                      new ImageRun({
+                        type: 'png',
+                        data: dataUrlToBytes(brand.logo.dataUrl),
+                        transformation: { width, height },
+                      }),
+                    ],
+                  }),
+                ],
+                22,
+              ),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
 export async function exportGuideAsDOCX(
   guide: Guide,
   steps: Step[],
   screenshots: Map<string, Screenshot>,
+  options?: ExportOptions,
 ): Promise<Blob> {
+  const opts = options ?? (await loadExportOptions());
   const domain = extractDomain(steps);
-  const coverChildren: Array<Paragraph | Table> = [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 3300, after: 200 },
-      children: [
-        new TextRun({
-          text: i18n.t('export.stepsCount', [String(steps.length)]),
-          font: DOCX_FONT_FAMILY,
-          bold: true,
-          color: '4F46E5',
-          size: 20,
-        }),
-      ],
-    }),
-    buildGradientDividerParagraph(),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 280 },
-      children: [new TextRun({ text: guide.title, font: DOCX_FONT_FAMILY, bold: true, size: 44, color: '1E1B4B' })],
-    }),
-    buildMetaTable(guide, domain),
-    new Paragraph({ spacing: { after: 420 } }),
-  ];
+  const brand = await loadBranding();
 
-  const children: Array<Paragraph | Table> = [...coverChildren];
+  const children: Array<Paragraph | Table> = opts.cover ? buildCover(guide, steps, domain, brand) : [];
 
-  if (steps.length > 0) {
-    children.push(
-      new Paragraph({
-        pageBreakBefore: true,
-      }),
-    );
-  }
-
-  for (const step of steps) {
-    const stepNumber = String(step.index + 1).padStart(2, '0');
-
-    children.push(
-      new Paragraph({
-        border: {
-          top: {
-            color: 'C7D2FE',
-            size: 6,
-            space: 1,
-            style: BorderStyle.SINGLE,
-          },
-        },
-        spacing: { before: 240, after: 120 },
-        children: [new TextRun({ text: '', font: DOCX_FONT_FAMILY })],
-      }),
-      new Paragraph({
-        indent: { left: DOCX_STEP_INDENT / 2 },
-        spacing: { after: 180 },
-        children: [
-          new TextRun({ text: stepNumber, font: DOCX_FONT_FAMILY, bold: true, color: '818CF8', size: 32 }),
-          new TextRun({ text: '   ', font: DOCX_FONT_FAMILY }),
-          new TextRun({ text: step.description, font: DOCX_FONT_FAMILY, color: '1E1B4B', size: 24 }),
-        ],
-      }),
-    );
-
-    const screenshot = screenshots.get(step.id);
-    if (screenshot) {
-      const imageParagraph = await buildImageParagraph(screenshot, step.index, DOCX_STEP_INDENT / 2);
-      if (imageParagraph) {
-        children.push(imageParagraph);
-      }
+  for (const [i, step] of steps.entries()) {
+    if (i === 0 && opts.cover) {
+      children.push(new Paragraph({ pageBreakBefore: true, spacing: { after: 120 }, children: [] }));
     }
+    children.push(await buildStepTable(step, opts.screenshots ? screenshots.get(step.id) : undefined, brand, opts));
+    children.push(new Paragraph({ spacing: { after: 300 }, children: [] }));
   }
 
   const doc = new Document({
-    styles: {
-      default: {
-        document: {
-          run: {
-            font: DOCX_FONT_FAMILY,
-          },
-        },
-      },
-    },
+    styles: { default: { document: { run: { font: DOCX_FONT_FAMILY } } } },
     sections: [
       {
-        properties: {},
+        properties: {
+          page: {
+            margin: {
+              top: dxa(MARGIN_MM),
+              bottom: dxa(MARGIN_MM),
+              left: dxa(MARGIN_MM),
+              right: dxa(MARGIN_MM),
+            },
+          },
+          titlePage: opts.cover,
+        },
+        headers: {
+          default: buildHeader(guide, brand, !opts.cover),
+          ...(opts.cover ? { first: new Header({ children: [new Paragraph({ children: [] })] }) } : {}),
+        },
+        footers: {
+          default: buildFooter(brand),
+          ...(opts.cover ? { first: buildFooter(brand) } : {}),
+        },
         children,
       },
     ],

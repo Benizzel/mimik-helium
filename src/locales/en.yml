@@ -85,8 +85,20 @@ settings:
   model: Model
   apiKey: API Key
   aiLanguage: Description Language
-  targetColor: "Click target colour"
-  targetColorHint: "Default for newly captured steps"
+  targetColor: "Brand colour"
+  targetColorHint: "Click highlights and export accents"
+  branding: "Export Branding"
+  brandLogo: "Logo"
+  brandLogoHint: "Shown on the cover of every export. Transparent PNG recommended."
+  uploadLogo: "Upload logo"
+  replaceLogo: "Replace"
+  removeLogo: "Remove logo"
+  footerLine: "Footer line"
+  footerLinePlaceholder: "e.g. Confidential — internal use only"
+  footerPresetConfidential: "Confidential — internal use only"
+  footerPresetNoDistribute: "Do not distribute"
+  attribution: 'Show "Made with Mimik"'
+  attributionHint: "In the footer of every export"
   saveSettings: Save Settings
   saved: Saved
   smartBlur: Smart Blur
@@ -228,6 +240,21 @@ annotationEditor:
   end_square_solid: "Square solid"
   done: Done
 
+exportPreview:
+  title: "Export preview"
+  cover: "Cover page"
+  coverHint: "A separate first sheet with the title and details"
+  screenshots: "Screenshots"
+  screenshotsHint: "Turn off for a compact text-only document"
+  stepUrls: "Step links"
+  stepUrlsHint: "Show the page address each step happened on"
+  imageScale: "Screenshot size"
+  scale_small: "Small"
+  scale_medium: "Medium"
+  scale_large: "Large"
+  download: "Export $1"
+  rendering: "Updating preview"
+  truncated: "Preview shows the first $1 of $2 steps"
 exportMenu:
   docx: DOCX
   html: HTML
@@ -284,6 +311,10 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  guideLabel: "GUIDE"
+  stepsRange: "Steps $1–$2 of $3"
+  stepOf: "Step $1 of $2"
+  madeWith: "Made with Mimik"
   created: Created
   source: Source
   step: Step

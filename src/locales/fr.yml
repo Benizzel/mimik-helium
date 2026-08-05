@@ -85,8 +85,20 @@ settings:
   model: "Modèle"
   apiKey: "Clé API"
   aiLanguage: Langue des descriptions
-  targetColor: "Couleur de la cible de clic"
-  targetColorHint: "Par défaut pour les nouvelles étapes"
+  targetColor: "Couleur de marque"
+  targetColorHint: "Surbrillance des clics et accents des exports"
+  branding: "Image de marque des exports"
+  brandLogo: "Logo"
+  brandLogoHint: "Affiché sur la couverture de chaque export. PNG transparent recommandé."
+  uploadLogo: "Téléverser un logo"
+  replaceLogo: "Remplacer"
+  removeLogo: "Supprimer le logo"
+  footerLine: "Ligne de pied de page"
+  footerLinePlaceholder: "p. ex. Confidentiel — usage interne"
+  footerPresetConfidential: "Confidentiel — usage interne"
+  footerPresetNoDistribute: "Ne pas diffuser"
+  attribution: 'Afficher « Made with Mimik »'
+  attributionHint: "Dans le pied de chaque export"
   saveSettings: "Enregistrer"
   saved: "Enregistré"
   smartBlur: Flou intelligent
@@ -228,6 +240,21 @@ annotationEditor:
   end_square_solid: "Carré plein"
   done: "Terminé"
 
+exportPreview:
+  title: "Aperçu de l’export"
+  cover: "Page de couverture"
+  coverHint: "Une première page avec le titre et les détails"
+  screenshots: "Captures"
+  screenshotsHint: "Désactivez pour un document compact, texte seul"
+  stepUrls: "Liens des étapes"
+  stepUrlsHint: "Affiche l’adresse de chaque étape"
+  imageScale: "Taille des captures"
+  scale_small: "Petite"
+  scale_medium: "Moyenne"
+  scale_large: "Grande"
+  download: "Exporter $1"
+  rendering: "Mise à jour de l’aperçu"
+  truncated: "L’aperçu montre les $1 premières étapes sur $2"
 exportMenu:
   docx: DOCX
   html: HTML
@@ -284,6 +311,10 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  guideLabel: "GUIDE"
+  stepsRange: "Étapes $1–$2 sur $3"
+  stepOf: "Étape $1 sur $2"
+  madeWith: "Made with Mimik"
   created: "Créé"
   source: Source
   step: "Étape"
