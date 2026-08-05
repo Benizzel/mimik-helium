@@ -80,7 +80,6 @@ type DragState =
   | { mode: 'draw'; start: { x: number; y: number }; shape: Annotation };
 
 const COLORS = ['#4F46E5', '#DC2626', '#059669', '#F59E0B', '#1E1B4B'];
-const DEFAULT_TEXT_SIZE = 28;
 const MIN_SHAPE_SIZE = 6;
 const MIN_CROP_SIZE = 20;
 const HANDLE_DISPLAY_SIZE = 10;
