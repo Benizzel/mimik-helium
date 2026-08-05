@@ -12,10 +12,11 @@ export function swatchStyle(color: string | undefined) {
 interface ColorPickerProps {
   value: string;
   allowNone?: boolean;
+  presets?: readonly string[];
   onChange: (color: string) => void;
 }
 
-export default function ColorPicker({ value, allowNone, onChange }: ColorPickerProps) {
+export default function ColorPicker({ value, allowNone, presets = SHAPE_COLORS, onChange }: ColorPickerProps) {
   const [draft, setDraft] = useState(value);
   const areaRef = useRef<HTMLDivElement>(null);
   const hueRef = useRef<HTMLDivElement>(null);
@@ -85,7 +86,7 @@ export default function ColorPicker({ value, allowNone, onChange }: ColorPickerP
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        {(allowNone ? SHAPE_COLORS : SHAPE_COLORS.filter((c) => c !== 'transparent')).map((c) => (
+        {(allowNone ? presets : presets.filter((c) => c !== 'transparent')).map((c) => (
           <button
             key={c}
             type="button"

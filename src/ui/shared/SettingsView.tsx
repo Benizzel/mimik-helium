@@ -1,4 +1,16 @@
-import { ArrowLeft, Bug, Check, ChevronRight, EyeOff, Globe, Shield, Sparkles, Star, Target } from 'lucide-react';
+import {
+  ArrowLeft,
+  Bug,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  EyeOff,
+  Globe,
+  Shield,
+  Sparkles,
+  Star,
+  Target,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
@@ -8,7 +20,9 @@ import { DEFAULT_TARGET_COLOR, TARGET_COLORS } from '@/core/screenshot/types';
 import { localStorage } from '@/lib/browser-api';
 import { Button } from '@/ui/components/ui/button';
 import { Input } from '@/ui/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
+import ColorPicker from '@/ui/shared/ColorPicker';
 
 interface SettingsViewProps {
   onBack?: () => void;
@@ -155,9 +169,9 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
           </div>
         </div>
 
-        <div className="border border-border rounded-[10px] p-3.5">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+        <div className="border border-border rounded-[10px] p-3.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center shrink-0">
               <Target size={14} className="text-accent" />
             </div>
             <div>
@@ -165,23 +179,24 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
               <div className="text-[11px] text-muted-foreground">{i18n.t('settings.targetColorHint')}</div>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {TARGET_COLORS.map((c) => (
+          <Popover>
+            <PopoverTrigger asChild>
               <button
-                key={c}
                 type="button"
-                aria-label={c}
-                onClick={() => setTargetColor(c)}
-                className={`w-6 h-6 rounded-full transition-transform ${targetColor === c ? 'ring-2 ring-accent ring-offset-2' : 'hover:scale-110'}`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
-            <Input
-              value={targetColor}
-              onChange={(e) => setTargetColor(e.target.value)}
-              className="w-24 h-7 text-[11px] ml-1"
-            />
-          </div>
+                className="flex items-center gap-2 shrink-0 border border-border rounded-lg px-2 py-1.5 text-[11px] text-foreground hover:border-accent"
+              >
+                <span
+                  className="w-[22px] h-[22px] rounded-full border border-foreground/15"
+                  style={{ backgroundColor: targetColor }}
+                />
+                <code className="tabular-nums">{targetColor.toUpperCase()}</code>
+                <ChevronDown size={12} className="opacity-60" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 p-2.5">
+              <ColorPicker value={targetColor} presets={TARGET_COLORS} onChange={setTargetColor} />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="border border-border rounded-[10px] p-3.5 space-y-1">
