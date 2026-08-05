@@ -25,6 +25,7 @@ import { shadeOf } from '@/core/screenshot/color';
 import { drawAnnotation, drawRoundedRect, TARGET_RADIUS, TARGET_STROKE } from '@/core/screenshot/draw';
 import {
   annotationBounds,
+  clamp,
   cropTo,
   type Handle,
   hitTest,
@@ -89,6 +90,7 @@ type DragState =
   | { mode: 'draw'; start: { x: number; y: number }; shape: Annotation };
 
 const COLORS = ['#4F46E5', '#DC2626', '#059669', '#F59E0B', '#1E1B4B'];
+const SELECTION_COLOR = '#4F46E5';
 const MIN_SHAPE_SIZE = 6;
 const MIN_CROP_SIZE = 20;
 const HANDLE_DISPLAY_SIZE = 10;
@@ -493,12 +495,19 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       ctx.rect(frame.x, frame.y, frame.width, frame.height);
       ctx.fill('evenodd');
       ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 2 * scale;
+      ctx.lineWidth = 3 * scale;
+      ctx.strokeRect(frame.x, frame.y, frame.width, frame.height);
+      ctx.strokeStyle = SELECTION_COLOR;
+      ctx.lineWidth = 1.5 * scale;
       ctx.strokeRect(frame.x, frame.y, frame.width, frame.height);
       const hs = HANDLE_DISPLAY_SIZE * scale;
-      ctx.fillStyle = '#FFFFFF';
       for (const [, hx, hy] of handleCorners(frame)) {
-        ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs);
+        const cx = clamp(hx, frame.x + hs / 2, frame.x + frame.width - hs / 2);
+        const cy = clamp(hy, frame.y + hs / 2, frame.y + frame.height - hs / 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(cx - hs / 2 - scale, cy - hs / 2 - scale, hs + scale * 2, hs + scale * 2);
+        ctx.fillStyle = SELECTION_COLOR;
+        ctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs);
       }
       ctx.restore();
     }
@@ -507,11 +516,11 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     if (sel) {
       const b = selectionBounds(sel, scale);
       ctx.save();
-      ctx.strokeStyle = '#4F46E5';
+      ctx.strokeStyle = SELECTION_COLOR;
       ctx.lineWidth = 1.5 * scale;
       ctx.strokeRect(b.x, b.y, b.width, b.height);
       const handleSize = HANDLE_DISPLAY_SIZE * scale;
-      ctx.fillStyle = '#4F46E5';
+      ctx.fillStyle = SELECTION_COLOR;
       for (const [, hx, hy] of handleCorners(b)) {
         ctx.fillRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
       }
@@ -730,7 +739,10 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
         if (Math.hypot(shape.x2 - shape.x1, shape.y2 - shape.y1) < MIN_SHAPE_SIZE) return;
       }
       pushHistory();
-      setAnnotations((prev) => [...prev, { ...shape, id: crypto.randomUUID() }]);
+      const id = crypto.randomUUID();
+      setAnnotations((prev) => [...prev, { ...shape, id }]);
+      setActiveTool('select');
+      setSelectedId(id);
     }
   };
 
@@ -788,6 +800,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     if (textEditor && textValue.trim()) {
       const id = crypto.randomUUID();
       pushHistory();
+      setActiveTool('select');
       setSelectedId(id);
       setAnnotations((prev) => [
         ...prev,
