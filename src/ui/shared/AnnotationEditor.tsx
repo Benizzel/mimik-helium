@@ -983,7 +983,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 ref={canvasRef}
                 width={screenshot.width}
                 height={screenshot.height}
-                className="block max-w-full max-h-full rounded-lg shadow-2xl touch-none"
+                className="block max-w-full max-h-[calc(100vh-98px)] rounded-lg shadow-2xl touch-none"
                 style={{ cursor: cursorFor(mode, activeTool, hovering, grabbing) }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
