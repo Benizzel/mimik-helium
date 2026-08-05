@@ -23,6 +23,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { i18n } from '#imports';
 import { updateScreenshotEdits } from '@/core/guides/service';
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
+import { drawAnnotation } from '@/core/screenshot/draw';
 import {
   annotationBounds,
   cropTo,
@@ -146,69 +147,6 @@ function hitHandle(b: ScreenshotBounds, x: number, y: number, radius: number): H
     if (Math.abs(x - hx) <= radius && Math.abs(y - hy) <= radius) return handle;
   }
   return null;
-}
-
-function drawShape(ctx: CanvasRenderingContext2D, a: Annotation, alpha: number) {
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  switch (a.type) {
-    case 'box':
-      ctx.strokeStyle = a.color;
-      ctx.lineWidth = 3;
-      ctx.strokeRect(a.x, a.y, a.w, a.h);
-      break;
-    case 'target':
-      ctx.strokeStyle = a.color;
-      ctx.lineWidth = 3.5;
-      if (a.border === 'dashed') ctx.setLineDash([8, 5]);
-      ctx.beginPath();
-      ctx.roundRect(a.x, a.y, a.w, a.h, 12);
-      ctx.stroke();
-      break;
-    case 'arrow': {
-      const head = 14;
-      const angle = Math.atan2(a.y2 - a.y1, a.x2 - a.x1);
-      ctx.strokeStyle = a.color;
-      ctx.fillStyle = a.color;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(a.x1, a.y1);
-      ctx.lineTo(a.x2, a.y2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(a.x2, a.y2);
-      ctx.lineTo(a.x2 - head * Math.cos(angle - Math.PI / 6), a.y2 - head * Math.sin(angle - Math.PI / 6));
-      ctx.lineTo(a.x2 - head * Math.cos(angle + Math.PI / 6), a.y2 - head * Math.sin(angle + Math.PI / 6));
-      ctx.closePath();
-      ctx.fill();
-      break;
-    }
-    case 'text':
-      ctx.fillStyle = a.color;
-      ctx.font = `600 ${a.size}px Poppins, sans-serif`;
-      ctx.fillText(a.text, a.x, a.y);
-      break;
-    case 'freehand':
-      ctx.strokeStyle = a.color;
-      ctx.lineWidth = 4;
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(a.points[0], a.points[1]);
-      for (let i = 2; i < a.points.length; i += 2) ctx.lineTo(a.points[i], a.points[i + 1]);
-      ctx.stroke();
-      break;
-    case 'redact':
-      if (a.style === 'solid') {
-        ctx.fillStyle = '#1E1B4B';
-        ctx.fillRect(a.x, a.y, a.w, a.h);
-      } else {
-        ctx.filter = 'blur(12px)';
-        ctx.drawImage(ctx.canvas, a.x, a.y, a.w, a.h, a.x, a.y, a.w, a.h);
-      }
-      break;
-  }
-  ctx.restore();
 }
 
 export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }: AnnotationEditorProps) {
@@ -350,8 +288,13 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-    for (const a of annotations) drawShape(ctx, a, 1);
-    if (draft) drawShape(ctx, draft, 0.7);
+    for (const a of annotations) drawAnnotation(ctx, a, 0, 0);
+    if (draft) {
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      drawAnnotation(ctx, draft, 0, 0);
+      ctx.restore();
+    }
 
     const scale = getScale();
 
@@ -1014,66 +957,6 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                   ))}
                 </select>
               </label>
-            )}
-            {activeTool === 'text' && (
-              <>
-                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-                  {i18n.t('annotationEditor.font')}
-                  <select
-                    value={fontFamily}
-                    onChange={(e) => setTextProp({ fontFamily: e.target.value as FontFamily })}
-                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
-                  >
-                    {FONT_FAMILY_ORDER.map((f) => (
-                      <option key={f} value={f}>
-                        {f}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-                  {i18n.t('annotationEditor.fontStyle')}
-                  <select
-                    value={fontStyle}
-                    onChange={(e) => setTextProp({ fontStyle: e.target.value as FontStyleName })}
-                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
-                  >
-                    {FONT_STYLE_ORDER.map((f) => (
-                      <option key={f} value={f}>
-                        {i18n.t(`annotationEditor.style_${f}`)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-                  {i18n.t('annotationEditor.fontSize')}
-                  <select
-                    value={fontSize}
-                    onChange={(e) => setTextProp({ fontSize: e.target.value as FontSizeName })}
-                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
-                  >
-                    {FONT_SIZE_ORDER.map((f) => (
-                      <option key={f} value={f}>
-                        {i18n.t(`annotationEditor.size_${f}`)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-                  {i18n.t('annotationEditor.lineHeight')}
-                  <select
-                    value={lineHeight}
-                    onChange={(e) => setTextProp({ lineHeight: e.target.value as LineHeightName })}
-                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
-                  >
-                    {LINE_HEIGHT_ORDER.map((f) => (
-                      <option key={f} value={f}>
-                        {i18n.t(`annotationEditor.height_${f}`)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </>
             )}
           </div>
         )}
