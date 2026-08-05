@@ -182,6 +182,7 @@ annotationEditor:
   toolArrow: Seta
   toolText: Texto
   toolSelect: "Selecionar"
+  addTarget: "Adicionar alvo de clique"
   toolRedact: Ocultar
   toolCrop: Recortar
   colorLabel: Cor

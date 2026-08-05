@@ -182,6 +182,7 @@ annotationEditor:
   toolArrow: Arrow
   toolText: Text
   toolSelect: "Select"
+  addTarget: "Add click target"
   toolRedact: Redact
   toolCrop: Crop
   colorLabel: Colour

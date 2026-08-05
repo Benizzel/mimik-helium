@@ -7,6 +7,7 @@ import {
   EyeOff,
   Minus,
   MousePointer2,
+  MousePointerClick,
   MoveVertical,
   Redo2,
   RotateCcw,
@@ -44,6 +45,7 @@ import {
   ARROW_ENDS,
   DEFAULT_FONT_SIZE,
   DEFAULT_LINE_HEIGHT,
+  DEFAULT_TARGET_COLOR,
   FONT_FAMILIES,
   FONT_FAMILY_ORDER,
   LINE_WIDTH_ORDER,
@@ -53,6 +55,7 @@ import {
   MIN_FONT_SIZE,
   MIN_LINE_HEIGHT,
 } from '@/core/screenshot/types';
+import { localStorage } from '@/lib/browser-api';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -320,6 +323,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const [hovering, setHovering] = useState(false);
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
   const [pulse, setPulse] = useState(0);
+  const [defaultTargetColor, setDefaultTargetColor] = useState(DEFAULT_TARGET_COLOR);
   const [grabbing, setGrabbing] = useState(false);
 
   const [fill] = useState('transparent');
@@ -359,6 +363,28 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const mode = modeForTool(activeTool);
   const selected = annotations.find((a) => a.id === selectedId);
   const selectedTarget = selected?.type === 'target' ? selected : null;
+  const hasTarget = annotations.some((a) => a.id === TARGET_ID);
+
+  const addTarget = () => {
+    pushHistory();
+    const w = Math.min(screenshot.width * 0.25, 260);
+    const h = Math.min(screenshot.height * 0.1, 90);
+    setAnnotations((prev) => [
+      ...prev,
+      {
+        id: TARGET_ID,
+        type: 'target',
+        x: (screenshot.width - w) / 2,
+        y: (screenshot.height - h) / 2,
+        w,
+        h,
+        color: defaultTargetColor,
+        border: 'dashed',
+      },
+    ]);
+    setActiveTool('select');
+    setSelectedId(TARGET_ID);
+  };
 
   const patchSelected = (patch: Record<string, unknown>) => {
     if (!selectedId || selectedId === TARGET_ID) return;
@@ -434,6 +460,12 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     const b = annotationBounds(sel);
     setAnchor({ x: b.x + b.width / 2, y: b.y + b.height });
   }, [selectedId]);
+
+  useEffect(() => {
+    localStorage.get(['targetColor']).then((result) => {
+      if (result.targetColor) setDefaultTargetColor(result.targetColor as string);
+    });
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -897,6 +929,20 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 </button>
               </Tip>
             ))}
+            {!hasTarget && (
+              <>
+                <span className="w-px h-5 bg-border mx-1.5" />
+                <Tip label={i18n.t('annotationEditor.addTarget')}>
+                  <button
+                    type="button"
+                    onClick={addTarget}
+                    className="flex items-center justify-center w-9 h-8 rounded-lg text-foreground/75 hover:bg-card hover:text-foreground"
+                  >
+                    <MousePointerClick size={16} />
+                  </button>
+                </Tip>
+              </>
+            )}
           </div>
 
           <div className="flex-1 flex items-center justify-end gap-1.5">

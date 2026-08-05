@@ -94,10 +94,14 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
     [guideId, loadGuide],
   );
 
-  const handleOpenEditor = useCallback((stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => {
-    setEditingStepId(stepId);
-    setEditingTool(tool);
-  }, []);
+  const handleOpenEditor = useCallback(
+    async (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => {
+      await loadGuide();
+      setEditingStepId(stepId);
+      setEditingTool(tool);
+    },
+    [loadGuide],
+  );
 
   const handleEditorDone = useCallback(
     (edits: ScreenshotEdits) => {

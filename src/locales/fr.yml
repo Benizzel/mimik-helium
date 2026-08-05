@@ -182,6 +182,7 @@ annotationEditor:
   toolArrow: "Flèche"
   toolText: Texte
   toolSelect: "Sélectionner"
+  addTarget: "Ajouter la cible de clic"
   toolRedact: Masquer
   toolCrop: Recadrer
   colorLabel: Couleur
