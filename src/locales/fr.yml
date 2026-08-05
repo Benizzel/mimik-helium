@@ -46,6 +46,7 @@ guideme:
   live: En direct
   roadblock: "Nous avons rencontré un obstacle. Agissez à l'écran pour continuer."
   manualStep: "Cette étape a été modifiée, elle ne peut donc pas être détectée automatiquement. Utilisez Suivant une fois faite."
+  stepOf: "Étape $1 sur $2"
   noDescription: Aucune description
   prev: "Préc."
   next: Suiv.
@@ -295,6 +296,9 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  guideLabel: "GUIDE"
+  stepsRange: "Étapes $1–$2 sur $3"
+  stepOf: "Étape $1 sur $2"
   madeWith: "Made with Mimik"
   created: "Créé"
   source: Source

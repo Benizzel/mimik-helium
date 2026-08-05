@@ -46,6 +46,7 @@ guideme:
   live: Live
   roadblock: "We hit a roadblock. Try taking action on the screen to move forward."
   manualStep: "This step was edited, so it can't be detected automatically. Use Next once you've done it."
+  stepOf: "Step $1 of $2"
   noDescription: No description
   prev: Prev
   next: Next
@@ -295,6 +296,9 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  guideLabel: "GUIDE"
+  stepsRange: "Steps $1–$2 of $3"
+  stepOf: "Step $1 of $2"
   madeWith: "Made with Mimik"
   created: Created
   source: Source

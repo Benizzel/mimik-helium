@@ -46,6 +46,7 @@ guideme:
   manualStep: "Dieser Schritt wurde bearbeitet und kann nicht automatisch erkannt werden. Nutze Weiter, wenn du fertig bist."
   roadblock: "Wir kommen nicht weiter. Führe die Aktion auf dem Bildschirm aus, um fortzufahren."
   live: Live
+  stepOf: "Schritt $1 von $2"
   noDescription: Keine Beschreibung
   prev: Zurück
   next: Weiter
@@ -227,6 +228,9 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  guideLabel: "ANLEITUNG"
+  stepsRange: "Schritte $1–$2 von $3"
+  stepOf: "Schritt $1 von $2"
   madeWith: "Made with Mimik"
   created: Erstellt
   source: Quelle

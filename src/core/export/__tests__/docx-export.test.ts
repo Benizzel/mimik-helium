@@ -62,7 +62,8 @@ describe('exportGuideAsDOCX', () => {
 
     const xml = await readDocumentXml(blob);
     expect(xml).toContain('My Guide');
-    expect(xml).toContain('export.stepsCount[1]');
+    expect(xml).toContain('EXPORT.STEPS');
+    expect(xml).toContain('>01</w:t>');
     expect(xml).toContain('EXPORT.CREATED');
     expect(xml).toContain('EXPORT.SOURCE');
     expect(xml).toContain('example.com');
@@ -75,7 +76,8 @@ describe('exportGuideAsDOCX', () => {
     const xml = await readDocumentXml(blob);
 
     expect(xml).toContain('Test Guide');
-    expect(xml).toContain('export.stepsCount[0]');
+    expect(xml).toContain('EXPORT.STEPS');
+    expect(xml).toContain('>00</w:t>');
     expect(xml).not.toContain('Click the button');
   });
 
