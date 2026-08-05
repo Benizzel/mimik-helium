@@ -1,6 +1,7 @@
 import { Download, FileCode, FileDown, FileText, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
+import { downloadBlob, downloadText, safeFilename } from '@/core/export/download';
 import { exportGuideAsHTML } from '@/core/export/html-export';
 import { exportGuideAsMarkdown } from '@/core/export/markdown-export';
 import { exportGuideAsPDF } from '@/core/export/pdf-export';
@@ -13,20 +14,6 @@ interface ExportMenuProps {
   guide: Guide;
   steps: Step[];
   screenshots: Map<string, Screenshot>;
-}
-
-function downloadFile(content: string, filename: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType });
-  downloadBlob(blob, filename);
-}
-
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 type ExportType = 'docx' | 'html' | 'markdown' | 'pdf';
@@ -60,17 +47,15 @@ export default function ExportMenu({
 
       if (type === 'html') {
         const html = await exportGuideAsHTML(guide, steps, screenshots);
-        downloadFile(html, `${guide.title}.html`, 'text/html');
+        downloadText(html, safeFilename(guide.title, 'html'), 'text/html');
       } else if (type === 'docx') {
         const { exportGuideAsDOCX } = await import('@/core/export/docx-export');
-        const blob = await exportGuideAsDOCX(guide, steps, screenshots);
-        downloadBlob(blob, `${guide.title}.docx`);
+        downloadBlob(await exportGuideAsDOCX(guide, steps, screenshots), safeFilename(guide.title, 'docx'));
       } else if (type === 'markdown') {
         const md = await exportGuideAsMarkdown(guide, steps, screenshots);
-        downloadFile(md, `${guide.title}.md`, 'text/markdown');
+        downloadText(md, safeFilename(guide.title, 'md'), 'text/markdown');
       } else {
-        const blob = await exportGuideAsPDF(guide, steps, screenshots);
-        downloadBlob(blob, `${guide.title}.pdf`);
+        downloadBlob(await exportGuideAsPDF(guide, steps, screenshots), safeFilename(guide.title, 'pdf'));
       }
     } finally {
       setExporting(false);
