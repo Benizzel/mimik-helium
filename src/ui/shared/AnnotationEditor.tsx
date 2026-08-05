@@ -8,7 +8,6 @@ import {
   EyeOff,
   Minus,
   MoveVertical,
-  PaintBucket,
   PenTool,
   Redo2,
   RotateCcw,
@@ -23,6 +22,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { i18n } from '#imports';
 import { updateScreenshotEdits } from '@/core/guides/service';
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
+import { shadeOf } from '@/core/screenshot/color';
 import { drawAnnotation, drawRoundedRect, TARGET_RADIUS, TARGET_STROKE } from '@/core/screenshot/draw';
 import {
   annotationBounds,
@@ -53,7 +53,6 @@ import {
   MAX_LINE_HEIGHT,
   MIN_FONT_SIZE,
   MIN_LINE_HEIGHT,
-  SHAPE_COLORS,
 } from '@/core/screenshot/types';
 import {
   DropdownMenu,
@@ -61,9 +60,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/ui/components/ui/dropdown-menu';
-import { Input } from '@/ui/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/components/ui/tooltip';
+import ColorPicker, { swatchStyle } from './ColorPicker';
 
 type EditorMode = 'crop' | 'annotate' | 'redact';
 type EditorTool = 'crop' | 'box' | 'ellipse' | 'arrow' | 'line' | 'freehand' | 'text' | 'redact' | 'eraser';
@@ -148,44 +147,53 @@ function Stepper({ title, value, min, max, step, decimals = 0, width, prefix, su
   );
 }
 
-const NO_FILL = 'linear-gradient(45deg, #FFFFFF 44%, #EF4444 44%, #EF4444 56%, #FFFFFF 56%)';
 const TOOLBAR_TRIGGER =
-  'h-6 w-auto gap-1 rounded-md border-0 bg-primary-foreground/10 px-1.5 py-0 text-[10px] text-primary-foreground hover:bg-primary-foreground/20 focus:ring-0';
+  'flex items-center gap-1 h-6 rounded-md bg-primary-foreground/10 px-1.5 text-primary-foreground hover:bg-primary-foreground/20';
 
-function swatchStyle(color: string | undefined) {
-  return !color || color === 'transparent' ? { backgroundImage: NO_FILL } : { backgroundColor: color };
+function Tip({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
 }
 
-interface PalettePopoverProps {
+interface ColorPopoverProps {
+  label: string;
   value: string;
   allowNone?: boolean;
   onChange: (color: string) => void;
   children: ReactNode;
 }
 
-function PalettePopover({ value, allowNone, onChange, children }: PalettePopoverProps) {
-  const colors = allowNone ? SHAPE_COLORS : SHAPE_COLORS.filter((c) => c !== 'transparent');
+function ColorPopover({ label, value, allowNone, onChange, children }: ColorPopoverProps) {
   return (
     <Popover>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent align="center" className="w-auto p-2.5">
-        <div className="grid grid-cols-8 gap-1.5">
-          {colors.map((c) => (
-            <button
-              key={c}
-              type="button"
-              aria-label={c}
-              onClick={() => onChange(c)}
-              className={`w-6 h-6 rounded-full border border-border transition-transform ${
-                value === c ? 'ring-2 ring-accent ring-offset-1' : 'hover:scale-110'
-              }`}
-              style={swatchStyle(c)}
-            />
-          ))}
-        </div>
-        <Input value={value} onChange={(e) => onChange(e.target.value)} className="mt-2 h-7 w-full text-[11px]" />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>{children}</PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
+      <PopoverContent align="center" className="w-56 p-2.5">
+        <ColorPicker value={value} allowNone={allowNone} onChange={onChange} />
       </PopoverContent>
     </Popover>
+  );
+}
+
+function MenuPopover({ label, children, items }: { label: string; children: ReactNode; items: ReactNode }) {
+  return (
+    <DropdownMenu>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
+      <DropdownMenuContent align="center">{items}</DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -216,6 +224,15 @@ function ArrowEndGlyph({ end }: { end: ArrowEnd }) {
     </svg>
   );
 }
+
+const TARGET_SWEEP: [number, number, number][] = [
+  [0, 0.35, 0.9],
+  [0.2, 1, 0.75],
+  [0.4, 0.45, 1],
+  [0.6, 1, 0.6],
+  [0.8, 0.4, 1],
+  [1, 0.35, 0.9],
+];
 
 const SELECTION_GAP = 6;
 const DRAFT_ID = 'draft';
@@ -437,15 +454,18 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
     for (const a of annotations) {
       if (a.type === 'target' && a.id !== selectedId) {
-        const t = 0.5 - 0.5 * Math.cos(pulse * Math.PI * 2);
-        const spread = 3 + 16 * t;
+        const gradient = ctx.createConicGradient(pulse * Math.PI * 2, a.x + a.w / 2, a.y + a.h / 2);
+        for (const [stop, v, s] of TARGET_SWEEP) gradient.addColorStop(stop, shadeOf(a.color, v, s));
         ctx.save();
-        ctx.globalAlpha = 0.4 * (1 - t);
-        ctx.strokeStyle = a.color;
-        ctx.lineWidth = TARGET_STROKE * 2;
-        drawRoundedRect(ctx, a.x - spread, a.y - spread, a.w + spread * 2, a.h + spread * 2, TARGET_RADIUS + spread);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = TARGET_STROKE + 1;
+        ctx.shadowColor = a.color;
+        ctx.shadowBlur = 14;
+        if (a.border === 'dashed') ctx.setLineDash([8, 5]);
+        drawRoundedRect(ctx, a.x, a.y, a.w, a.h, TARGET_RADIUS);
         ctx.stroke();
         ctx.restore();
+        continue;
       }
       drawAnnotation(ctx, a, 0, 0);
     }
@@ -818,339 +838,350 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
-      <div className="shrink-0 bg-card border-b border-border px-3 h-[50px] flex items-center gap-3">
-        <div className="flex-1 flex items-center gap-1">
-          <button
-            type="button"
-            onClick={undo}
-            disabled={past.length === 0}
-            title={i18n.t('annotationEditor.undo')}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground/75 hover:bg-secondary hover:text-foreground disabled:opacity-25"
-          >
-            <Undo2 size={15} />
-          </button>
-          <button
-            type="button"
-            onClick={redo}
-            disabled={future.length === 0}
-            title={i18n.t('annotationEditor.redo')}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground/75 hover:bg-secondary hover:text-foreground disabled:opacity-25"
-          >
-            <Redo2 size={15} />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-0.5 rounded-xl bg-secondary p-1">
-          {TOOLS.map(({ id, icon: Icon, labelKey }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => {
-                setActiveTool(id);
-                setSelectedId(null);
-              }}
-              title={i18n.t(labelKey)}
-              aria-pressed={activeTool === id}
-              className={`flex items-center justify-center w-9 h-8 rounded-lg transition-colors ${
-                activeTool === id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground/75 hover:bg-card hover:text-foreground'
-              }`}
-            >
-              <Icon size={16} />
-            </button>
-          ))}
-          <span className="w-px h-5 bg-border mx-1.5" />
-          <PalettePopover value={color} onChange={handleColorSelect}>
-            <button
-              type="button"
-              title={i18n.t('annotationEditor.lineColor')}
-              className="flex items-center gap-1 h-8 pl-1 pr-1.5 rounded-lg bg-card text-foreground/70 hover:text-foreground"
-            >
-              <span className="w-5 h-5 rounded-full border border-foreground/20" style={{ backgroundColor: color }} />
-              <ChevronDown size={11} />
-            </button>
-          </PalettePopover>
-        </div>
-
-        <div className="flex-1 flex items-center justify-end gap-1.5">
-          {mode === 'crop' && viewport && (
-            <button
-              type="button"
-              onClick={() => {
-                setViewport(undefined);
-                setCropDraft(null);
-              }}
-              className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-[12px] font-semibold text-foreground/75 hover:bg-secondary"
-            >
-              <RotateCcw size={13} />
-              {i18n.t('annotationEditor.resetCrop')}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-3 h-8 text-[12px] font-semibold text-foreground/75 rounded-lg hover:bg-secondary"
-          >
-            {i18n.t('common.cancel')}
-          </button>
-          <button
-            type="button"
-            onClick={handleDone}
-            disabled={saving}
-            className="px-4 h-8 text-[12px] font-bold text-white bg-accent rounded-lg hover:bg-accent/90 disabled:opacity-50"
-          >
-            {i18n.t('annotationEditor.done')}
-          </button>
-        </div>
-      </div>
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex items-center justify-center overflow-auto p-6">
-          <div className="relative inline-block">
-            <canvas
-              ref={canvasRef}
-              width={screenshot.width}
-              height={screenshot.height}
-              className="block max-w-full max-h-[calc(100vh-190px)] rounded-lg shadow-2xl touch-none"
-              style={{ cursor: cursorFor(mode, activeTool, hovering, grabbing) }}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerCancel}
-            />
-            {textEditor && (
-              <input
-                ref={textInputRef}
-                value={textValue}
-                onChange={(e) => setTextValue(e.target.value)}
-                onBlur={commitText}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    commitText();
-                  } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    setTextEditor(null);
-                    setTextValue('');
-                  }
-                }}
-                placeholder={i18n.t('annotationEditor.textPlaceholder')}
-                className="absolute z-10 rounded-[2px] border-2 border-accent bg-transparent px-1 outline-none leading-tight"
-                style={{
-                  left: textEditor.left,
-                  top: textEditor.top - fontSize / getScale(),
-                  color,
-                  fontFamily: FONT_FAMILIES[fontFamily],
-                  fontSize: `${fontSize / getScale()}px`,
-                  fontWeight: bold ? 700 : 500,
-                  fontStyle: italic ? 'italic' : 'normal',
-                  lineHeight,
-                  width: `${Math.max(6, textValue.length + 4)}ch`,
-                }}
-              />
-            )}
-            {selected && anchor && (
-              <div
-                className="absolute z-20 -translate-x-1/2 flex flex-col items-center gap-1.5"
-                style={{
-                  left: `${((anchor?.x ?? 0) / screenshot.width) * 100}%`,
-                  top: `${((anchor?.y ?? 0) / screenshot.height) * 100}%`,
-                }}
+    <TooltipProvider>
+      <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
+        <div className="shrink-0 bg-card border-b border-border px-3 h-[50px] flex items-center gap-3">
+          <div className="flex-1 flex items-center gap-1">
+            <Tip label={i18n.t('annotationEditor.undo')}>
+              <button
+                type="button"
+                onClick={undo}
+                disabled={past.length === 0}
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground/75 hover:bg-secondary hover:text-foreground disabled:opacity-25"
               >
-                <div className="mt-2 flex items-center gap-1 rounded-xl bg-primary px-2 py-1.5 shadow-xl">
-                  {selected.type !== 'redact' && (
-                    <PalettePopover value={selected.color} onChange={handleColorSelect}>
-                      <button
-                        type="button"
-                        title={i18n.t('annotationEditor.lineColor')}
-                        className="w-6 h-6 rounded-full border-2 border-primary-foreground/25"
-                        style={{ backgroundColor: selected.color }}
-                      />
-                    </PalettePopover>
-                  )}
-                  {selectedTarget ? (
-                    <button
-                      type="button"
-                      title={i18n.t('annotationEditor.targetBorder')}
-                      onClick={() => updateTarget({ border: selectedTarget.border === 'dashed' ? 'solid' : 'dashed' })}
-                      className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
-                    >
-                      {selectedTarget.border === 'dashed' ? <SquareDashed size={14} /> : <Square size={14} />}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      title={i18n.t('annotationEditor.duplicate')}
-                      onClick={() => {
-                        pushHistory();
-                        const copy = { ...moveAnnotation(selected, 24, 24), id: crypto.randomUUID() };
-                        setAnnotations((prev) => [...prev, copy]);
-                        setSelectedId(copy.id);
-                      }}
-                      className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
-                    >
-                      <CopyPlus size={14} />
-                    </button>
-                  )}
-                  {(selected.type === 'box' || selected.type === 'ellipse') && (
-                    <PalettePopover
-                      allowNone
-                      value={selected.fill ?? 'transparent'}
-                      onChange={(c) => setProp('fill', c)}
-                    >
-                      <button
-                        type="button"
-                        title={i18n.t('annotationEditor.fillColor')}
-                        className="w-6 h-6 flex flex-col items-center justify-center gap-px rounded-md text-primary-foreground hover:bg-primary-foreground/15"
-                      >
-                        <PaintBucket size={13} />
-                        <span className="w-3.5 h-[3px] rounded-[1px]" style={swatchStyle(selected.fill)} />
-                      </button>
-                    </PalettePopover>
-                  )}
-                  {selected.type !== 'text' && selected.type !== 'redact' && selected.type !== 'target' && (
-                    <Select
-                      value={selected.lineWidth ?? 'ms'}
-                      onValueChange={(v) => setProp('lineWidth', v as LineWidth)}
-                    >
-                      <SelectTrigger title={i18n.t('annotationEditor.lineWidth')} className={TOOLBAR_TRIGGER}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {LINE_WIDTH_ORDER.map((w) => (
-                          <SelectItem key={w} value={w}>
-                            <span className="flex items-center gap-2">
-                              <span
-                                className={`w-9 rounded-full ${LINE_WIDTHS[w] ? 'bg-foreground' : 'bg-foreground/20'}`}
-                                style={{ height: LINE_WIDTHS[w] || 2 }}
-                              />
-                              <span className="text-[11px] text-muted-foreground">
-                                {i18n.t(`annotationEditor.width_${w}`)}
-                              </span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {selected.type === 'box' && (
-                    <Stepper
-                      title={i18n.t('annotationEditor.cornerRadius')}
-                      value={Math.round(selected.radius ?? 0)}
-                      min={0}
-                      max={60}
-                      step={4}
-                      width="w-6"
-                      onChange={(v) => setProp('radius', v)}
-                    />
-                  )}
-                  {selected.type === 'arrow' && (
-                    <Select value={selected.end ?? 'arrow-solid'} onValueChange={(v) => setProp('end', v as ArrowEnd)}>
-                      <SelectTrigger title={i18n.t('annotationEditor.arrowEnd')} className={TOOLBAR_TRIGGER}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ARROW_ENDS.map((end) => (
-                          <SelectItem key={end} value={end}>
-                            <span className="flex items-center gap-2">
-                              <ArrowEndGlyph end={end} />
-                              <span className="text-[11px] text-muted-foreground">
-                                {i18n.t(`annotationEditor.end_${end.replace('-', '_')}`)}
-                              </span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {selected.type === 'text' && (
-                    <>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            title={i18n.t('annotationEditor.font')}
-                            className="flex items-center gap-1.5 h-6 rounded-md bg-primary-foreground/10 px-2 text-[11px] text-primary-foreground hover:bg-primary-foreground/20"
-                            style={{ fontFamily: FONT_FAMILIES[selected.fontFamily ?? 'sans-serif'] }}
-                          >
-                            <span className="text-[13px] leading-none">Ag</span>
-                            <ChevronDown size={10} className="opacity-60" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="min-w-[150px]">
-                          {FONT_FAMILY_ORDER.map((f) => (
-                            <DropdownMenuItem
-                              key={f}
-                              onSelect={() => setTextProp({ fontFamily: f })}
-                              style={{ fontFamily: FONT_FAMILIES[f] }}
-                            >
-                              <span className="text-[15px]">Ag</span>
-                              <span className="text-[12px] text-muted-foreground">{f}</span>
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <div className="flex items-center gap-0.5 rounded-md bg-primary-foreground/10 p-0.5">
-                        <button
-                          type="button"
-                          title={i18n.t('annotationEditor.bold')}
-                          onClick={() => setTextProp({ bold: !selected.bold })}
-                          className={`w-5 h-5 rounded text-[12px] font-extrabold ${selected.bold ? 'bg-accent text-primary-foreground' : 'text-primary-foreground hover:bg-primary-foreground/15'}`}
-                        >
-                          B
-                        </button>
-                        <button
-                          type="button"
-                          title={i18n.t('annotationEditor.italic')}
-                          onClick={() => setTextProp({ italic: !selected.italic })}
-                          className={`w-5 h-5 rounded text-[12px] italic font-serif ${selected.italic ? 'bg-accent text-primary-foreground' : 'text-primary-foreground hover:bg-primary-foreground/15'}`}
-                        >
-                          I
-                        </button>
-                      </div>
-                      <Stepper
-                        title={i18n.t('annotationEditor.fontSize')}
-                        prefix={<span className="text-[9px] text-primary-foreground/60">A</span>}
-                        suffix={<span className="text-[13px] text-primary-foreground/60">A</span>}
-                        value={Math.round(selected.size)}
-                        min={MIN_FONT_SIZE}
-                        max={MAX_FONT_SIZE}
-                        step={2}
-                        width="w-7"
-                        onChange={(v) => setTextProp({ size: v })}
-                      />
-                      <Stepper
-                        title={i18n.t('annotationEditor.lineHeight')}
-                        prefix={<MoveVertical size={11} className="text-primary-foreground/60" />}
-                        value={selected.lineHeight ?? DEFAULT_LINE_HEIGHT}
-                        min={MIN_LINE_HEIGHT}
-                        max={MAX_LINE_HEIGHT}
-                        step={0.1}
-                        decimals={1}
-                        width="w-7"
-                        onChange={(v) => setTextProp({ lineHeight: v })}
-                      />
-                    </>
-                  )}
-                  <button
-                    type="button"
-                    title={i18n.t('common.delete')}
-                    onClick={() => {
-                      pushHistory();
-                      setAnnotations((prev) => prev.filter((a) => a.id !== selected.id));
-                      setSelectedId(null);
-                    }}
-                    className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-destructive/25"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
+                <Undo2 size={15} />
+              </button>
+            </Tip>
+            <Tip label={i18n.t('annotationEditor.redo')}>
+              <button
+                type="button"
+                onClick={redo}
+                disabled={future.length === 0}
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground/75 hover:bg-secondary hover:text-foreground disabled:opacity-25"
+              >
+                <Redo2 size={15} />
+              </button>
+            </Tip>
+          </div>
+
+          <div className="flex items-center gap-0.5 rounded-xl bg-secondary p-1">
+            {TOOLS.map(({ id, icon: Icon, labelKey }) => (
+              <Tip key={id} label={i18n.t(labelKey)}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTool(id);
+                    setSelectedId(null);
+                  }}
+                  aria-pressed={activeTool === id}
+                  className={`flex items-center justify-center w-9 h-8 rounded-lg transition-colors ${
+                    activeTool === id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-foreground/75 hover:bg-card hover:text-foreground'
+                  }`}
+                >
+                  <Icon size={16} />
+                </button>
+              </Tip>
+            ))}
+            <span className="w-px h-5 bg-border mx-1.5" />
+            <ColorPopover label={i18n.t('annotationEditor.lineColor')} value={color} onChange={handleColorSelect}>
+              <button
+                type="button"
+                className="flex items-center gap-1 h-8 pl-1 pr-1.5 rounded-lg bg-card text-foreground/70 hover:text-foreground"
+              >
+                <span className="w-5 h-5 rounded-full border border-foreground/20" style={{ backgroundColor: color }} />
+                <ChevronDown size={11} />
+              </button>
+            </ColorPopover>
+          </div>
+
+          <div className="flex-1 flex items-center justify-end gap-1.5">
+            {mode === 'crop' && viewport && (
+              <button
+                type="button"
+                onClick={() => {
+                  setViewport(undefined);
+                  setCropDraft(null);
+                }}
+                className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-[12px] font-semibold text-foreground/75 hover:bg-secondary"
+              >
+                <RotateCcw size={13} />
+                {i18n.t('annotationEditor.resetCrop')}
+              </button>
             )}
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-3 h-8 text-[12px] font-semibold text-foreground/75 rounded-lg hover:bg-secondary"
+            >
+              {i18n.t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={handleDone}
+              disabled={saving}
+              className="px-4 h-8 text-[12px] font-bold text-white bg-accent rounded-lg hover:bg-accent/90 disabled:opacity-50"
+            >
+              {i18n.t('annotationEditor.done')}
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex items-center justify-center overflow-auto p-6">
+            <div className="relative inline-block">
+              <canvas
+                ref={canvasRef}
+                width={screenshot.width}
+                height={screenshot.height}
+                className="block max-w-full max-h-[calc(100vh-190px)] rounded-lg shadow-2xl touch-none"
+                style={{ cursor: cursorFor(mode, activeTool, hovering, grabbing) }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerCancel}
+              />
+              {textEditor && (
+                <input
+                  ref={textInputRef}
+                  value={textValue}
+                  onChange={(e) => setTextValue(e.target.value)}
+                  onBlur={commitText}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      commitText();
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setTextEditor(null);
+                      setTextValue('');
+                    }
+                  }}
+                  placeholder={i18n.t('annotationEditor.textPlaceholder')}
+                  className="absolute z-10 rounded-[2px] border-2 border-accent bg-transparent px-1 outline-none leading-tight"
+                  style={{
+                    left: textEditor.left,
+                    top: textEditor.top - fontSize / getScale(),
+                    color,
+                    fontFamily: FONT_FAMILIES[fontFamily],
+                    fontSize: `${fontSize / getScale()}px`,
+                    fontWeight: bold ? 700 : 500,
+                    fontStyle: italic ? 'italic' : 'normal',
+                    lineHeight,
+                    width: `${Math.max(6, textValue.length + 4)}ch`,
+                  }}
+                />
+              )}
+              {selected && anchor && (
+                <div
+                  className="absolute z-20 -translate-x-1/2 flex flex-col items-center gap-1.5"
+                  style={{
+                    left: `${((anchor?.x ?? 0) / screenshot.width) * 100}%`,
+                    top: `${((anchor?.y ?? 0) / screenshot.height) * 100}%`,
+                  }}
+                >
+                  <div className="mt-2 flex items-center gap-1 rounded-xl bg-primary px-2 py-1.5 shadow-xl">
+                    {selected.type !== 'redact' && (
+                      <ColorPopover
+                        label={i18n.t('annotationEditor.lineColor')}
+                        value={selected.color}
+                        onChange={handleColorSelect}
+                      >
+                        <button
+                          type="button"
+                          className="w-6 h-6 rounded-full border-2 border-primary-foreground/25"
+                          style={{ backgroundColor: selected.color }}
+                        />
+                      </ColorPopover>
+                    )}
+                    {selectedTarget ? (
+                      <Tip label={i18n.t('annotationEditor.targetBorder')}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateTarget({ border: selectedTarget.border === 'dashed' ? 'solid' : 'dashed' })
+                          }
+                          className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
+                        >
+                          {selectedTarget.border === 'dashed' ? <SquareDashed size={14} /> : <Square size={14} />}
+                        </button>
+                      </Tip>
+                    ) : (
+                      <Tip label={i18n.t('annotationEditor.duplicate')}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            pushHistory();
+                            const copy = { ...moveAnnotation(selected, 24, 24), id: crypto.randomUUID() };
+                            setAnnotations((prev) => [...prev, copy]);
+                            setSelectedId(copy.id);
+                          }}
+                          className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
+                        >
+                          <CopyPlus size={14} />
+                        </button>
+                      </Tip>
+                    )}
+                    {(selected.type === 'box' || selected.type === 'ellipse') && (
+                      <ColorPopover
+                        label={i18n.t('annotationEditor.fillColor')}
+                        allowNone
+                        value={selected.fill ?? 'transparent'}
+                        onChange={(c) => setProp('fill', c)}
+                      >
+                        <button
+                          type="button"
+                          className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-primary-foreground/15"
+                        >
+                          <span
+                            className="w-4 h-4 rounded-[3px] border border-primary-foreground/35"
+                            style={swatchStyle(selected.fill)}
+                          />
+                        </button>
+                      </ColorPopover>
+                    )}
+                    {selected.type !== 'text' && selected.type !== 'redact' && selected.type !== 'target' && (
+                      <MenuPopover
+                        label={i18n.t('annotationEditor.lineWidth')}
+                        items={LINE_WIDTH_ORDER.map((w) => (
+                          <DropdownMenuItem key={w} onSelect={() => setProp('lineWidth', w)}>
+                            <span
+                              className={`w-16 rounded-full ${LINE_WIDTHS[w] ? 'bg-foreground' : 'bg-foreground/20'}`}
+                              style={{ height: LINE_WIDTHS[w] || 2 }}
+                            />
+                          </DropdownMenuItem>
+                        ))}
+                      >
+                        <button type="button" className={TOOLBAR_TRIGGER}>
+                          <span
+                            className={`w-7 rounded-full ${
+                              LINE_WIDTHS[selected.lineWidth ?? 'ms']
+                                ? 'bg-primary-foreground'
+                                : 'bg-primary-foreground/25'
+                            }`}
+                            style={{ height: LINE_WIDTHS[selected.lineWidth ?? 'ms'] || 2 }}
+                          />
+                          <ChevronDown size={10} className="opacity-60" />
+                        </button>
+                      </MenuPopover>
+                    )}
+                    {selected.type === 'box' && (
+                      <Stepper
+                        title={i18n.t('annotationEditor.cornerRadius')}
+                        value={Math.round(selected.radius ?? 0)}
+                        min={0}
+                        max={60}
+                        step={4}
+                        width="w-6"
+                        onChange={(v) => setProp('radius', v)}
+                      />
+                    )}
+                    {selected.type === 'arrow' && (
+                      <MenuPopover
+                        label={i18n.t('annotationEditor.arrowEnd')}
+                        items={ARROW_ENDS.map((end) => (
+                          <DropdownMenuItem key={end} onSelect={() => setProp('end', end)}>
+                            <ArrowEndGlyph end={end} />
+                          </DropdownMenuItem>
+                        ))}
+                      >
+                        <button type="button" className={TOOLBAR_TRIGGER}>
+                          <ArrowEndGlyph end={selected.end ?? 'arrow-solid'} />
+                          <ChevronDown size={10} className="opacity-60" />
+                        </button>
+                      </MenuPopover>
+                    )}
+                    {selected.type === 'text' && (
+                      <>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              title={i18n.t('annotationEditor.font')}
+                              className="flex items-center gap-1.5 h-6 rounded-md bg-primary-foreground/10 px-2 text-[11px] text-primary-foreground hover:bg-primary-foreground/20"
+                              style={{ fontFamily: FONT_FAMILIES[selected.fontFamily ?? 'sans-serif'] }}
+                            >
+                              <span className="text-[13px] leading-none">Ag</span>
+                              <ChevronDown size={10} className="opacity-60" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="min-w-[150px]">
+                            {FONT_FAMILY_ORDER.map((f) => (
+                              <DropdownMenuItem
+                                key={f}
+                                onSelect={() => setTextProp({ fontFamily: f })}
+                                style={{ fontFamily: FONT_FAMILIES[f] }}
+                              >
+                                <span className="text-[15px]">Ag</span>
+                                <span className="text-[12px] text-muted-foreground">{f}</span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <div className="flex items-center gap-0.5 rounded-md bg-primary-foreground/10 p-0.5">
+                          <Tip label={i18n.t('annotationEditor.bold')}>
+                            <button
+                              type="button"
+                              onClick={() => setTextProp({ bold: !selected.bold })}
+                              className={`w-5 h-5 rounded text-[12px] font-extrabold ${selected.bold ? 'bg-accent text-primary-foreground' : 'text-primary-foreground hover:bg-primary-foreground/15'}`}
+                            >
+                              B
+                            </button>
+                          </Tip>
+                          <Tip label={i18n.t('annotationEditor.italic')}>
+                            <button
+                              type="button"
+                              onClick={() => setTextProp({ italic: !selected.italic })}
+                              className={`w-5 h-5 rounded text-[12px] italic font-serif ${selected.italic ? 'bg-accent text-primary-foreground' : 'text-primary-foreground hover:bg-primary-foreground/15'}`}
+                            >
+                              I
+                            </button>
+                          </Tip>
+                        </div>
+                        <Stepper
+                          title={i18n.t('annotationEditor.fontSize')}
+                          prefix={<span className="text-[9px] text-primary-foreground/60">A</span>}
+                          suffix={<span className="text-[13px] text-primary-foreground/60">A</span>}
+                          value={Math.round(selected.size)}
+                          min={MIN_FONT_SIZE}
+                          max={MAX_FONT_SIZE}
+                          step={2}
+                          width="w-7"
+                          onChange={(v) => setTextProp({ size: v })}
+                        />
+                        <Stepper
+                          title={i18n.t('annotationEditor.lineHeight')}
+                          prefix={<MoveVertical size={11} className="text-primary-foreground/60" />}
+                          value={selected.lineHeight ?? DEFAULT_LINE_HEIGHT}
+                          min={MIN_LINE_HEIGHT}
+                          max={MAX_LINE_HEIGHT}
+                          step={0.1}
+                          decimals={1}
+                          width="w-7"
+                          onChange={(v) => setTextProp({ lineHeight: v })}
+                        />
+                      </>
+                    )}
+                    <Tip label={i18n.t('common.delete')}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          pushHistory();
+                          setAnnotations((prev) => prev.filter((a) => a.id !== selected.id));
+                          setSelectedId(null);
+                        }}
+                        className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-destructive/25"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </Tip>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
