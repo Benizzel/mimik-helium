@@ -85,6 +85,7 @@ settings:
   model: "Modèle"
   apiKey: "Clé API"
   aiLanguage: Langue des descriptions
+  targetColor: "Couleur de la cible de clic"
   targetColorHint: "Par défaut pour les nouvelles étapes"
   saveSettings: "Enregistrer"
   saved: "Enregistré"
@@ -189,7 +190,6 @@ annotationEditor:
   toolCrop: Recadrer
   colorLabel: Couleur
   textPlaceholder: "Écrivez quelque chose..."
-  targetColor: Couleur de la cible
   targetBorder: Style de bordure
   modeAnnotate: "Annoter"
   toolLine: "Ligne"

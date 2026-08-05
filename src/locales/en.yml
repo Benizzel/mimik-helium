@@ -85,6 +85,7 @@ settings:
   model: Model
   apiKey: API Key
   aiLanguage: Description Language
+  targetColor: "Click target colour"
   targetColorHint: "Default for newly captured steps"
   saveSettings: Save Settings
   saved: Saved
@@ -189,7 +190,6 @@ annotationEditor:
   toolCrop: Crop
   colorLabel: Colour
   textPlaceholder: Type something...
-  targetColor: Target color
   targetBorder: Border style
   modeAnnotate: "Annotate"
   toolLine: "Line"

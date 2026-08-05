@@ -85,6 +85,7 @@ settings:
   model: Modelo
   apiKey: Chave da API
   aiLanguage: "Idioma das descrições"
+  targetColor: "Cor do alvo de clique"
   targetColorHint: "Padrão para novas etapas"
   saveSettings: Salvar ajustes
   saved: Salvo
@@ -189,7 +190,6 @@ annotationEditor:
   toolCrop: Recortar
   colorLabel: Cor
   textPlaceholder: Digite algo...
-  targetColor: Cor do alvo
   targetBorder: Estilo da borda
   modeAnnotate: "Anotar"
   toolLine: "Linha"
