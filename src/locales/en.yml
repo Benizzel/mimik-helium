@@ -46,7 +46,6 @@ guideme:
   live: Live
   roadblock: "We hit a roadblock. Try taking action on the screen to move forward."
   manualStep: "This step was edited, so it can't be detected automatically. Use Next once you've done it."
-  stepOf: "Step $1 of $2"
   noDescription: No description
   prev: Prev
   next: Next
@@ -85,8 +84,20 @@ settings:
   model: Model
   apiKey: API Key
   aiLanguage: Description Language
-  targetColor: "Click target colour"
-  targetColorHint: "Default for newly captured steps"
+  targetColor: "Brand colour"
+  targetColorHint: "Click highlights and export accents"
+  branding: "Export Branding"
+  brandLogo: "Logo"
+  brandLogoHint: "Shown on the cover of every export. Transparent PNG recommended."
+  uploadLogo: "Upload logo"
+  replaceLogo: "Replace"
+  removeLogo: "Remove logo"
+  footerLine: "Footer line"
+  footerLinePlaceholder: "e.g. Confidential — internal use only"
+  footerPresetConfidential: "Confidential — internal use only"
+  footerPresetNoDistribute: "Do not distribute"
+  attribution: 'Show "Made with Mimik"'
+  attributionHint: "In the footer of every export"
   saveSettings: Save Settings
   saved: Saved
   smartBlur: Smart Blur
@@ -284,6 +295,7 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  madeWith: "Made with Mimik"
   created: Created
   source: Source
   step: Step

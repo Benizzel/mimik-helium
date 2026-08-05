@@ -46,7 +46,6 @@ guideme:
   manualStep: "Dieser Schritt wurde bearbeitet und kann nicht automatisch erkannt werden. Nutze Weiter, wenn du fertig bist."
   roadblock: "Wir kommen nicht weiter. Führe die Aktion auf dem Bildschirm aus, um fortzufahren."
   live: Live
-  stepOf: "Schritt $1 von $2"
   noDescription: Keine Beschreibung
   prev: Zurück
   next: Weiter
@@ -79,8 +78,20 @@ recording:
   minutesAgo: "vor $1 Min."
 
 settings:
-  targetColorHint: "Standard für neu aufgenommene Schritte"
-  targetColor: "Farbe des Klickziels"
+  targetColorHint: "Klick-Hervorhebungen und Export-Akzente"
+  branding: "Export-Branding"
+  brandLogo: "Logo"
+  brandLogoHint: "Erscheint auf dem Deckblatt jedes Exports. Transparentes PNG empfohlen."
+  uploadLogo: "Logo hochladen"
+  replaceLogo: "Ersetzen"
+  removeLogo: "Logo entfernen"
+  footerLine: "Fußzeile"
+  footerLinePlaceholder: "z. B. Vertraulich — nur intern"
+  footerPresetConfidential: "Vertraulich — nur intern"
+  footerPresetNoDistribute: "Nicht weitergeben"
+  attribution: '"Made with Mimik" anzeigen'
+  attributionHint: "In der Fußzeile jedes Exports"
+  targetColor: "Markenfarbe"
   title: Einstellungen
   aiDescriptions: KI-Beschreibungen
   provider: Anbieter
@@ -216,6 +227,7 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  madeWith: "Made with Mimik"
   created: Erstellt
   source: Quelle
   step: Schritt

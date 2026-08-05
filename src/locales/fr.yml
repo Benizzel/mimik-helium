@@ -46,7 +46,6 @@ guideme:
   live: En direct
   roadblock: "Nous avons rencontré un obstacle. Agissez à l'écran pour continuer."
   manualStep: "Cette étape a été modifiée, elle ne peut donc pas être détectée automatiquement. Utilisez Suivant une fois faite."
-  stepOf: "Étape $1 sur $2"
   noDescription: Aucune description
   prev: "Préc."
   next: Suiv.
@@ -85,8 +84,20 @@ settings:
   model: "Modèle"
   apiKey: "Clé API"
   aiLanguage: Langue des descriptions
-  targetColor: "Couleur de la cible de clic"
-  targetColorHint: "Par défaut pour les nouvelles étapes"
+  targetColor: "Couleur de marque"
+  targetColorHint: "Surbrillance des clics et accents des exports"
+  branding: "Image de marque des exports"
+  brandLogo: "Logo"
+  brandLogoHint: "Affiché sur la couverture de chaque export. PNG transparent recommandé."
+  uploadLogo: "Téléverser un logo"
+  replaceLogo: "Remplacer"
+  removeLogo: "Supprimer le logo"
+  footerLine: "Ligne de pied de page"
+  footerLinePlaceholder: "p. ex. Confidentiel — usage interne"
+  footerPresetConfidential: "Confidentiel — usage interne"
+  footerPresetNoDistribute: "Ne pas diffuser"
+  attribution: 'Afficher « Made with Mimik »'
+  attributionHint: "Dans le pied de chaque export"
   saveSettings: "Enregistrer"
   saved: "Enregistré"
   smartBlur: Flou intelligent
@@ -284,6 +295,7 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  madeWith: "Made with Mimik"
   created: "Créé"
   source: Source
   step: "Étape"
