@@ -22,6 +22,7 @@ interface StepCardProps {
   dragHandleProps?: DragHandleProps;
   onOpenEditor?: (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
   onCopy?: (stepId: string) => void;
+  placeholderRatio?: number;
 }
 
 export default function StepCard({
@@ -31,6 +32,7 @@ export default function StepCard({
   onDelete,
   dragHandleProps,
   onOpenEditor,
+  placeholderRatio,
 }: StepCardProps) {
   const [description, setDescription] = useState(step.description);
   const [dragOver, setDragOver] = useState(false);
@@ -103,7 +105,8 @@ export default function StepCard({
       ) : (
         <ImagePlaceholder
           label={i18n.t('editor.noScreenshot')}
-          className="w-full h-32 !rounded-none border-x-0 border-t-0"
+          ratio={placeholderRatio}
+          className="w-full !rounded-none border-x-0 border-t-0"
         />
       )}
 

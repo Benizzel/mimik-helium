@@ -9,6 +9,7 @@ import { getMostCommonDomain } from '@/lib/utils';
 import { Input } from '@/ui/components/ui/input';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
+import { siblingRatio } from '@/ui/shared/ImagePlaceholder';
 import ExportMenu from './ExportMenu';
 import StepCard from './StepCard';
 
@@ -183,6 +184,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
               <StepCard
                 step={step}
                 screenshot={data.screenshots.get(step.id)}
+                placeholderRatio={siblingRatio(data.screenshots)}
                 onDescriptionChange={handleDescriptionChange}
                 onDelete={handleDeleteStep}
                 onOpenEditor={(stepId, tool) => openInFullView(guideId, stepId, tool)}
