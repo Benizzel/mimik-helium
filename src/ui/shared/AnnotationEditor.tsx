@@ -229,6 +229,7 @@ const TARGET_MARCH = [26, 10];
 const DASH_PERIOD = 13;
 const MARCH_PERIOD = 36;
 const TARGET_MARCH_CYCLES = 4;
+const PULSE_PERIOD_MS = 5200;
 
 const TARGET_SWEEP: [number, number, number][] = [
   [0, 0.35, 0.9],
@@ -434,8 +435,8 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let raf = 0;
-    const loop = () => {
-      setPulse((p) => (p + 0.015) % 1);
+    const loop = (elapsed: number) => {
+      setPulse((elapsed % PULSE_PERIOD_MS) / PULSE_PERIOD_MS);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
