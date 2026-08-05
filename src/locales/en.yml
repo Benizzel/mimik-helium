@@ -240,6 +240,21 @@ annotationEditor:
   end_square_solid: "Square solid"
   done: Done
 
+exportPreview:
+  title: "Export preview"
+  cover: "Cover page"
+  coverHint: "A separate first sheet with the title and details"
+  screenshots: "Screenshots"
+  screenshotsHint: "Turn off for a compact text-only document"
+  stepUrls: "Step links"
+  stepUrlsHint: "Show the page address each step happened on"
+  imageScale: "Screenshot size"
+  scale_small: "Small"
+  scale_medium: "Medium"
+  scale_large: "Large"
+  download: "Export $1"
+  rendering: "Updating preview"
+  truncated: "Preview shows the first $1 of $2 steps"
 exportMenu:
   docx: DOCX
   html: HTML

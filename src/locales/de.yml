@@ -172,6 +172,21 @@ blurPanel:
   doneResume: "Fertig \xB7 Aufnahme fortsetzen"
   resetAll: Alles zurücksetzen
 
+exportPreview:
+  title: "Export-Vorschau"
+  cover: "Deckblatt"
+  coverHint: "Ein eigenes erstes Blatt mit Titel und Details"
+  screenshots: "Screenshots"
+  screenshotsHint: "Ausschalten für ein kompaktes Nur-Text-Dokument"
+  stepUrls: "Schritt-Links"
+  stepUrlsHint: "Zeigt die Adresse jedes Schritts"
+  imageScale: "Screenshot-Größe"
+  scale_small: "Klein"
+  scale_medium: "Mittel"
+  scale_large: "Groß"
+  download: "$1 exportieren"
+  rendering: "Vorschau wird aktualisiert"
+  truncated: "Vorschau zeigt die ersten $1 von $2 Schritten"
 exportMenu:
   docx: "DOCX"
   html: HTML

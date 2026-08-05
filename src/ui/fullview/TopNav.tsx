@@ -1,9 +1,10 @@
-import { ChevronRight, FileText, Search, Star, Trash2 } from 'lucide-react';
+import { ChevronRight, Download, FileText, Search, Star, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { i18n } from '#imports';
 import { useFullview } from '@/stores/fullview';
 import { Button } from '@/ui/components/ui/button';
 import MascotIcon from '@/ui/shared/MascotIcon';
-import ExportMenu from '@/ui/sidepanel/ExportMenu';
+import ExportPreviewModal from './ExportPreviewModal';
 import type { Route } from './router';
 import { navigate } from './router';
 
@@ -31,6 +32,7 @@ export default function TopNav({ route }: TopNavProps) {
     guideExportData: s.guideExportData,
     setSearchOpen: s.setSearchOpen,
   }));
+  const [exportOpen, setExportOpen] = useState(false);
 
   return (
     <header className="flex items-center gap-5 px-7 h-16 shrink-0 bg-gradient-to-br from-violet to-violet-light">
@@ -97,12 +99,19 @@ export default function TopNav({ route }: TopNavProps) {
           <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-foreground/10 text-violet-dark">⌘K</span>
         </Button>
         {route.page === 'guide' && exportData && (
-          <ExportMenu
-            guideId={exportData.guideId}
-            guide={exportData.guide}
-            steps={exportData.steps}
-            screenshots={exportData.screenshots}
-          />
+          <>
+            <Button size="sm" onClick={() => setExportOpen(true)}>
+              <Download size={14} />
+              {i18n.t('common.export')}
+            </Button>
+            <ExportPreviewModal
+              open={exportOpen}
+              onOpenChange={setExportOpen}
+              guide={exportData.guide}
+              steps={exportData.steps}
+              screenshots={exportData.screenshots}
+            />
+          </>
         )}
       </div>
     </header>

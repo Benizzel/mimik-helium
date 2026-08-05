@@ -240,6 +240,21 @@ annotationEditor:
   end_square_solid: "Carré plein"
   done: "Terminé"
 
+exportPreview:
+  title: "Aperçu de l’export"
+  cover: "Page de couverture"
+  coverHint: "Une première page avec le titre et les détails"
+  screenshots: "Captures"
+  screenshotsHint: "Désactivez pour un document compact, texte seul"
+  stepUrls: "Liens des étapes"
+  stepUrlsHint: "Affiche l’adresse de chaque étape"
+  imageScale: "Taille des captures"
+  scale_small: "Petite"
+  scale_medium: "Moyenne"
+  scale_large: "Grande"
+  download: "Exporter $1"
+  rendering: "Mise à jour de l’aperçu"
+  truncated: "L’aperçu montre les $1 premières étapes sur $2"
 exportMenu:
   docx: DOCX
   html: HTML

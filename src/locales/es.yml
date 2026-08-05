@@ -240,6 +240,21 @@ annotationEditor:
   end_square_solid: "Cuadrado sólido"
   done: Listo
 
+exportPreview:
+  title: "Vista previa de exportación"
+  cover: "Portada"
+  coverHint: "Una primera hoja con el título y los detalles"
+  screenshots: "Capturas"
+  screenshotsHint: "Desactiva para un documento compacto solo de texto"
+  stepUrls: "Enlaces de pasos"
+  stepUrlsHint: "Muestra la dirección de cada paso"
+  imageScale: "Tamaño de captura"
+  scale_small: "Pequeño"
+  scale_medium: "Medio"
+  scale_large: "Grande"
+  download: "Exportar $1"
+  rendering: "Actualizando vista previa"
+  truncated: "La vista previa muestra los primeros $1 de $2 pasos"
 exportMenu:
   docx: DOCX
   html: HTML
