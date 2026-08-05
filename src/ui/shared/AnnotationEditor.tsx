@@ -229,6 +229,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const [saving, setSaving] = useState(false);
   const [targetPicker, setTargetPicker] = useState(false);
   const [hovering, setHovering] = useState(false);
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
   const [grabbing, setGrabbing] = useState(false);
   const [mode, setMode] = useState<EditorMode>(initialModeFor(tool));
   const [fill, setFill] = useState('transparent');
@@ -332,6 +333,16 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [selectedId, pushHistory]);
+
+  useEffect(() => {
+    const sel = annotationsRef.current.find((a) => a.id === selectedId);
+    if (!sel) {
+      setAnchor(null);
+      return;
+    }
+    const b = annotationBounds(sel);
+    setAnchor({ x: b.x + b.width / 2, y: b.y + b.height });
+  }, [selectedId]);
 
   useEffect(() => {
     if (!textEditor) return;
@@ -586,6 +597,11 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
   const handlePointerUp = () => {
     setGrabbing(false);
+    const settled = annotations.find((a) => a.id === selectedId);
+    if (settled) {
+      const b = annotationBounds(settled);
+      setAnchor({ x: b.x + b.width / 2, y: b.y + b.height });
+    }
     const drag = dragRef.current;
     dragRef.current = null;
     if (!drag) return;
@@ -783,16 +799,26 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                   }
                 }}
                 placeholder={i18n.t('annotationEditor.textPlaceholder')}
-                className="absolute z-10 rounded-md border border-accent bg-card px-2 py-1 text-sm text-foreground outline-none"
-                style={{ left: textEditor.left, top: textEditor.top }}
+                className="absolute z-10 rounded-[2px] border-2 border-accent bg-transparent px-1 outline-none leading-tight"
+                style={{
+                  left: textEditor.left,
+                  top: textEditor.top - fontSize / getScale(),
+                  color,
+                  fontFamily: FONT_FAMILIES[fontFamily],
+                  fontSize: `${fontSize / getScale()}px`,
+                  fontWeight: bold ? 700 : 500,
+                  fontStyle: italic ? 'italic' : 'normal',
+                  lineHeight,
+                  width: `${Math.max(6, textValue.length + 4)}ch`,
+                }}
               />
             )}
-            {selected && (
+            {selected && anchor && (
               <div
                 className="absolute z-20 -translate-x-1/2 flex flex-col items-center gap-1.5"
                 style={{
-                  left: `${((annotationBounds(selected).x + annotationBounds(selected).width / 2) / screenshot.width) * 100}%`,
-                  top: `${((annotationBounds(selected).y + annotationBounds(selected).height) / screenshot.height) * 100}%`,
+                  left: `${((anchor?.x ?? 0) / screenshot.width) * 100}%`,
+                  top: `${((anchor?.y ?? 0) / screenshot.height) * 100}%`,
                 }}
               >
                 <div className="mt-2 flex items-center gap-1 rounded-xl bg-primary px-2 py-1.5 shadow-xl">
