@@ -819,14 +819,14 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
-      <div className="shrink-0 bg-primary px-3 h-12 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-1">
+      <div className="shrink-0 bg-card border-b border-border px-3 h-[50px] flex items-center gap-3">
+        <div className="flex-1 flex items-center gap-1">
           <button
             type="button"
             onClick={undo}
             disabled={past.length === 0}
             title={i18n.t('annotationEditor.undo')}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-primary-foreground hover:bg-primary-foreground/15 disabled:opacity-25"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground/75 hover:bg-secondary hover:text-foreground disabled:opacity-25"
           >
             <Undo2 size={15} />
           </button>
@@ -835,13 +835,13 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
             onClick={redo}
             disabled={future.length === 0}
             title={i18n.t('annotationEditor.redo')}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-primary-foreground hover:bg-primary-foreground/15 disabled:opacity-25"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground/75 hover:bg-secondary hover:text-foreground disabled:opacity-25"
           >
             <Redo2 size={15} />
           </button>
         </div>
 
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 rounded-xl bg-secondary p-1">
           {TOOLS.map(({ id, icon: Icon, labelKey }) => (
             <button
               key={id}
@@ -854,30 +854,27 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
               aria-pressed={activeTool === id}
               className={`flex items-center justify-center w-9 h-8 rounded-lg transition-colors ${
                 activeTool === id
-                  ? 'bg-primary-foreground/20 text-primary-foreground'
-                  : 'text-primary-foreground/60 hover:bg-primary-foreground/10 hover:text-primary-foreground'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground/75 hover:bg-card hover:text-foreground'
               }`}
             >
               <Icon size={16} />
             </button>
           ))}
-          <span className="w-px h-5 bg-primary-foreground/20 mx-1.5" />
+          <span className="w-px h-5 bg-border mx-1.5" />
           <PalettePopover value={color} onChange={handleColorSelect}>
             <button
               type="button"
               title={i18n.t('annotationEditor.lineColor')}
-              className="flex items-center gap-1 h-8 pl-1 pr-1.5 rounded-lg text-primary-foreground/70 hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              className="flex items-center gap-1 h-8 pl-1 pr-1.5 rounded-lg bg-card text-foreground/70 hover:text-foreground"
             >
-              <span
-                className="w-5 h-5 rounded-full border-2 border-primary-foreground/25"
-                style={{ backgroundColor: color }}
-              />
+              <span className="w-5 h-5 rounded-full border border-foreground/20" style={{ backgroundColor: color }} />
               <ChevronDown size={11} />
             </button>
           </PalettePopover>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex-1 flex items-center justify-end gap-1.5">
           {mode === 'crop' && viewport && (
             <button
               type="button"
@@ -885,7 +882,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 setViewport(undefined);
                 setCropDraft(null);
               }}
-              className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-[12px] font-semibold text-primary-foreground/80 hover:bg-primary-foreground/15"
+              className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-[12px] font-semibold text-foreground/75 hover:bg-secondary"
             >
               <RotateCcw size={13} />
               {i18n.t('annotationEditor.resetCrop')}
@@ -894,7 +891,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 h-8 text-[12px] font-semibold text-primary-foreground/80 rounded-lg hover:bg-primary-foreground/15"
+            className="px-3 h-8 text-[12px] font-semibold text-foreground/75 rounded-lg hover:bg-secondary"
           >
             {i18n.t('common.cancel')}
           </button>
@@ -902,7 +899,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
             type="button"
             onClick={handleDone}
             disabled={saving}
-            className="px-4 h-8 text-[12px] font-bold text-primary bg-primary-foreground rounded-lg hover:bg-primary-foreground/90 disabled:opacity-50"
+            className="px-4 h-8 text-[12px] font-bold text-white bg-accent rounded-lg hover:bg-accent/90 disabled:opacity-50"
           >
             {i18n.t('annotationEditor.done')}
           </button>
