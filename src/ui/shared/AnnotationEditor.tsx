@@ -25,7 +25,6 @@ import { shadeOf } from '@/core/screenshot/color';
 import { drawAnnotation, drawRoundedRect, TARGET_RADIUS, TARGET_STROKE } from '@/core/screenshot/draw';
 import {
   annotationBounds,
-  clamp,
   cropTo,
   type Handle,
   hitTest,
@@ -91,6 +90,8 @@ type DragState =
 
 const COLORS = ['#4F46E5', '#DC2626', '#059669', '#F59E0B', '#1E1B4B'];
 const SELECTION_COLOR = '#4F46E5';
+const BRACKET_ARM = 26;
+const BRACKET_THICKNESS = 4;
 const MIN_SHAPE_SIZE = 6;
 const MIN_CROP_SIZE = 20;
 const HANDLE_DISPLAY_SIZE = 10;
@@ -495,19 +496,21 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       ctx.rect(frame.x, frame.y, frame.width, frame.height);
       ctx.fill('evenodd');
       ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 3 * scale;
+      ctx.lineWidth = 1 * scale;
       ctx.strokeRect(frame.x, frame.y, frame.width, frame.height);
-      ctx.strokeStyle = SELECTION_COLOR;
-      ctx.lineWidth = 1.5 * scale;
-      ctx.strokeRect(frame.x, frame.y, frame.width, frame.height);
-      const hs = HANDLE_DISPLAY_SIZE * scale;
-      for (const [, hx, hy] of handleCorners(frame)) {
-        const cx = clamp(hx, frame.x + hs / 2, frame.x + frame.width - hs / 2);
-        const cy = clamp(hy, frame.y + hs / 2, frame.y + frame.height - hs / 2);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(cx - hs / 2 - scale, cy - hs / 2 - scale, hs + scale * 2, hs + scale * 2);
-        ctx.fillStyle = SELECTION_COLOR;
-        ctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs);
+
+      const arm = Math.min(BRACKET_ARM * scale, frame.width / 3, frame.height / 3);
+      const thick = BRACKET_THICKNESS * scale;
+      ctx.fillStyle = SELECTION_COLOR;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 4 * scale;
+      for (const [handle, hx, hy] of handleCorners(frame)) {
+        const left = handle === 'nw' || handle === 'sw';
+        const top = handle === 'nw' || handle === 'ne';
+        const x = left ? hx : hx - arm;
+        const y = top ? hy : hy - arm;
+        ctx.fillRect(x, top ? hy : hy - thick, arm, thick);
+        ctx.fillRect(left ? hx : hx - thick, y, thick, arm);
       }
       ctx.restore();
     }
@@ -934,7 +937,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 ref={canvasRef}
                 width={screenshot.width}
                 height={screenshot.height}
-                className="block max-w-full max-h-[calc(100vh-190px)] rounded-lg shadow-2xl touch-none"
+                className="block max-w-full max-h-full rounded-lg shadow-2xl touch-none"
                 style={{ cursor: cursorFor(mode, activeTool, hovering, grabbing) }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
