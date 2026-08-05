@@ -66,12 +66,13 @@ class CaptureController {
     }
   }
 
-  private async captureAction(action: string, target: HTMLElement) {
+  private async captureAction(action: string, target: HTMLElement, point?: { x: number; y: number }) {
     await waitForPaint();
+    const elementMeta = extractElementMeta(target);
     await sendMessage('captureStep', {
       guideId: this.guideId,
       action,
-      elementMeta: extractElementMeta(target),
+      elementMeta: point ? { ...elementMeta, clickPoint: point } : elementMeta,
       domContext: extractDOMContext(target, action),
     });
   }
@@ -99,7 +100,7 @@ class CaptureController {
     if (isNavigatingClick(target)) {
       me.preventDefault();
       me.stopImmediatePropagation();
-      this.queue.add(() => this.captureAction('click', target));
+      this.queue.add(() => this.captureAction('click', target, { x: me.clientX, y: me.clientY }));
       const anchor = target.closest('a[href]') as HTMLAnchorElement;
       if (anchor) {
         const href = anchor.href;
@@ -112,7 +113,7 @@ class CaptureController {
       return;
     }
 
-    this.queue.add(() => this.captureAction('click', target));
+    this.queue.add(() => this.captureAction('click', target, { x: me.clientX, y: me.clientY }));
   }
 
   private onAuxClick(e: Event) {
@@ -120,7 +121,9 @@ class CaptureController {
     if (!raw || !(raw instanceof Element)) return;
     const target = findFocusableAncestor(raw);
     if (isMimikElement(target)) return;
-    this.queue.add(() => this.captureAction('auxclick', target));
+    this.queue.add(() =>
+      this.captureAction('auxclick', target, { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY }),
+    );
   }
 
   private onKeydown(e: Event) {

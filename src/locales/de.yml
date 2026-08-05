@@ -43,6 +43,8 @@ library:
   openInFullView: In der Vollansicht öffnen
 
 guideme:
+  manualStep: "Dieser Schritt wurde bearbeitet und kann nicht automatisch erkannt werden. Nutze Weiter, wenn du fertig bist."
+  roadblock: "Wir kommen nicht weiter. Führe die Aktion auf dem Bildschirm aus, um fortzufahren."
   live: Live
   stepOf: "Schritt $1 von $2"
   noDescription: Keine Beschreibung
@@ -77,6 +79,8 @@ recording:
   minutesAgo: "vor $1 Min."
 
 settings:
+  targetColorHint: "Standard für neu aufgenommene Schritte"
+  targetColor: "Farbe des Klickziels"
   title: Einstellungen
   aiDescriptions: KI-Beschreibungen
   provider: Anbieter
@@ -140,7 +144,6 @@ editor:
   backToLibrary: Zurück zur Bibliothek
   guideMe: Anleiten
   deleteThisStep: "Diesen Schritt löschen?"
-  blurSensitiveArea: Sensiblen Bereich weichzeichnen
   copyScreenshot: Screenshot kopieren
   noScreenshot: Kein Screenshot
 
@@ -148,10 +151,6 @@ emptyGuide:
   title: Diese Anleitung ist leer
   subtitle: Erwecke sie zum Leben, indem du Schritte aufnimmst
 
-blurCanvas:
-  drawInstructions: Rechtecke zum Weichzeichnen ziehen
-  regionCount: "$1 Bereich"
-  regionCountPlural: "$1 Bereiche"
 
 blurPanel:
   title: Smart Blur
@@ -162,6 +161,7 @@ blurPanel:
   resetAll: Alles zurücksetzen
 
 exportMenu:
+  docx: "DOCX"
   html: HTML
   markdown: Markdown
   pdf: PDF
@@ -228,3 +228,72 @@ export:
 background:
   guideOnDomain: "Anleitung auf $1"
   newGuide: Neue Anleitung
+
+annotationEditor:
+  title: "Screenshot bearbeiten"
+  toolBox: "Rechteck"
+  toolArrow: "Pfeil"
+  toolText: "Text"
+  toolSelect: "Auswählen"
+  addTarget: "Klickziel hinzufügen"
+  toolRedact: "Schwärzen"
+  toolCrop: "Zuschneiden"
+  colorLabel: "Farbe"
+  textPlaceholder: "Text eingeben ..."
+  targetBorder: "Rahmenstil"
+  modeAnnotate: "Kommentieren"
+  toolLine: "Linie"
+  duplicate: "Duplizieren"
+  toolEllipse: "Ellipse"
+  lineColor: "Linienfarbe"
+  fillColor: "Füllfarbe"
+  lineWidth: "Linienstärke"
+  cornerRadius: "Eckenradius"
+  font: "Schriftart"
+  bold: "Fett"
+  italic: "Kursiv"
+  lineHeight: "Zeilenhöhe"
+  width_none: "Keine Kontur"
+  width_xs: "Sehr dünn"
+  width_sm: "Dünn"
+  width_ms: "Mitteldünn"
+  width_md: "Mittel"
+  width_ml: "Mitteldick"
+  width_lg: "Dick"
+  width_xl: "Sehr dick"
+  zoom: "Zoom"
+  cropHint: "Zum Zuschneiden ziehen oder eine Ecke zum Ändern der Größe"
+  resetCrop: "Zuschnitt zurücksetzen"
+  arrowEnd: "Pfeilende"
+  fontSize: "Schriftgröße"
+  undo: "Rückgängig"
+  redo: "Wiederholen"
+  end_none: "Keins"
+  end_bar: "Strich"
+  end_arrow: "Pfeil"
+  end_arrow_solid: "Pfeil gefüllt"
+  end_circle: "Kreis"
+  end_circle_solid: "Kreis gefüllt"
+  end_square: "Quadrat"
+  end_square_solid: "Quadrat gefüllt"
+  done: "Fertig"
+
+screenshotView:
+  zoomIn: "Vergrößern"
+  zoomOut: "Verkleinern"
+  saved: "Gespeichert"
+  editMenu: "Screenshot bearbeiten"
+  downloadEdited: "Bearbeitetes Bild"
+  downloadOriginal: "Originalbild"
+  edit: "Bearbeiten"
+  replaceImage: "Bild ersetzen"
+  replaceHint: "Wähle ein neues Bild für diesen Schritt"
+  replaceDrop: "Klicken zum Auswählen oder Bild hierher ziehen"
+  replaceFormats: "PNG, JPG oder WebP"
+  download: "Herunterladen"
+  deleteImage: "Bild löschen"
+  deleteConfirm: "Diesen Screenshot löschen? Das kann nicht rückgängig gemacht werden."
+  imageDeleted: "Bild gelöscht"
+  altButton: "ALT"
+  altLabel: "Alternativtext"
+  altPlaceholder: "Beschreibe dieses Bild für Screenreader"

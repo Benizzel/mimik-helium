@@ -44,11 +44,13 @@ library:
 
 guideme:
   live: En vivo
+  roadblock: "Nos encontramos con un obstáculo. Actúa en la pantalla para avanzar."
+  manualStep: "Este paso fue editado, así que no se puede detectar automáticamente. Usa Siguiente cuando lo hayas hecho."
   stepOf: "Paso $1 de $2"
   noDescription: Sin descripción
   prev: Anterior
   next: Siguiente
-  finish: Terminar
+  finish: "Finalizar"
   exitTitle: "¿Ya te vas?"
   exitMessage: Se detendrá el recorrido y se quitará la guía de la página.
   stay: Quedarme
@@ -83,6 +85,8 @@ settings:
   model: Modelo
   apiKey: Clave API
   aiLanguage: Idioma de descripciones
+  targetColor: "Color del objetivo de clic"
+  targetColorHint: "Predeterminado para pasos nuevos"
   saveSettings: Guardar ajustes
   saved: Guardado
   smartBlur: Desenfoque inteligente
@@ -140,18 +144,12 @@ editor:
   backToLibrary: Volver a la biblioteca
   guideMe: "¡Guíame!"
   deleteThisStep: "¿Eliminar este paso?"
-  blurSensitiveArea: Desenfocar zona sensible
   copyScreenshot: Copiar captura
   noScreenshot: Sin captura
 
 emptyGuide:
   title: Esta guía está vacía
   subtitle: Graba algunos pasos para llenarla
-
-blurCanvas:
-  drawInstructions: Dibuja rectángulos para desenfocar
-  regionCount: "$1 región"
-  regionCountPlural: "$1 regiones"
 
 blurPanel:
   title: Desenfoque inteligente
@@ -160,6 +158,75 @@ blurPanel:
   done: Listo
   doneResume: "Listo \xB7 Continuar grabación"
   resetAll: Restablecer todo
+
+screenshotView:
+  zoomIn: Acercar
+  zoomOut: Alejar
+  saved: Guardado
+  editMenu: Editar captura
+  downloadEdited: "Imagen editada"
+  downloadOriginal: "Imagen original"
+  edit: "Editar"
+  replaceImage: Reemplazar imagen
+  replaceHint: "Elige una nueva imagen para este paso"
+  replaceDrop: "Haz clic para buscar o suelta una imagen aquí"
+  replaceFormats: "PNG, JPG o WebP"
+  download: Descargar
+  deleteImage: Eliminar imagen
+  deleteConfirm: "¿Eliminar esta captura? No hay vuelta atrás."
+  imageDeleted: Imagen eliminada
+  altButton: ALT
+  altLabel: Texto alternativo
+  altPlaceholder: Describe esta imagen para lectores de pantalla
+
+annotationEditor:
+  title: Editar captura
+  toolBox: Rectángulo
+  toolArrow: Flecha
+  toolText: Texto
+  toolSelect: "Seleccionar"
+  addTarget: "Añadir objetivo de clic"
+  toolRedact: Ocultar
+  toolCrop: Recortar
+  colorLabel: Color
+  textPlaceholder: Escribe algo...
+  targetBorder: Estilo del borde
+  modeAnnotate: "Anotar"
+  toolLine: "Línea"
+  duplicate: "Duplicar"
+  toolEllipse: "Elipse"
+  lineColor: "Color de línea"
+  fillColor: "Relleno"
+  lineWidth: "Grosor"
+  cornerRadius: "Radio"
+  font: "Fuente"
+  bold: "Negrita"
+  italic: "Cursiva"
+  lineHeight: "Interlineado"
+  width_none: "Sin contorno"
+  width_xs: "Muy fino"
+  width_sm: "Fino"
+  width_ms: "Medio fino"
+  width_md: "Medio"
+  width_ml: "Medio grueso"
+  width_lg: "Grueso"
+  width_xl: "Muy grueso"
+  zoom: "Zoom"
+  cropHint: "Arrastra para recortar o arrastra una esquina para redimensionar"
+  resetCrop: "Restablecer recorte"
+  arrowEnd: "Punta de flecha"
+  fontSize: "Tamaño"
+  undo: "Deshacer"
+  redo: "Rehacer"
+  end_none: "Ninguna"
+  end_bar: "Barra"
+  end_arrow: "Flecha"
+  end_arrow_solid: "Flecha sólida"
+  end_circle: "Círculo"
+  end_circle_solid: "Círculo sólido"
+  end_square: "Cuadrado"
+  end_square_solid: "Cuadrado sólido"
+  done: Listo
 
 exportMenu:
   docx: DOCX

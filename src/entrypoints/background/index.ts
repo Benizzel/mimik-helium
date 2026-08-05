@@ -1,7 +1,15 @@
 import { browser, defineBackground, i18n } from '#imports';
 import { generateGuideTitle } from '@/core/capture/ai/title';
+import { stepRequiresManual } from '@/core/guideme/manual';
 import { advanceSession, cancelSession, completeSession, getSession, startSession } from '@/core/guideme/session';
-import { createGuide, getGuideDomain, getStepsForGuide, updateGuideTitle } from '@/core/guides/service';
+import {
+  createGuide,
+  getGuideDomain,
+  getScreenshotsForSteps,
+  getStepsForGuide,
+  updateGuideTitle,
+} from '@/core/guides/service';
+import type { Step } from '@/core/guides/types';
 import { getActiveTab, localStorage, sendMessageToTab, setSidePanelBehavior, updateTab } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import { onMessage } from '@/lib/messaging';
@@ -49,6 +57,12 @@ async function generateTitleInBackground(guideId: string) {
       domain ? i18n.t('background.guideOnDomain', [domain]) : i18n.t('background.newGuide'),
     );
   }
+}
+
+async function resolveManual(step: Step): Promise<boolean> {
+  if (!step.screenshotId) return stepRequiresManual(step, null);
+  const screenshots = await getScreenshotsForSteps([step.screenshotId]);
+  return stepRequiresManual(step, screenshots.get(step.id));
 }
 
 export default defineBackground(() => {
@@ -184,7 +198,7 @@ export default defineBackground(() => {
     const firstStep = steps.find((s) => s.elementMeta) ?? steps[0];
     if (!steps.some((s) => s.elementMeta)) return { started: false, error: 'Guide lacks element metadata' };
 
-    await startSession(data.guideId, steps.length, firstStep);
+    await startSession(data.guideId, steps.length, firstStep, await resolveManual(firstStep));
 
     const activeTab = await getActiveTab();
     if (activeTab?.id && firstStep.url) {
@@ -212,7 +226,7 @@ export default defineBackground(() => {
       await completeSession();
       return { advanced: true, completed: true };
     }
-    await advanceSession(nextStep, nextIndex);
+    await advanceSession(nextStep, nextIndex, await resolveManual(nextStep));
 
     const currentTab = await getActiveTab();
     if (currentTab?.id && nextStep.url && nextStep.url !== currentTab.url) {
@@ -227,22 +241,19 @@ export default defineBackground(() => {
     return { cancelled: true };
   });
 
-  onMessage('guideMePrev', async ({ data }) => {
-    if (data.stepIndex <= 0) return { moved: false };
-
+  onMessage('guideMeGoTo', async ({ data }) => {
     const sessionData = await localStorage.get(['guideMeSession']);
     const session = sessionData.guideMeSession as { guideId: string } | undefined;
     if (!session) return { moved: false };
 
     const steps = await getStepsForGuide(session.guideId);
-    const prevIndex = data.stepIndex - 1;
-    const prevStep = steps[prevIndex];
-    if (!prevStep) return { moved: false };
-    await advanceSession(prevStep, prevIndex);
+    const target = steps[data.stepIndex];
+    if (!target) return { moved: false };
+    await advanceSession(target, data.stepIndex, await resolveManual(target));
 
     const currentTab = await getActiveTab();
-    if (currentTab?.id && prevStep.url && prevStep.url !== currentTab.url) {
-      await updateTab(currentTab.id, { url: prevStep.url });
+    if (currentTab?.id && target.url && target.url !== currentTab.url) {
+      await updateTab(currentTab.id, { url: target.url });
     }
 
     return { moved: true };

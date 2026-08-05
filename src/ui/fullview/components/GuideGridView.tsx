@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { formatDate } from '@/lib/utils';
 import { useFullview } from '@/stores/fullview';
-import ZoomScreenshot from '@/ui/sidepanel/ZoomScreenshot';
+import ScreenshotView from '@/ui/shared/ScreenshotView';
 import { navigate } from '../router';
 
 interface GuideGridViewProps {
@@ -152,7 +152,7 @@ export default function GuideGridView({ category, onStar, onTrash, onRestore, on
           >
             <div className="h-36 overflow-hidden rounded-t-xl">
               {thumb ? (
-                <ZoomScreenshot screenshot={thumb} alt={guide.title} className="!rounded-none !border-0" />
+                <ScreenshotView screenshot={thumb} alt={guide.title} className="!rounded-none !border-0" readOnly />
               ) : (
                 <MimikEyes />
               )}

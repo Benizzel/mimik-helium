@@ -4,6 +4,8 @@ import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
 import { AI_PROVIDERS, type AIProviderKey } from '@/core/capture/ai/models';
 import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
 import { localStorage, requestHostPermissions } from '@/lib/browser-api';
+import { Input } from '@/ui/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
 
 const BLUR_PRESET_I18N: Record<PresetKey, string> = {
   email: 'email',
@@ -135,42 +137,44 @@ function AISetupStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
               <label className="block text-xs font-semibold text-foreground mb-1.5">
                 {i18n.t('settings.provider')}
               </label>
-              <select
-                value={provider}
-                onChange={(e) => handleProviderChange(e.target.value as AIProviderKey)}
-                className="w-full border border-border rounded-xl px-4 py-2.5 text-sm text-foreground bg-card font-medium outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
-              >
-                {Object.entries(AI_PROVIDERS).map(([key, cfg]) => (
-                  <option key={key} value={key}>
-                    {cfg.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={provider} onValueChange={(v) => handleProviderChange(v as AIProviderKey)}>
+                <SelectTrigger className="w-full rounded-xl px-4 py-2.5 text-sm focus:border-accent focus:ring-accent/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(AI_PROVIDERS).map(([key, cfg]) => (
+                    <SelectItem key={key} value={key}>
+                      {cfg.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1.5">{i18n.t('settings.model')}</label>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                className="w-full border border-border rounded-xl px-4 py-2.5 text-sm text-foreground bg-card font-medium outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
-              >
-                {providerConfig.models.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={model} onValueChange={(v) => setModel(v)}>
+                <SelectTrigger className="w-full rounded-xl px-4 py-2.5 text-sm focus:border-accent focus:ring-accent/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {providerConfig.models.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1.5">{i18n.t('settings.apiKey')}</label>
-              <input
+              <Input
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="sk-..."
-                className="w-full border border-border rounded-xl px-4 py-2.5 text-sm text-foreground bg-card font-medium outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 placeholder:text-muted-foreground/50"
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:border-accent focus:ring-accent/10"
               />
             </div>
 
@@ -178,17 +182,18 @@ function AISetupStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
               <label className="block text-xs font-semibold text-foreground mb-1.5">
                 {i18n.t('settings.aiLanguage')}
               </label>
-              <select
-                value={aiLanguage}
-                onChange={(e) => setAiLanguage(e.target.value as AILanguageCode)}
-                className="w-full border border-border rounded-xl px-4 py-2.5 text-sm text-foreground bg-card font-medium outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
-              >
-                {AI_LANGUAGES.map((lang) => (
-                  <option key={lang.code} value={lang.code}>
-                    {lang.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={aiLanguage} onValueChange={(v) => setAiLanguage(v as AILanguageCode)}>
+                <SelectTrigger className="w-full rounded-xl px-4 py-2.5 text-sm focus:border-accent focus:ring-accent/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {AI_LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

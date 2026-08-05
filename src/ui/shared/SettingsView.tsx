@@ -1,12 +1,28 @@
-import { ArrowLeft, Bug, Check, ChevronRight, EyeOff, Globe, Shield, Sparkles, Star } from 'lucide-react';
+import {
+  ArrowLeft,
+  Bug,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  EyeOff,
+  Globe,
+  Shield,
+  Sparkles,
+  Star,
+  Target,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
 import { AI_PROVIDERS, type AIProviderKey } from '@/core/capture/ai/models';
 import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
+import { DEFAULT_TARGET_COLOR, TARGET_COLORS } from '@/core/screenshot/types';
 import { localStorage } from '@/lib/browser-api';
 import { Button } from '@/ui/components/ui/button';
 import { Input } from '@/ui/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
+import ColorPicker from '@/ui/shared/ColorPicker';
 
 interface SettingsViewProps {
   onBack?: () => void;
@@ -18,6 +34,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
   const [aiLanguage, setAiLanguage] = useState<AILanguageCode>('en');
+  const [targetColor, setTargetColor] = useState<string>(DEFAULT_TARGET_COLOR);
   const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>({
     email: true,
     phone: true,
@@ -28,14 +45,17 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   });
 
   useEffect(() => {
-    localStorage.get(['aiApiKey', 'aiProvider', 'aiModel', 'aiLanguage', 'blurPresets']).then((result) => {
-      const p = (result.aiProvider as AIProviderKey) || 'openai';
-      setProvider(p);
-      setModel((result.aiModel as string) || AI_PROVIDERS[p].defaultModel);
-      if (result.aiApiKey) setApiKey(result.aiApiKey as string);
-      if (result.aiLanguage) setAiLanguage(result.aiLanguage as AILanguageCode);
-      if (result.blurPresets) setBlurPresets(result.blurPresets as Record<PresetKey, boolean>);
-    });
+    localStorage
+      .get(['aiApiKey', 'aiProvider', 'aiModel', 'aiLanguage', 'blurPresets', 'targetColor'])
+      .then((result) => {
+        const p = (result.aiProvider as AIProviderKey) || 'openai';
+        setProvider(p);
+        setModel((result.aiModel as string) || AI_PROVIDERS[p].defaultModel);
+        if (result.aiApiKey) setApiKey(result.aiApiKey as string);
+        if (result.aiLanguage) setAiLanguage(result.aiLanguage as AILanguageCode);
+        if (result.blurPresets) setBlurPresets(result.blurPresets as Record<PresetKey, boolean>);
+        if (result.targetColor) setTargetColor(result.targetColor as string);
+      });
   }, []);
 
   const handleProviderChange = (newProvider: AIProviderKey) => {
@@ -44,7 +64,14 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   };
 
   const handleSave = async () => {
-    await localStorage.set({ aiApiKey: apiKey, aiProvider: provider, aiModel: model, aiLanguage, blurPresets });
+    await localStorage.set({
+      aiApiKey: apiKey,
+      aiProvider: provider,
+      aiModel: model,
+      aiLanguage,
+      blurPresets,
+      targetColor,
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -87,32 +114,34 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
             <label className="block text-[11px] font-semibold text-foreground mb-1">
               {i18n.t('settings.provider')}
             </label>
-            <select
-              value={provider}
-              onChange={(e) => handleProviderChange(e.target.value as AIProviderKey)}
-              className="w-full border border-border rounded-lg px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-ring focus:ring-2 focus:ring-ring/10"
-            >
-              {Object.entries(AI_PROVIDERS).map(([key, cfg]) => (
-                <option key={key} value={key}>
-                  {cfg.label}
-                </option>
-              ))}
-            </select>
+            <Select value={provider} onValueChange={(v) => handleProviderChange(v as AIProviderKey)}>
+              <SelectTrigger className="w-full rounded-lg px-3 py-2 text-[13px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(AI_PROVIDERS).map(([key, cfg]) => (
+                  <SelectItem key={key} value={key}>
+                    {cfg.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="block text-[11px] font-semibold text-foreground mb-1">{i18n.t('settings.model')}</label>
-            <select
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="w-full border border-border rounded-lg px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-ring focus:ring-2 focus:ring-ring/10"
-            >
-              {providerConfig.models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
+            <Select value={model} onValueChange={(v) => setModel(v)}>
+              <SelectTrigger className="w-full rounded-lg px-3 py-2 text-[13px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {providerConfig.models.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -125,18 +154,49 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
               <Globe size={11} className="inline mr-1 -mt-px" />
               {i18n.t('settings.aiLanguage')}
             </label>
-            <select
-              value={aiLanguage}
-              onChange={(e) => setAiLanguage(e.target.value as AILanguageCode)}
-              className="w-full border border-border rounded-lg px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-ring focus:ring-2 focus:ring-ring/10"
-            >
-              {AI_LANGUAGES.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.label}
-                </option>
-              ))}
-            </select>
+            <Select value={aiLanguage} onValueChange={(v) => setAiLanguage(v as AILanguageCode)}>
+              <SelectTrigger className="w-full rounded-lg px-3 py-2 text-[13px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AI_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+        </div>
+
+        <div className="border border-border rounded-[10px] p-3.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+              <Target size={14} className="text-accent" />
+            </div>
+            <div>
+              <div className="text-[13px] font-semibold text-foreground">{i18n.t('settings.targetColor')}</div>
+              <div className="text-[11px] text-muted-foreground">{i18n.t('settings.targetColorHint')}</div>
+            </div>
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-2 shrink-0 border border-border rounded-lg px-2 py-1.5 text-[11px] text-foreground hover:border-accent"
+              >
+                <span
+                  className="w-[22px] h-[22px] rounded-full border border-foreground/15"
+                  style={{ backgroundColor: targetColor }}
+                />
+                <code className="tabular-nums">{targetColor.toUpperCase()}</code>
+                <ChevronDown size={12} className="opacity-60" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 p-2.5">
+              <ColorPicker value={targetColor} presets={TARGET_COLORS} onChange={setTargetColor} />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="border border-border rounded-[10px] p-3.5 space-y-1">

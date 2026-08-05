@@ -4,6 +4,7 @@ import { i18n } from '#imports';
 import { exportGuideAsHTML } from '@/core/export/html-export';
 import { exportGuideAsMarkdown } from '@/core/export/markdown-export';
 import { exportGuideAsPDF } from '@/core/export/pdf-export';
+import { getGuide } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { Button } from '@/ui/components/ui/button';
 
@@ -30,7 +31,12 @@ function downloadBlob(blob: Blob, filename: string) {
 
 type ExportType = 'docx' | 'html' | 'markdown' | 'pdf';
 
-export default function ExportMenu({ guide, steps, screenshots }: ExportMenuProps) {
+export default function ExportMenu({
+  guideId,
+  guide: guideProp,
+  steps: stepsProp,
+  screenshots: screenshotsProp,
+}: ExportMenuProps) {
   const [open, setOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -47,6 +53,11 @@ export default function ExportMenu({ guide, steps, screenshots }: ExportMenuProp
     setOpen(false);
     setExporting(true);
     try {
+      const fresh = await getGuide(guideId);
+      const guide = fresh?.guide ?? guideProp;
+      const steps = fresh?.steps ?? stepsProp;
+      const screenshots = fresh?.screenshots ?? screenshotsProp;
+
       if (type === 'html') {
         const html = await exportGuideAsHTML(guide, steps, screenshots);
         downloadFile(html, `${guide.title}.html`, 'text/html');

@@ -1,9 +1,12 @@
-import { Check, Copy, EyeOff, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Check, Copy, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import type { Screenshot, Step } from '@/core/guides/types';
+import { renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
-import ZoomScreenshot from './ZoomScreenshot';
+import ConfirmDialog from '@/ui/shared/ConfirmDialog';
+import ImagePlaceholder from '@/ui/shared/ImagePlaceholder';
+import ScreenshotView from '@/ui/shared/ScreenshotView';
 
 interface DragHandleProps {
   onDragStart: (e: React.DragEvent) => void;
@@ -17,8 +20,9 @@ interface StepCardProps {
   onDescriptionChange: (stepId: string, description: string) => void;
   onDelete: (stepId: string) => void;
   dragHandleProps?: DragHandleProps;
-  onBlur?: (stepId: string) => void;
+  onOpenEditor?: (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
   onCopy?: (stepId: string) => void;
+  placeholderRatio?: number;
 }
 
 export default function StepCard({
@@ -27,11 +31,14 @@ export default function StepCard({
   onDescriptionChange,
   onDelete,
   dragHandleProps,
-  onBlur,
+  onOpenEditor,
+  placeholderRatio,
 }: StepCardProps) {
   const [description, setDescription] = useState(step.description);
   const [dragOver, setDragOver] = useState(false);
   const [copied, setCopied] = useState(false);
+  const pressedOnScreenshot = useRef(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     setDescription(step.description);
@@ -42,14 +49,15 @@ export default function StepCard({
   };
 
   const handleDelete = () => {
-    if (window.confirm(i18n.t('editor.deleteThisStep'))) onDelete(step.id);
+    setConfirmDelete(false);
+    onDelete(step.id);
   };
 
   const handleCopy = async () => {
     if (!screenshot) return;
     try {
-      const item = new ClipboardItem({ [screenshot.mimeType]: screenshot.blob });
-      await navigator.clipboard.write([item]);
+      const rendered = await renderScreenshot(screenshot, { format: 'image/png' });
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': rendered })]);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {
@@ -63,10 +71,21 @@ export default function StepCard({
     dragHandleProps?.onDragOver(e);
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    if (pressedOnScreenshot.current) {
+      e.preventDefault();
+      return;
+    }
+    dragHandleProps?.onDragStart(e);
+  };
+
   return (
     <div
       draggable={!!dragHandleProps}
-      onDragStart={dragHandleProps?.onDragStart}
+      onPointerDownCapture={(e) => {
+        pressedOnScreenshot.current = !!(e.target as HTMLElement).closest('[data-screenshot-frame]');
+      }}
+      onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragLeave={() => setDragOver(false)}
       onDragEnd={() => {
@@ -76,15 +95,19 @@ export default function StepCard({
       className={`rounded-xl mb-3 overflow-hidden transition-shadow border border-border bg-card ${dragOver ? 'ring-2 ring-accent' : ''}`}
     >
       {screenshot ? (
-        <ZoomScreenshot
+        <ScreenshotView
           screenshot={screenshot}
           alt={`Step ${step.index + 1} screenshot`}
           className="!rounded-none !border-0"
+          crop
+          onOpenEditor={onOpenEditor ? (tool) => onOpenEditor(step.id, tool) : undefined}
         />
       ) : (
-        <div className="w-full h-32 flex items-center justify-center text-sm bg-secondary text-purple">
-          {i18n.t('editor.noScreenshot')}
-        </div>
+        <ImagePlaceholder
+          label={i18n.t('editor.noScreenshot')}
+          ratio={placeholderRatio}
+          className="w-full !rounded-none border-x-0 border-t-0"
+        />
       )}
 
       <div className="px-3 pt-2 pb-2">
@@ -103,25 +126,16 @@ export default function StepCard({
         <div className="flex items-center justify-end mt-1">
           <div className="flex items-center gap-0.5">
             {screenshot && (
-              <>
-                <button
-                  onClick={() => onBlur?.(step.id)}
-                  className="p-1 rounded-md transition-colors text-border hover:text-accent"
-                  title={i18n.t('editor.blurSensitiveArea')}
-                >
-                  <EyeOff size={13} />
-                </button>
-                <button
-                  onClick={handleCopy}
-                  className={`p-1 rounded-md transition-colors ${copied ? 'text-success' : 'text-border hover:text-success'}`}
-                  title={i18n.t('editor.copyScreenshot')}
-                >
-                  {copied ? <Check size={13} /> : <Copy size={13} />}
-                </button>
-              </>
+              <button
+                onClick={handleCopy}
+                className={`p-1 rounded-md transition-colors ${copied ? 'text-success' : 'text-border hover:text-success'}`}
+                title={i18n.t('editor.copyScreenshot')}
+              >
+                {copied ? <Check size={13} /> : <Copy size={13} />}
+              </button>
             )}
             <button
-              onClick={handleDelete}
+              onClick={() => setConfirmDelete(true)}
               className="p-1 rounded-md transition-colors text-border hover:text-destructive"
               title={i18n.t('recording.deleteStep')}
             >
@@ -130,6 +144,13 @@ export default function StepCard({
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmDelete}
+        title={i18n.t('editor.deleteThisStep')}
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

@@ -44,11 +44,13 @@ library:
 
 guideme:
   live: En direct
+  roadblock: "Nous avons rencontré un obstacle. Agissez à l'écran pour continuer."
+  manualStep: "Cette étape a été modifiée, elle ne peut donc pas être détectée automatiquement. Utilisez Suivant une fois faite."
   stepOf: "Étape $1 sur $2"
   noDescription: Aucune description
   prev: "Préc."
   next: Suiv.
-  finish: Terminer
+  finish: "Terminer"
   exitTitle: "Vous partez déjà ?"
   exitMessage: "La visite guidée va s'arrêter et le calque sera retiré de la page."
   stay: Rester
@@ -83,6 +85,8 @@ settings:
   model: "Modèle"
   apiKey: "Clé API"
   aiLanguage: Langue des descriptions
+  targetColor: "Couleur de la cible de clic"
+  targetColorHint: "Par défaut pour les nouvelles étapes"
   saveSettings: "Enregistrer"
   saved: "Enregistré"
   smartBlur: Flou intelligent
@@ -140,18 +144,12 @@ editor:
   backToLibrary: "Retour à la bibliothèque"
   guideMe: "Guidez-moi !"
   deleteThisStep: "Supprimer cette étape ?"
-  blurSensitiveArea: Flouter une zone sensible
   copyScreenshot: "Copier la capture"
   noScreenshot: "Pas de capture"
 
 emptyGuide:
   title: Ce guide est vide
   subtitle: "Enregistrez quelques étapes pour lui donner vie"
-
-blurCanvas:
-  drawInstructions: "Dessinez des rectangles pour flouter"
-  regionCount: "$1 zone"
-  regionCountPlural: "$1 zones"
 
 blurPanel:
   title: Flou intelligent
@@ -160,6 +158,75 @@ blurPanel:
   done: Terminé
   doneResume: "Terminé \xB7 Reprendre l'enregistrement"
   resetAll: Tout réinitialiser
+
+screenshotView:
+  zoomIn: "Zoom avant"
+  zoomOut: "Zoom arrière"
+  saved: "Enregistré"
+  editMenu: "Modifier la capture"
+  downloadEdited: "Image modifiée"
+  downloadOriginal: "Image originale"
+  edit: "Modifier"
+  replaceImage: "Remplacer l'image"
+  replaceHint: "Choisissez une nouvelle image pour cette étape"
+  replaceDrop: "Cliquez pour parcourir ou déposez une image ici"
+  replaceFormats: "PNG, JPG ou WebP"
+  download: "Télécharger"
+  deleteImage: "Supprimer l'image"
+  deleteConfirm: "Supprimer cette capture ? Pas de retour en arrière."
+  imageDeleted: "Image supprimée"
+  altButton: "ALT"
+  altLabel: "Texte alternatif"
+  altPlaceholder: "Décrivez cette image pour les lecteurs d'écran"
+
+annotationEditor:
+  title: "Modifier la capture"
+  toolBox: Rectangle
+  toolArrow: "Flèche"
+  toolText: Texte
+  toolSelect: "Sélectionner"
+  addTarget: "Ajouter la cible de clic"
+  toolRedact: Masquer
+  toolCrop: Recadrer
+  colorLabel: Couleur
+  textPlaceholder: "Écrivez quelque chose..."
+  targetBorder: Style de bordure
+  modeAnnotate: "Annoter"
+  toolLine: "Ligne"
+  duplicate: "Dupliquer"
+  toolEllipse: "Ellipse"
+  lineColor: "Couleur"
+  fillColor: "Remplissage"
+  lineWidth: "Épaisseur"
+  cornerRadius: "Rayon"
+  font: "Police"
+  bold: "Gras"
+  italic: "Italique"
+  lineHeight: "Interligne"
+  width_none: "Sans contour"
+  width_xs: "Très fin"
+  width_sm: "Fin"
+  width_ms: "Moyen fin"
+  width_md: "Moyen"
+  width_ml: "Moyen épais"
+  width_lg: "Épais"
+  width_xl: "Très épais"
+  zoom: "Zoom"
+  cropHint: "Faites glisser pour recadrer, ou un coin pour redimensionner"
+  resetCrop: "Réinitialiser"
+  arrowEnd: "Extrémité de flèche"
+  fontSize: "Taille"
+  undo: "Annuler"
+  redo: "Rétablir"
+  end_none: "Aucune"
+  end_bar: "Barre"
+  end_arrow: "Flèche"
+  end_arrow_solid: "Flèche pleine"
+  end_circle: "Cercle"
+  end_circle_solid: "Cercle plein"
+  end_square: "Carré"
+  end_square_solid: "Carré plein"
+  done: "Terminé"
 
 exportMenu:
   docx: DOCX

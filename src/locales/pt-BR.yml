@@ -44,11 +44,13 @@ library:
 
 guideme:
   live: Ao vivo
+  roadblock: "Encontramos um obstáculo. Aja na tela para avançar."
+  manualStep: "Esta etapa foi editada, então não pode ser detectada automaticamente. Use Próximo quando terminar."
   stepOf: "Passo $1 de $2"
   noDescription: Sem descrição
   prev: Anterior
   next: Próximo
-  finish: Terminar
+  finish: "Concluir"
   exitTitle: "Vai sair?"
   exitMessage: O passo a passo vai parar e o destaque vai sumir da página.
   stay: Ficar
@@ -83,6 +85,8 @@ settings:
   model: Modelo
   apiKey: Chave da API
   aiLanguage: "Idioma das descrições"
+  targetColor: "Cor do alvo de clique"
+  targetColorHint: "Padrão para novas etapas"
   saveSettings: Salvar ajustes
   saved: Salvo
   smartBlur: Desfoque inteligente
@@ -140,18 +144,12 @@ editor:
   backToLibrary: Voltar pra biblioteca
   guideMe: "Me guia!"
   deleteThisStep: "Excluir esse passo?"
-  blurSensitiveArea: Desfocar área sensível
   copyScreenshot: Copiar captura
   noScreenshot: Sem captura
 
 emptyGuide:
   title: Esse guia tá vazio
   subtitle: Grava alguns passos pra dar vida a ele
-
-blurCanvas:
-  drawInstructions: Desenhe retângulos pra desfocar
-  regionCount: "$1 região"
-  regionCountPlural: "$1 regiões"
 
 blurPanel:
   title: Desfoque inteligente
@@ -160,6 +158,75 @@ blurPanel:
   done: Pronto
   doneResume: "Pronto \xB7 Continuar gravação"
   resetAll: Limpar tudo
+
+screenshotView:
+  zoomIn: Aumentar zoom
+  zoomOut: Diminuir zoom
+  saved: Salvo
+  editMenu: Editar captura
+  downloadEdited: "Imagem editada"
+  downloadOriginal: "Imagem original"
+  edit: "Editar"
+  replaceImage: Substituir imagem
+  replaceHint: "Escolha uma nova imagem para esta etapa"
+  replaceDrop: "Clique para procurar ou solte uma imagem aqui"
+  replaceFormats: "PNG, JPG ou WebP"
+  download: Baixar
+  deleteImage: Excluir imagem
+  deleteConfirm: "Excluir essa captura? Não tem como desfazer."
+  imageDeleted: Imagem excluída
+  altButton: ALT
+  altLabel: Texto alternativo
+  altPlaceholder: Descreva essa imagem pra leitores de tela
+
+annotationEditor:
+  title: Editar captura
+  toolBox: Retângulo
+  toolArrow: Seta
+  toolText: Texto
+  toolSelect: "Selecionar"
+  addTarget: "Adicionar alvo de clique"
+  toolRedact: Ocultar
+  toolCrop: Recortar
+  colorLabel: Cor
+  textPlaceholder: Digite algo...
+  targetBorder: Estilo da borda
+  modeAnnotate: "Anotar"
+  toolLine: "Linha"
+  duplicate: "Duplicar"
+  toolEllipse: "Elipse"
+  lineColor: "Cor da linha"
+  fillColor: "Preenchimento"
+  lineWidth: "Espessura"
+  cornerRadius: "Raio"
+  font: "Fonte"
+  bold: "Negrito"
+  italic: "Itálico"
+  lineHeight: "Entrelinha"
+  width_none: "Sem contorno"
+  width_xs: "Muito fina"
+  width_sm: "Fina"
+  width_ms: "Média fina"
+  width_md: "Média"
+  width_ml: "Média grossa"
+  width_lg: "Grossa"
+  width_xl: "Muito grossa"
+  zoom: "Zoom"
+  cropHint: "Arraste para recortar ou arraste um canto para redimensionar"
+  resetCrop: "Redefinir recorte"
+  arrowEnd: "Ponta da seta"
+  fontSize: "Tamanho"
+  undo: "Desfazer"
+  redo: "Refazer"
+  end_none: "Nenhuma"
+  end_bar: "Barra"
+  end_arrow: "Seta"
+  end_arrow_solid: "Seta sólida"
+  end_circle: "Círculo"
+  end_circle_solid: "Círculo sólido"
+  end_square: "Quadrado"
+  end_square_solid: "Quadrado sólido"
+  done: Pronto
 
 exportMenu:
   docx: DOCX

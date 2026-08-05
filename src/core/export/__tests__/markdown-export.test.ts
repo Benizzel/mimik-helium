@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { exportGuideAsMarkdown } from '@/core/export/markdown-export';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
+
+vi.mock('@/core/screenshot/render', () => ({
+  renderScreenshot: async (s: Screenshot) => s.blob,
+}));
 
 function makeGuide(overrides: Partial<Guide> = {}): Guide {
   return {

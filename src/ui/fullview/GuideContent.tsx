@@ -2,25 +2,21 @@ import { Play } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TypeAnimation } from 'react-type-animation';
 import { i18n } from '#imports';
-import {
-  deleteStep,
-  getGuide,
-  onGuidesChanged,
-  updateGuideTitle,
-  updateScreenshotBlob,
-  updateStepDescription,
-} from '@/core/guides/service';
+import { deleteStep, getGuide, onGuidesChanged, updateGuideTitle, updateStepDescription } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
+import type { ScreenshotEdits } from '@/core/screenshot/types';
 import { openSidebar } from '@/lib/browser-api';
 import { sendMessage } from '@/lib/messaging';
 import { formatDate, getMostCommonDomain } from '@/lib/utils';
 import { useFullview } from '@/stores/fullview';
+import AnnotationEditor from '@/ui/shared/AnnotationEditor';
 import FaviconImg from '@/ui/shared/FaviconImg';
-import BlurCanvas from '@/ui/sidepanel/BlurCanvas';
 import GuideStepList from './components/GuideStepList';
 
 interface GuideContentProps {
   guideId: string;
+  initialStepId?: string;
+  initialTool?: 'annotate' | 'redact' | 'crop' | 'target';
 }
 
 interface GuideData {
@@ -29,19 +25,22 @@ interface GuideData {
   screenshots: Map<string, Screenshot>;
 }
 
-export default function GuideContent({ guideId }: GuideContentProps) {
-  const { setGuideTitle, setGuideStepCount, setGuideExportData } = useFullview((s) => ({
+export default function GuideContent({ guideId, initialStepId, initialTool }: GuideContentProps) {
+  const { setGuideTitle, setGuideStepCount, setGuideExportData, scrollToStep } = useFullview((s) => ({
     setGuideTitle: s.setGuideTitle,
     setGuideStepCount: s.setGuideStepCount,
     setGuideExportData: s.setGuideExportData,
+    scrollToStep: s.scrollToStep,
   }));
 
   const [data, setData] = useState<GuideData | null>(null);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [typingTitle, setTypingTitle] = useState<string | null>(null);
-  const [blurringStepId, setBlurringStepId] = useState<string | null>(null);
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [editingTool, setEditingTool] = useState<'annotate' | 'redact' | 'crop' | 'target'>('annotate');
   const titleRef = useRef('');
+  const appliedInitialRef = useRef(false);
 
   const loadGuide = useCallback(async () => {
     const result = await getGuide(guideId);
@@ -95,22 +94,41 @@ export default function GuideContent({ guideId }: GuideContentProps) {
     [guideId, loadGuide],
   );
 
-  const handleBlurSave = useCallback(
-    async (blob: Blob) => {
-      if (!blurringStepId || !data) return;
-      const screenshot = data.screenshots.get(blurringStepId);
+  const handleOpenEditor = useCallback(
+    async (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => {
+      await loadGuide();
+      setEditingStepId(stepId);
+      setEditingTool(tool);
+    },
+    [loadGuide],
+  );
+
+  const handleEditorDone = useCallback(
+    (edits: ScreenshotEdits) => {
+      if (!editingStepId || !data) return;
+      const screenshot = data.screenshots.get(editingStepId);
       if (!screenshot) return;
-      await updateScreenshotBlob(screenshot.id, blob);
       setData((prev) => {
         if (!prev) return prev;
         const newScreenshots = new Map(prev.screenshots);
-        newScreenshots.set(blurringStepId, { ...screenshot, blob });
+        newScreenshots.set(editingStepId, { ...screenshot, edits });
         return { ...prev, screenshots: newScreenshots };
       });
-      setBlurringStepId(null);
+      setEditingStepId(null);
     },
-    [blurringStepId, data],
+    [editingStepId, data],
   );
+
+  useEffect(() => {
+    if (appliedInitialRef.current || !data || !initialStepId) return;
+    if (!data.screenshots.has(initialStepId)) return;
+    appliedInitialRef.current = true;
+    scrollToStep(initialStepId);
+    if (initialTool) {
+      setEditingStepId(initialStepId);
+      setEditingTool(initialTool);
+    }
+  }, [data, initialStepId, initialTool, scrollToStep]);
 
   if (loading)
     return (
@@ -136,12 +154,17 @@ export default function GuideContent({ guideId }: GuideContentProps) {
   if (!data) return <p className="text-sm py-12 text-center text-purple">{i18n.t('fullview_guideNotFound')}</p>;
 
   const domain = getMostCommonDomain(data.steps);
-  const blurScreenshot = blurringStepId ? data.screenshots.get(blurringStepId) : undefined;
+  const editingScreenshot = editingStepId ? data.screenshots.get(editingStepId) : undefined;
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)]">
-      {blurringStepId && blurScreenshot && (
-        <BlurCanvas screenshot={blurScreenshot} onSave={handleBlurSave} onCancel={() => setBlurringStepId(null)} />
+      {editingStepId && editingScreenshot && (
+        <AnnotationEditor
+          screenshot={editingScreenshot}
+          tool={editingTool}
+          onDone={handleEditorDone}
+          onCancel={() => setEditingStepId(null)}
+        />
       )}
 
       <div
@@ -233,7 +256,7 @@ export default function GuideContent({ guideId }: GuideContentProps) {
         screenshots={data.screenshots}
         onDescriptionChange={handleDescriptionChange}
         onDelete={handleDeleteStep}
-        onBlur={(stepId) => setBlurringStepId(stepId)}
+        onOpenEditor={handleOpenEditor}
         onReorder={(newSteps) => setData((prev) => (prev ? { ...prev, steps: newSteps } : prev))}
       />
     </div>

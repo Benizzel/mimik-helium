@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { page: 'library'; category: 'all' | 'starred' | 'trash' } | { page: 'guide'; guideId: string };
+export type Route =
+  | { page: 'library'; category: 'all' | 'starred' | 'trash' }
+  | { page: 'guide'; guideId: string; stepId?: string; tool?: 'annotate' | 'redact' | 'crop' | 'target' };
 
 function parseHash(hash: string): Route {
   const h = hash.replace(/^#\/?/, '');
@@ -28,8 +30,11 @@ export function useRoute(): Route {
     const params = new URLSearchParams(window.location.search);
     const guideId = params.get('guideId');
     if (guideId) {
+      const stepId = params.get('stepId') ?? undefined;
+      const toolParam = params.get('tool');
+      const tool = toolParam === 'annotate' || toolParam === 'redact' || toolParam === 'crop' ? toolParam : undefined;
       window.history.replaceState(null, '', `${window.location.pathname}#guide/${guideId}`);
-      return { page: 'guide', guideId };
+      return { page: 'guide', guideId, stepId, tool };
     }
     return parseHash(window.location.hash);
   });

@@ -1,3 +1,5 @@
+import type { ScreenshotEdits } from '@/core/screenshot/types';
+
 export interface Guide {
   id: string;
   title: string;
@@ -37,6 +39,8 @@ export interface Screenshot {
   height: number;
   bounds?: ScreenshotBounds;
   pixelRatio?: number;
+  clickPoint?: { x: number; y: number };
+  edits?: ScreenshotEdits;
 }
 
 export interface Settings {
@@ -59,4 +63,5 @@ export interface ElementMeta {
   dataTestId: string | null;
   rect: { x: number; y: number; width: number; height: number };
   devicePixelRatio: number;
+  clickPoint?: { x: number; y: number };
 }
