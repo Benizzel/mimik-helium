@@ -2,8 +2,8 @@ import { ChevronRight, FileText, Search, Star, Trash2 } from 'lucide-react';
 import { i18n } from '#imports';
 import { useFullview } from '@/stores/fullview';
 import { Button } from '@/ui/components/ui/button';
+import MascotIcon from '@/ui/shared/MascotIcon';
 import ExportMenu from '@/ui/sidepanel/ExportMenu';
-import MascotIcon from './components/MascotIcon';
 import type { Route } from './router';
 import { navigate } from './router';
 

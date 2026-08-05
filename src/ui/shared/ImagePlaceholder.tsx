@@ -1,6 +1,6 @@
-import { ImageOff } from 'lucide-react';
 import type { Screenshot } from '@/core/guides/types';
 import { resolveViewport } from '@/core/screenshot/geometry';
+import MascotIcon from '@/ui/shared/MascotIcon';
 
 interface ImagePlaceholderProps {
   label: string;
@@ -16,9 +16,7 @@ export default function ImagePlaceholder({ label, ratio = DEFAULT_RATIO, classNa
       className={`flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-secondary/60 ${className}`}
       style={{ aspectRatio: ratio }}
     >
-      <span className="flex items-center justify-center w-11 h-11 rounded-full bg-card text-muted-foreground shadow-sm">
-        <ImageOff size={19} />
-      </span>
+      <MascotIcon size={64} />
       <span className="text-[12px] font-semibold text-muted-foreground">{label}</span>
     </div>
   );
