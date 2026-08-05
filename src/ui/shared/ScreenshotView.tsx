@@ -1,12 +1,11 @@
-import { Crop, Download, EyeOff, Highlighter, ImageUp, Pencil, Target, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { Download, ImageUp, Pencil, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { deleteScreenshot, updateScreenshotBlob, updateScreenshotEdits } from '@/core/guides/service';
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
-import { panBy, resolveTarget, resolveViewport, zoomBy } from '@/core/screenshot/geometry';
+import { panBy, resolveViewport, zoomBy } from '@/core/screenshot/geometry';
 import { renderScreenshot } from '@/core/screenshot/render';
-import type { ClickTarget, ScreenshotEdits } from '@/core/screenshot/types';
-import { DEFAULT_TARGET_COLOR } from '@/core/screenshot/types';
+import type { ScreenshotEdits } from '@/core/screenshot/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,8 +43,6 @@ const SAVED_MESSAGE_MS = 1500;
 const ZOOM_IN_FACTOR = 1.25;
 const ZOOM_OUT_FACTOR = 0.8;
 const VIEWPORT_EPSILON = 0.5;
-const TARGET_WIDTH_RATIO = 0.3;
-const TARGET_HEIGHT_RATIO = 0.15;
 const FRAME_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const FRAME_TRANSITION = `width 0.4s ${FRAME_EASING}, height 0.4s ${FRAME_EASING}, left 0.4s ${FRAME_EASING}, top 0.4s ${FRAME_EASING}`;
 
@@ -53,22 +50,6 @@ function withFullViewport(screenshot: Screenshot): Screenshot {
   return {
     ...screenshot,
     edits: { ...screenshot.edits, viewport: { x: 0, y: 0, width: screenshot.width, height: screenshot.height } },
-  };
-}
-
-function defaultTargetRect(screenshot: Screenshot): ClickTarget {
-  const dpr = screenshot.pixelRatio || 1;
-  const width = screenshot.width / dpr;
-  const height = screenshot.height / dpr;
-  const w = width * TARGET_WIDTH_RATIO;
-  const h = height * TARGET_HEIGHT_RATIO;
-  return {
-    x: (width - w) / 2,
-    y: (height - h) / 2,
-    width: w,
-    height: h,
-    border: 'dashed',
-    color: DEFAULT_TARGET_COLOR,
   };
 }
 
@@ -240,16 +221,6 @@ export default function ScreenshotView({
     if (drag.moved) scheduleSave(effectiveEdits ?? {});
   };
 
-  const handleClickTarget = () => {
-    const nextEdits: ScreenshotEdits = {
-      ...effectiveEdits,
-      target: resolveTarget(effectiveScreenshot) ?? defaultTargetRect(effectiveScreenshot),
-    };
-    setEditsOverride(nextEdits);
-    scheduleSave(nextEdits);
-    onOpenEditor?.('target');
-  };
-
   const handleAltChange = (value: string) => {
     setAltDraft(value);
     const nextEdits: ScreenshotEdits = { ...effectiveEdits, alt: value };
@@ -400,21 +371,9 @@ export default function ScreenshotView({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onSelect={handleClickTarget}>
-                <Target size={14} />
-                {i18n.t(effectiveEdits?.target ? 'screenshotView.editClickTarget' : 'screenshotView.clickTarget')}
-              </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => onOpenEditor?.('annotate')}>
-                <Highlighter size={14} />
-                {i18n.t('screenshotView.annotate')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onOpenEditor?.('redact')}>
-                <EyeOff size={14} />
-                {i18n.t('screenshotView.redact')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onOpenEditor?.('crop')}>
-                <Crop size={14} />
-                {i18n.t('screenshotView.crop')}
+                <Pencil size={14} />
+                {i18n.t('screenshotView.edit')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => setReplaceOpen(true)}>

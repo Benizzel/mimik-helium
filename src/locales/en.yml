@@ -162,13 +162,9 @@ screenshotView:
   zoomOut: Zoom out
   saved: Saved
   editMenu: Edit screenshot
-  clickTarget: Click target
-  editClickTarget: "Edit click target"
   downloadEdited: "Edited image"
   downloadOriginal: "Original image"
-  annotate: Annotate
-  redact: Redact
-  crop: Crop
+  edit: "Edit"
   replaceImage: Replace image
   replaceHint: "Choose a new image for this step"
   replaceDrop: "Click to browse or drop an image here"

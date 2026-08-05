@@ -230,6 +230,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const [targetPicker, setTargetPicker] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [hue, setHue] = useState(0);
   const [grabbing, setGrabbing] = useState(false);
   const [mode, setMode] = useState<EditorMode>(initialModeFor(tool));
   const [fill, setFill] = useState('transparent');
@@ -345,6 +346,17 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   }, [selectedId]);
 
   useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let raf = 0;
+    const loop = () => {
+      setHue((h) => (h + 3) % 360);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  useEffect(() => {
     if (!textEditor) return;
     const id = requestAnimationFrame(() => textInputRef.current?.focus());
     return () => cancelAnimationFrame(id);
@@ -358,7 +370,10 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-    for (const a of annotations) drawAnnotation(ctx, a, 0, 0);
+    for (const a of annotations) {
+      const pulsing = a.type === 'target' && a.id !== selectedId;
+      drawAnnotation(ctx, pulsing ? { ...a, color: `hsl(${hue} 85% 58%)` } : a, 0, 0);
+    }
     if (draft) {
       ctx.save();
       ctx.globalAlpha = 0.7;
@@ -403,7 +418,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       }
       ctx.restore();
     }
-  }, [annotations, draft, cropDraft, selectedId, bitmap, getScale, mode, viewport]);
+  }, [annotations, draft, cropDraft, selectedId, bitmap, getScale, mode, viewport, hue]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -729,47 +744,6 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
-      <div className="px-4 py-2.5 bg-primary flex items-center justify-between shrink-0">
-        <span className="text-xs font-medium text-primary-foreground">{i18n.t('annotationEditor.title')}</span>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={undo}
-            disabled={past.length === 0}
-            title={i18n.t('annotationEditor.undo')}
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-primary-foreground hover:bg-primary-foreground/15 disabled:opacity-30"
-          >
-            <Undo2 size={13} />
-          </button>
-          <button
-            type="button"
-            onClick={redo}
-            disabled={future.length === 0}
-            title={i18n.t('annotationEditor.redo')}
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-primary-foreground hover:bg-primary-foreground/15 disabled:opacity-30"
-          >
-            <Redo2 size={13} />
-          </button>
-          <div className="w-px h-5 bg-primary-foreground/15 mx-1" />
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold text-primary-foreground rounded-lg border border-primary-foreground/10 bg-primary-foreground/[0.06] hover:bg-destructive/15 hover:text-destructive transition-colors"
-          >
-            <X size={12} />
-            {i18n.t('common.cancel')}
-          </button>
-          <button
-            type="button"
-            onClick={handleDone}
-            disabled={saving}
-            className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold text-primary bg-primary-foreground rounded-lg hover:bg-primary-foreground/90 transition-colors disabled:opacity-50"
-          >
-            <Check size={12} />
-            {i18n.t('annotationEditor.done')}
-          </button>
-        </div>
-      </div>
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex items-center justify-center overflow-auto p-6">
           <div className="relative inline-block">
@@ -1087,25 +1061,66 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
           </div>
         )}
 
-        <div className="flex items-center gap-2">
-          {MODES.map(({ id, icon: Icon, labelKey }) => (
+        <div className="flex items-center gap-3 w-full justify-between">
+          <div className="flex items-center gap-1">
             <button
-              key={id}
               type="button"
-              onClick={() => {
-                setMode(id);
-                setSelectedId(null);
-              }}
-              className={`flex flex-col items-center justify-center gap-1 w-[74px] h-[60px] rounded-xl border transition-colors ${
-                mode === id
-                  ? 'bg-secondary border-accent text-accent'
-                  : 'bg-card border-border text-foreground hover:bg-secondary/50'
-              }`}
+              onClick={undo}
+              disabled={past.length === 0}
+              title={i18n.t('annotationEditor.undo')}
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground hover:bg-secondary disabled:opacity-30"
             >
-              <Icon size={17} />
-              <span className="text-[11px] font-semibold">{i18n.t(labelKey)}</span>
+              <Undo2 size={15} />
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={redo}
+              disabled={future.length === 0}
+              title={i18n.t('annotationEditor.redo')}
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-foreground hover:bg-secondary disabled:opacity-30"
+            >
+              <Redo2 size={15} />
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            {MODES.map(({ id, icon: Icon, labelKey }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => {
+                  setMode(id);
+                  setSelectedId(null);
+                }}
+                className={`flex flex-col items-center justify-center gap-1 w-[74px] h-[60px] rounded-xl border transition-colors ${
+                  mode === id
+                    ? 'bg-secondary border-accent text-accent'
+                    : 'bg-card border-border text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                <Icon size={17} />
+                <span className="text-[11px] font-semibold">{i18n.t(labelKey)}</span>
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex items-center gap-1 px-3 h-8 text-[12px] font-semibold text-foreground rounded-lg border border-border hover:bg-secondary"
+            >
+              <X size={13} />
+              {i18n.t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={handleDone}
+              disabled={saving}
+              className="flex items-center gap-1 px-3.5 h-8 text-[12px] font-bold text-primary-foreground bg-accent rounded-lg hover:bg-accent/90 disabled:opacity-50"
+            >
+              <Check size={13} />
+              {i18n.t('annotationEditor.done')}
+            </button>
+          </div>
         </div>
       </div>
     </div>

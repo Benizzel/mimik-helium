@@ -162,13 +162,9 @@ screenshotView:
   zoomOut: Diminuir zoom
   saved: Salvo
   editMenu: Editar captura
-  clickTarget: Alvo de clique
-  editClickTarget: "Editar alvo de clique"
   downloadEdited: "Imagem editada"
   downloadOriginal: "Imagem original"
-  annotate: Anotar
-  redact: Ocultar
-  crop: Recortar
+  edit: "Editar"
   replaceImage: Substituir imagem
   replaceHint: "Escolha uma nova imagem para esta etapa"
   replaceDrop: "Clique para procurar ou solte uma imagem aqui"
