@@ -202,6 +202,8 @@ annotationEditor:
   width_medium: "Média"
   width_large: "Grossa"
   cornerRadius: "raio"
+  cropHint: "Arraste para recortar ou arraste um canto para redimensionar"
+  resetCrop: "Redefinir recorte"
   arrowEnd: "ponta"
   fontSize: "tamanho"
   undo: "Desfazer"

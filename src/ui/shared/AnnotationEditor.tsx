@@ -9,6 +9,7 @@ import {
   Pencil,
   PenTool,
   Redo2,
+  RotateCcw,
   Square,
   SquareDashed,
   Trash2,
@@ -751,6 +752,23 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
         </div>
       </div>
       <div className="shrink-0 bg-card border-t border-border px-4 py-3 flex flex-col items-center gap-2.5">
+        {mode === 'crop' && (
+          <div className="flex items-center gap-3 min-h-[46px]">
+            <span className="text-[11px] text-muted-foreground">{i18n.t('annotationEditor.cropHint')}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setViewport(undefined);
+                setCropDraft(null);
+              }}
+              disabled={!viewport}
+              className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-border text-[12px] font-semibold text-foreground hover:bg-secondary disabled:opacity-40"
+            >
+              <RotateCcw size={13} />
+              {i18n.t('annotationEditor.resetCrop')}
+            </button>
+          </div>
+        )}
         {mode === 'annotate' && (
           <div className="flex items-end gap-5 min-h-[46px]">
             <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">

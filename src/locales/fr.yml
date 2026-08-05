@@ -202,6 +202,8 @@ annotationEditor:
   width_medium: "Moyen"
   width_large: "Épais"
   cornerRadius: "rayon"
+  cropHint: "Faites glisser pour recadrer, ou un coin pour redimensionner"
+  resetCrop: "Réinitialiser"
   arrowEnd: "extrémité"
   fontSize: "taille"
   undo: "Annuler"

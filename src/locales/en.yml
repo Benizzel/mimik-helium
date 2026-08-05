@@ -202,6 +202,8 @@ annotationEditor:
   width_medium: "Medium"
   width_large: "Large"
   cornerRadius: "corner radius"
+  cropHint: "Drag to crop, or drag a corner to resize"
+  resetCrop: "Reset crop"
   arrowEnd: "end"
   fontSize: "font size"
   undo: "Undo"
