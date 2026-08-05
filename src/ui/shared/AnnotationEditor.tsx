@@ -7,6 +7,7 @@ import {
   Eraser,
   EyeOff,
   Minus,
+  MoveVertical,
   Pencil,
   PenTool,
   Redo2,
@@ -37,22 +38,21 @@ import type {
   Annotation,
   ArrowEnd,
   FontFamily,
-  FontSizeName,
-  FontStyleName,
-  LineHeightName,
   LineWidth,
   ScreenshotEdits,
   TargetBorder,
 } from '@/core/screenshot/types';
 import {
   ARROW_ENDS,
+  DEFAULT_FONT_SIZE,
+  DEFAULT_LINE_HEIGHT,
   FONT_FAMILIES,
   FONT_FAMILY_ORDER,
-  FONT_SIZE_ORDER,
-  FONT_SIZES,
-  FONT_STYLE_ORDER,
-  LINE_HEIGHT_ORDER,
   LINE_WIDTH_ORDER,
+  MAX_FONT_SIZE,
+  MAX_LINE_HEIGHT,
+  MIN_FONT_SIZE,
+  MIN_LINE_HEIGHT,
   SHAPE_COLORS,
   TARGET_COLORS,
 } from '@/core/screenshot/types';
@@ -88,6 +88,12 @@ const MIN_CROP_SIZE = 20;
 const HANDLE_DISPLAY_SIZE = 10;
 const HANDLE_HIT_PX = 10;
 const HISTORY_LIMIT = 49;
+
+function clampNumber(raw: string, min: number, max: number): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, n));
+}
 const SELECTION_GAP = 6;
 const DRAFT_ID = 'draft';
 const TARGET_ID = 'click-target';
@@ -178,9 +184,10 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const [radius, setRadius] = useState(0);
   const [arrowEnd, setArrowEnd] = useState<ArrowEnd>('arrow-solid');
   const [fontFamily, setFontFamily] = useState<FontFamily>('sans-serif');
-  const [fontStyle, setFontStyle] = useState<FontStyleName>('normal');
-  const [fontSize, setFontSize] = useState<FontSizeName>('md');
-  const [lineHeight, setLineHeight] = useState<LineHeightName>('md');
+  const [bold, setBold] = useState(false);
+  const [italic, setItalic] = useState(false);
+  const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
+  const [lineHeight, setLineHeight] = useState(DEFAULT_LINE_HEIGHT);
   const [past, setPast] = useState<Annotation[][]>([]);
   const [future, setFuture] = useState<Annotation[][]>([]);
 
@@ -401,7 +408,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       const rect = canvasRef.current?.getBoundingClientRect();
       setTextEditor({
         x: p.x,
-        y: p.y + FONT_SIZES[fontSize],
+        y: p.y + fontSize,
         left: rect ? e.clientX - rect.left : 0,
         top: rect ? e.clientY - rect.top : 0,
       });
@@ -565,23 +572,25 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
   const setTextProp = (patch: {
     fontFamily?: FontFamily;
-    fontStyle?: FontStyleName;
-    fontSize?: FontSizeName;
-    lineHeight?: LineHeightName;
+    bold?: boolean;
+    italic?: boolean;
+    size?: number;
+    lineHeight?: number;
   }) => {
     if (patch.fontFamily) setFontFamily(patch.fontFamily);
-    if (patch.fontStyle) setFontStyle(patch.fontStyle);
-    if (patch.fontSize) setFontSize(patch.fontSize);
-    if (patch.lineHeight) setLineHeight(patch.lineHeight);
+    if (patch.bold !== undefined) setBold(patch.bold);
+    if (patch.italic !== undefined) setItalic(patch.italic);
+    if (patch.size !== undefined) setFontSize(patch.size);
+    if (patch.lineHeight !== undefined) setLineHeight(patch.lineHeight);
     if (!selected || selected.type !== 'text') return;
     const next = {
       fontFamily: patch.fontFamily ?? selected.fontFamily ?? 'sans-serif',
-      fontStyle: patch.fontStyle ?? selected.fontStyle ?? 'normal',
-      fontSize: patch.fontSize ?? selected.fontSize ?? 'md',
-      lineHeight: patch.lineHeight ?? selected.lineHeight ?? 'md',
+      bold: patch.bold ?? selected.bold ?? false,
+      italic: patch.italic ?? selected.italic ?? false,
+      size: patch.size ?? selected.size,
+      lineHeight: patch.lineHeight ?? selected.lineHeight ?? DEFAULT_LINE_HEIGHT,
     };
-    const px = FONT_SIZES[next.fontSize];
-    patchSelected({ ...next, size: px, ...measureText(selected.text, px, next.fontFamily, next.fontStyle) });
+    patchSelected({ ...next, ...measureText(selected.text, next.size, next.fontFamily, next.bold, next.italic) });
   };
 
   const handleColorSelect = (c: string) => {
@@ -589,13 +598,11 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     setAnnotations((prev) => prev.map((a) => (a.id === selectedId && a.type !== 'redact' ? { ...a, color: c } : a)));
   };
 
-  const measureText = (value: string, px: number, family: FontFamily, style: FontStyleName) => {
+  const measureText = (value: string, px: number, family: FontFamily, isBold: boolean, isItalic: boolean) => {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return { w: value.length * px * 0.6, h: px * 1.4 };
     ctx.save();
-    const italic = style === 'italic' ? 'italic ' : '';
-    const weight = style === 'bold' ? 700 : 500;
-    ctx.font = `${italic}${weight} ${px}px ${FONT_FAMILIES[family]}`;
+    ctx.font = `${isItalic ? 'italic ' : ''}${isBold ? 700 : 500} ${px}px ${FONT_FAMILIES[family]}`;
     const w = ctx.measureText(value).width;
     ctx.restore();
     return { w, h: px * 1.4 };
@@ -614,11 +621,11 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
           y: textEditor.y,
           text: textValue.trim(),
           color,
-          size: FONT_SIZES[fontSize],
-          ...measureText(textValue.trim(), FONT_SIZES[fontSize], fontFamily, fontStyle),
-          fontSize,
+          size: fontSize,
+          ...measureText(textValue.trim(), fontSize, fontFamily, bold, italic),
           fontFamily,
-          fontStyle,
+          bold,
+          italic,
           lineHeight,
         },
       ]);
@@ -773,47 +780,68 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                       <select
                         value={selected.fontFamily ?? 'sans-serif'}
                         onChange={(e) => setTextProp({ fontFamily: e.target.value as FontFamily })}
-                        className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
+                        title={i18n.t('annotationEditor.font')}
+                        className="h-6 rounded-md bg-primary-foreground/10 px-1.5 text-[11px] text-primary-foreground outline-none"
+                        style={{ fontFamily: FONT_FAMILIES[selected.fontFamily ?? 'sans-serif'] }}
                       >
                         {FONT_FAMILY_ORDER.map((f) => (
-                          <option key={f} value={f}>
-                            {f}
+                          <option key={f} value={f} style={{ fontFamily: FONT_FAMILIES[f] }}>
+                            Ag — {f}
                           </option>
                         ))}
                       </select>
-                      <select
-                        value={selected.fontStyle ?? 'normal'}
-                        onChange={(e) => setTextProp({ fontStyle: e.target.value as FontStyleName })}
-                        className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
+                      <div className="flex items-center gap-0.5 rounded-md bg-primary-foreground/10 p-0.5">
+                        <button
+                          type="button"
+                          title={i18n.t('annotationEditor.bold')}
+                          onClick={() => setTextProp({ bold: !selected.bold })}
+                          className={`w-5 h-5 rounded text-[12px] font-extrabold ${selected.bold ? 'bg-accent text-primary-foreground' : 'text-primary-foreground hover:bg-primary-foreground/15'}`}
+                        >
+                          B
+                        </button>
+                        <button
+                          type="button"
+                          title={i18n.t('annotationEditor.italic')}
+                          onClick={() => setTextProp({ italic: !selected.italic })}
+                          className={`w-5 h-5 rounded text-[12px] italic font-serif ${selected.italic ? 'bg-accent text-primary-foreground' : 'text-primary-foreground hover:bg-primary-foreground/15'}`}
+                        >
+                          I
+                        </button>
+                      </div>
+                      <div
+                        className="flex items-center rounded-md bg-primary-foreground/10 h-6"
+                        title={i18n.t('annotationEditor.fontSize')}
                       >
-                        {FONT_STYLE_ORDER.map((f) => (
-                          <option key={f} value={f}>
-                            {i18n.t(`annotationEditor.style_${f}`)}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={selected.fontSize ?? 'md'}
-                        onChange={(e) => setTextProp({ fontSize: e.target.value as FontSizeName })}
-                        className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
+                        <span className="pl-1.5 text-[9px] text-primary-foreground/60">A</span>
+                        <input
+                          type="number"
+                          min={MIN_FONT_SIZE}
+                          max={MAX_FONT_SIZE}
+                          value={Math.round(selected.size)}
+                          onChange={(e) =>
+                            setTextProp({ size: clampNumber(e.target.value, MIN_FONT_SIZE, MAX_FONT_SIZE) })
+                          }
+                          className="w-9 bg-transparent text-center text-[11px] tabular-nums text-primary-foreground outline-none"
+                        />
+                        <span className="pr-1.5 text-[13px] text-primary-foreground/60">A</span>
+                      </div>
+                      <div
+                        className="flex items-center gap-1 rounded-md bg-primary-foreground/10 h-6 px-1.5"
+                        title={i18n.t('annotationEditor.lineHeight')}
                       >
-                        {FONT_SIZE_ORDER.map((f) => (
-                          <option key={f} value={f}>
-                            {i18n.t(`annotationEditor.size_${f}`)}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={selected.lineHeight ?? 'md'}
-                        onChange={(e) => setTextProp({ lineHeight: e.target.value as LineHeightName })}
-                        className="h-6 rounded-md bg-primary-foreground/10 px-1 text-[10px] text-primary-foreground outline-none"
-                      >
-                        {LINE_HEIGHT_ORDER.map((f) => (
-                          <option key={f} value={f}>
-                            {i18n.t(`annotationEditor.height_${f}`)}
-                          </option>
-                        ))}
-                      </select>
+                        <MoveVertical size={11} className="text-primary-foreground/60" />
+                        <input
+                          type="number"
+                          step={0.1}
+                          min={MIN_LINE_HEIGHT}
+                          max={MAX_LINE_HEIGHT}
+                          value={selected.lineHeight ?? DEFAULT_LINE_HEIGHT}
+                          onChange={(e) =>
+                            setTextProp({ lineHeight: clampNumber(e.target.value, MIN_LINE_HEIGHT, MAX_LINE_HEIGHT) })
+                          }
+                          className="w-8 bg-transparent text-center text-[11px] tabular-nums text-primary-foreground outline-none"
+                        />
+                      </div>
                     </>
                   )}
                   <button

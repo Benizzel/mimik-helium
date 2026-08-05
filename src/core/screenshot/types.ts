@@ -36,23 +36,20 @@ export const LINE_WIDTHS: Record<LineWidth, number> = {
 export const LINE_WIDTH_ORDER: LineWidth[] = ['none', 'xs', 'sm', 'ms', 'md', 'ml', 'lg', 'xl'];
 
 export type FontFamily = 'sans-serif' | 'serif' | 'monospace';
-export type FontStyleName = 'normal' | 'bold' | 'italic';
-export type FontSizeName = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-export type LineHeightName = 'sm' | 'md' | 'lg';
-
 export const FONT_FAMILIES: Record<FontFamily, string> = {
   'sans-serif': 'Poppins, sans-serif',
   serif: 'Georgia, serif',
   monospace: 'ui-monospace, monospace',
 };
 
-export const FONT_SIZES: Record<FontSizeName, number> = { xs: 16, sm: 22, md: 30, lg: 42, xl: 60 };
-export const LINE_HEIGHTS: Record<LineHeightName, number> = { sm: 1.1, md: 1.4, lg: 1.9 };
-
 export const FONT_FAMILY_ORDER: FontFamily[] = ['sans-serif', 'serif', 'monospace'];
-export const FONT_STYLE_ORDER: FontStyleName[] = ['normal', 'bold', 'italic'];
-export const FONT_SIZE_ORDER: FontSizeName[] = ['xs', 'sm', 'md', 'lg', 'xl'];
-export const LINE_HEIGHT_ORDER: LineHeightName[] = ['sm', 'md', 'lg'];
+
+export const DEFAULT_FONT_SIZE = 32;
+export const MIN_FONT_SIZE = 8;
+export const MAX_FONT_SIZE = 200;
+export const DEFAULT_LINE_HEIGHT = 1.4;
+export const MIN_LINE_HEIGHT = 0.8;
+export const MAX_LINE_HEIGHT = 3;
 
 export type ArrowEnd = 'none' | 'bar' | 'arrow' | 'arrow-solid' | 'circle' | 'circle-solid' | 'square' | 'square-solid';
 
@@ -132,10 +129,10 @@ export type Annotation =
       size: number;
       w?: number;
       h?: number;
-      fontSize?: FontSizeName;
       fontFamily?: FontFamily;
-      fontStyle?: FontStyleName;
-      lineHeight?: LineHeightName;
+      bold?: boolean;
+      italic?: boolean;
+      lineHeight?: number;
     }
   | { id: string; type: 'freehand'; points: number[]; color: string; lineWidth?: LineWidth }
   | { id: string; type: 'redact'; x: number; y: number; w: number; h: number; style: 'blur' | 'solid' }

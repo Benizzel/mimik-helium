@@ -1,5 +1,5 @@
 import type { Annotation, ArrowEnd } from './types';
-import { FONT_FAMILIES, FONT_SIZES, LINE_HEIGHTS, LINE_WIDTHS } from './types';
+import { DEFAULT_LINE_HEIGHT, FONT_FAMILIES, LINE_WIDTHS } from './types';
 
 export type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
@@ -111,13 +111,14 @@ export function drawAnnotation(ctx: Ctx, a: Annotation, originX: number, originY
       break;
     }
     case 'text': {
-      const px = a.fontSize ? FONT_SIZES[a.fontSize] : a.size;
+      const px = a.size;
       const family = FONT_FAMILIES[a.fontFamily ?? 'sans-serif'];
-      const style = a.fontStyle === 'italic' ? 'italic ' : '';
-      const weight = a.fontStyle === 'bold' ? 700 : 500;
+      const style = a.italic ? 'italic ' : '';
+      const weight = a.bold ? 700 : 500;
       ctx.fillStyle = a.color;
       ctx.font = `${style}${weight} ${px}px ${family}`;
-      const lh = px * LINE_HEIGHTS[a.lineHeight ?? 'md'];
+      const ratio = typeof a.lineHeight === 'number' ? a.lineHeight : DEFAULT_LINE_HEIGHT;
+      const lh = px * ratio;
       a.text.split('\n').forEach((line, i) => {
         ctx.fillText(line, a.x, a.y + i * lh);
       });
