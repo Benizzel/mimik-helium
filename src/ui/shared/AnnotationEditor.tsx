@@ -1,6 +1,7 @@
 import {
   ArrowUpRight,
   Check,
+  ChevronDown,
   Circle as CircleIcon,
   CopyPlus,
   Crop,
@@ -19,7 +20,7 @@ import {
   Undo2,
   X,
 } from 'lucide-react';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { updateScreenshotEdits } from '@/core/guides/service';
@@ -56,6 +57,12 @@ import {
   SHAPE_COLORS,
   TARGET_COLORS,
 } from '@/core/screenshot/types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/ui/components/ui/dropdown-menu';
 
 type EditorMode = 'crop' | 'annotate' | 'redact';
 type EditorTool = 'eraser' | 'line' | 'arrow' | 'box' | 'ellipse' | 'text' | 'freehand';
@@ -89,10 +96,55 @@ const HANDLE_DISPLAY_SIZE = 10;
 const HANDLE_HIT_PX = 10;
 const HISTORY_LIMIT = 49;
 
-function clampNumber(raw: string, min: number, max: number): number {
+function clampNumber(raw: string | number, min: number, max: number): number {
   const n = Number(raw);
   if (!Number.isFinite(n)) return min;
   return Math.min(max, Math.max(min, n));
+}
+
+interface StepperProps {
+  title: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  decimals?: number;
+  width: string;
+  prefix?: ReactNode;
+  suffix?: ReactNode;
+  onChange: (value: number) => void;
+}
+
+function Stepper({ title, value, min, max, step, decimals = 0, width, prefix, suffix, onChange }: StepperProps) {
+  const round = (n: number) => Number(n.toFixed(decimals));
+  return (
+    <div className="flex items-center gap-0.5 rounded-md bg-primary-foreground/10 h-6 px-1" title={title}>
+      {prefix}
+      <button
+        type="button"
+        aria-label="-"
+        onClick={() => onChange(round(clampNumber(value - step, min, max)))}
+        className="w-4 h-5 rounded text-primary-foreground/70 hover:bg-primary-foreground/15 text-[13px] leading-none"
+      >
+        &minus;
+      </button>
+      <input
+        value={value}
+        inputMode="decimal"
+        onChange={(e) => onChange(round(clampNumber(e.target.value, min, max)))}
+        className={`${width} bg-transparent text-center text-[11px] tabular-nums text-primary-foreground outline-none`}
+      />
+      <button
+        type="button"
+        aria-label="+"
+        onClick={() => onChange(round(clampNumber(value + step, min, max)))}
+        className="w-4 h-5 rounded text-primary-foreground/70 hover:bg-primary-foreground/15 text-[13px] leading-none"
+      >
+        +
+      </button>
+      {suffix}
+    </div>
+  );
 }
 const SELECTION_GAP = 6;
 const DRAFT_ID = 'draft';
@@ -777,19 +829,31 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                   )}
                   {selected.type === 'text' && (
                     <>
-                      <select
-                        value={selected.fontFamily ?? 'sans-serif'}
-                        onChange={(e) => setTextProp({ fontFamily: e.target.value as FontFamily })}
-                        title={i18n.t('annotationEditor.font')}
-                        className="h-6 rounded-md bg-primary-foreground/10 px-1.5 text-[11px] text-primary-foreground outline-none"
-                        style={{ fontFamily: FONT_FAMILIES[selected.fontFamily ?? 'sans-serif'] }}
-                      >
-                        {FONT_FAMILY_ORDER.map((f) => (
-                          <option key={f} value={f} style={{ fontFamily: FONT_FAMILIES[f] }}>
-                            Ag — {f}
-                          </option>
-                        ))}
-                      </select>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            title={i18n.t('annotationEditor.font')}
+                            className="flex items-center gap-1.5 h-6 rounded-md bg-primary-foreground/10 px-2 text-[11px] text-primary-foreground hover:bg-primary-foreground/20"
+                            style={{ fontFamily: FONT_FAMILIES[selected.fontFamily ?? 'sans-serif'] }}
+                          >
+                            <span className="text-[13px] leading-none">Ag</span>
+                            <ChevronDown size={10} className="opacity-60" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="min-w-[150px]">
+                          {FONT_FAMILY_ORDER.map((f) => (
+                            <DropdownMenuItem
+                              key={f}
+                              onSelect={() => setTextProp({ fontFamily: f })}
+                              style={{ fontFamily: FONT_FAMILIES[f] }}
+                            >
+                              <span className="text-[15px]">Ag</span>
+                              <span className="text-[12px] text-muted-foreground">{f}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <div className="flex items-center gap-0.5 rounded-md bg-primary-foreground/10 p-0.5">
                         <button
                           type="button"
@@ -808,40 +872,28 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                           I
                         </button>
                       </div>
-                      <div
-                        className="flex items-center rounded-md bg-primary-foreground/10 h-6"
+                      <Stepper
                         title={i18n.t('annotationEditor.fontSize')}
-                      >
-                        <span className="pl-1.5 text-[9px] text-primary-foreground/60">A</span>
-                        <input
-                          type="number"
-                          min={MIN_FONT_SIZE}
-                          max={MAX_FONT_SIZE}
-                          value={Math.round(selected.size)}
-                          onChange={(e) =>
-                            setTextProp({ size: clampNumber(e.target.value, MIN_FONT_SIZE, MAX_FONT_SIZE) })
-                          }
-                          className="w-9 bg-transparent text-center text-[11px] tabular-nums text-primary-foreground outline-none"
-                        />
-                        <span className="pr-1.5 text-[13px] text-primary-foreground/60">A</span>
-                      </div>
-                      <div
-                        className="flex items-center gap-1 rounded-md bg-primary-foreground/10 h-6 px-1.5"
+                        prefix={<span className="text-[9px] text-primary-foreground/60">A</span>}
+                        suffix={<span className="text-[13px] text-primary-foreground/60">A</span>}
+                        value={Math.round(selected.size)}
+                        min={MIN_FONT_SIZE}
+                        max={MAX_FONT_SIZE}
+                        step={2}
+                        width="w-7"
+                        onChange={(v) => setTextProp({ size: v })}
+                      />
+                      <Stepper
                         title={i18n.t('annotationEditor.lineHeight')}
-                      >
-                        <MoveVertical size={11} className="text-primary-foreground/60" />
-                        <input
-                          type="number"
-                          step={0.1}
-                          min={MIN_LINE_HEIGHT}
-                          max={MAX_LINE_HEIGHT}
-                          value={selected.lineHeight ?? DEFAULT_LINE_HEIGHT}
-                          onChange={(e) =>
-                            setTextProp({ lineHeight: clampNumber(e.target.value, MIN_LINE_HEIGHT, MAX_LINE_HEIGHT) })
-                          }
-                          className="w-8 bg-transparent text-center text-[11px] tabular-nums text-primary-foreground outline-none"
-                        />
-                      </div>
+                        prefix={<MoveVertical size={11} className="text-primary-foreground/60" />}
+                        value={selected.lineHeight ?? DEFAULT_LINE_HEIGHT}
+                        min={MIN_LINE_HEIGHT}
+                        max={MAX_LINE_HEIGHT}
+                        step={0.1}
+                        decimals={1}
+                        width="w-7"
+                        onChange={(v) => setTextProp({ lineHeight: v })}
+                      />
                     </>
                   )}
                   <button
