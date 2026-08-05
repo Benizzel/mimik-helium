@@ -256,6 +256,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   };
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<DragState | null>(null);
 
   const getScale = useCallback((): number => {
@@ -308,6 +309,12 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [selectedId, pushHistory]);
+
+  useEffect(() => {
+    if (!textEditor) return;
+    const id = requestAnimationFrame(() => textInputRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [textEditor]);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -422,6 +429,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     }
 
     if (activeTool === 'text') {
+      e.preventDefault();
       const rect = canvasRef.current?.getBoundingClientRect();
       setTextEditor({
         x: p.x,
@@ -663,7 +671,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
               ref={canvasRef}
               width={screenshot.width}
               height={screenshot.height}
-              className="block max-w-full max-h-[calc(100vh-140px)] rounded-lg shadow-2xl touch-none"
+              className="block max-w-full max-h-[calc(100vh-280px)] rounded-lg shadow-2xl touch-none"
               style={{ cursor: cursorFor(mode, activeTool) }}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
@@ -672,7 +680,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
             />
             {textEditor && (
               <input
-                ref={(el) => el?.focus()}
+                ref={textInputRef}
                 value={textValue}
                 onChange={(e) => setTextValue(e.target.value)}
                 onBlur={commitText}
