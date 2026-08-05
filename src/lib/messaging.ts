@@ -73,11 +73,11 @@ export interface GuideMe_CancelResponse {
   cancelled: boolean;
 }
 
-export interface GuideMe_PrevData {
+export interface GuideMe_GoToData {
   stepIndex: number;
 }
 
-export interface GuideMe_PrevResponse {
+export interface GuideMe_GoToResponse {
   moved: boolean;
 }
 
@@ -99,7 +99,7 @@ interface MimikProtocol {
   startGuideMe(data: StartGuideMeData): StartGuideMeResponse;
   guideMeStepCompleted(data: GuideMeStepCompletedData): GuideMeStepCompletedResponse;
   guideMeCancel(): GuideMe_CancelResponse;
-  guideMePrev(data: GuideMe_PrevData): GuideMe_PrevResponse;
+  guideMeGoTo(data: GuideMe_GoToData): GuideMe_GoToResponse;
   enterBlurMode(): EnterBlurModeResponse;
   exitBlurMode(): ExitBlurModeResponse;
 }

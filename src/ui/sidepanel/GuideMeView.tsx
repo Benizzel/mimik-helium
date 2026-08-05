@@ -68,7 +68,6 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
   const [data, setData] = useState<GuideData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
-  const [viewedStepIndex, setViewedStepIndex] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [blockedStepIndex, setBlockedStepIndex] = useState<number | null>(null);
 
@@ -99,7 +98,6 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
         return;
       }
       setActiveStepIndex(session.activeStepIndex);
-      setViewedStepIndex(session.activeStepIndex);
     };
 
     browser.storage.local.onChanged.addListener(handler);
@@ -109,15 +107,12 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
   useEffect(() => {
     browser.storage.local.get([SESSION_KEY, BLOCKED_KEY]).then((result: Record<string, unknown>) => {
       const session = result[SESSION_KEY] as GuideMeSession | null;
-      if (session?.active) {
-        setActiveStepIndex(session.activeStepIndex);
-        setViewedStepIndex(session.activeStepIndex);
-      }
+      if (session?.active) setActiveStepIndex(session.activeStepIndex);
       setBlockedStepIndex((result[BLOCKED_KEY] as number | null) ?? null);
     });
   }, []);
 
-  const viewedStep = data?.steps[viewedStepIndex] ?? null;
+  const viewedStep = data?.steps[activeStepIndex] ?? null;
   const viewedScreenshot = viewedStep ? data?.screenshots.get(viewedStep.id) : undefined;
 
   if (loading) return <p className="text-sm text-purple p-4">{i18n.t('common.loading')}</p>;
@@ -125,11 +120,8 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
 
   const totalSteps = data.steps.length;
   const viewedIsManual = viewedStep ? stepRequiresManual(viewedStep, viewedScreenshot) : false;
-  const showRoadblock =
-    !viewedIsManual &&
-    blockedStepIndex !== null &&
-    blockedStepIndex === activeStepIndex &&
-    viewedStepIndex === activeStepIndex;
+  const showRoadblock = !viewedIsManual && blockedStepIndex === activeStepIndex;
+  const goTo = (stepIndex: number) => sendMessage('guideMeGoTo', { stepIndex }).catch(() => {});
 
   return (
     <div className="min-h-screen bg-card flex flex-col relative">
@@ -164,9 +156,9 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
           <div className="p-4 pb-3">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-secondary text-accent px-2.5 py-1 rounded-full mb-2.5">
               <span className="w-5 h-5 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-bold">
-                {viewedStepIndex + 1}
+                {activeStepIndex + 1}
               </span>
-              {i18n.t('guideme.stepOf', [String(viewedStepIndex + 1), String(totalSteps)])}
+              {i18n.t('guideme.stepOf', [String(activeStepIndex + 1), String(totalSteps)])}
             </span>
             <p className="text-[15px] font-semibold text-foreground leading-snug">
               {viewedStep?.description || i18n.t('guideme.noDescription')}
@@ -183,7 +175,7 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
             <ScreenshotView
               key={viewedScreenshot.id}
               screenshot={viewedScreenshot}
-              alt={i18n.t('guideme.stepOf', [String(viewedStepIndex + 1), String(totalSteps)])}
+              alt={i18n.t('guideme.stepOf', [String(activeStepIndex + 1), String(totalSteps)])}
               crop
               readOnly
               className="mx-4 mb-3"
@@ -199,28 +191,18 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
 
           <div className="flex items-center justify-between px-4 pb-3">
             <button
-              onClick={() => setViewedStepIndex((i) => Math.max(0, i - 1))}
-              disabled={viewedStepIndex === 0}
+              onClick={() => goTo(activeStepIndex - 1)}
+              disabled={activeStepIndex === 0}
               className="flex items-center gap-1 text-xs font-medium text-purple hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronLeft size={14} />
               {i18n.t('guideme.prev')}
             </button>
             <button
-              onClick={() => {
-                if (viewedStepIndex === activeStepIndex) {
-                  sendMessage('guideMeStepCompleted', { stepIndex: activeStepIndex }).catch(() => {});
-                }
-                if (viewedStepIndex < totalSteps - 1) {
-                  setViewedStepIndex((i) => i + 1);
-                }
-              }}
-              disabled={viewedStepIndex === totalSteps - 1 && viewedStepIndex !== activeStepIndex}
+              onClick={() => sendMessage('guideMeStepCompleted', { stepIndex: activeStepIndex }).catch(() => {})}
               className="flex items-center gap-1 text-xs font-medium text-purple hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              {viewedStepIndex === totalSteps - 1 && viewedStepIndex === activeStepIndex
-                ? i18n.t('guideme.finish')
-                : i18n.t('guideme.next')}
+              {activeStepIndex === totalSteps - 1 ? i18n.t('guideme.finish') : i18n.t('guideme.next')}
               <ChevronRight size={14} />
             </button>
           </div>
@@ -234,9 +216,9 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
           return (
             <button
               key={step.id}
-              onClick={() => setViewedStepIndex(idx)}
+              onClick={() => goTo(idx)}
               className={`w-full flex items-start gap-2.5 py-2 px-2 rounded-lg text-left transition-colors ${
-                viewedStepIndex === idx ? 'bg-secondary' : 'hover:bg-secondary/50'
+                activeStepIndex === idx ? 'bg-secondary' : 'hover:bg-secondary/50'
               }`}
             >
               {isDone ? (

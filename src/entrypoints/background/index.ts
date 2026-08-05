@@ -241,22 +241,19 @@ export default defineBackground(() => {
     return { cancelled: true };
   });
 
-  onMessage('guideMePrev', async ({ data }) => {
-    if (data.stepIndex <= 0) return { moved: false };
-
+  onMessage('guideMeGoTo', async ({ data }) => {
     const sessionData = await localStorage.get(['guideMeSession']);
     const session = sessionData.guideMeSession as { guideId: string } | undefined;
     if (!session) return { moved: false };
 
     const steps = await getStepsForGuide(session.guideId);
-    const prevIndex = data.stepIndex - 1;
-    const prevStep = steps[prevIndex];
-    if (!prevStep) return { moved: false };
-    await advanceSession(prevStep, prevIndex, await resolveManual(prevStep));
+    const target = steps[data.stepIndex];
+    if (!target) return { moved: false };
+    await advanceSession(target, data.stepIndex, await resolveManual(target));
 
     const currentTab = await getActiveTab();
-    if (currentTab?.id && prevStep.url && prevStep.url !== currentTab.url) {
-      await updateTab(currentTab.id, { url: prevStep.url });
+    if (currentTab?.id && target.url && target.url !== currentTab.url) {
+      await updateTab(currentTab.id, { url: target.url });
     }
 
     return { moved: true };
