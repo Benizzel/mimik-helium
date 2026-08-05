@@ -20,9 +20,39 @@ export interface ClickTarget extends ScreenshotBounds {
   color: string;
 }
 
-export type LineWidth = 'small' | 'medium' | 'large';
+export type LineWidth = 'none' | 'xs' | 'sm' | 'ms' | 'md' | 'ml' | 'lg' | 'xl';
 
-export const LINE_WIDTHS: Record<LineWidth, number> = { small: 3, medium: 6, large: 10 };
+export const LINE_WIDTHS: Record<LineWidth, number> = {
+  none: 0,
+  xs: 1,
+  sm: 2,
+  ms: 3,
+  md: 5,
+  ml: 7,
+  lg: 10,
+  xl: 14,
+};
+
+export const LINE_WIDTH_ORDER: LineWidth[] = ['none', 'xs', 'sm', 'ms', 'md', 'ml', 'lg', 'xl'];
+
+export type FontFamily = 'sans-serif' | 'serif' | 'monospace';
+export type FontStyleName = 'normal' | 'bold' | 'italic';
+export type FontSizeName = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+export type LineHeightName = 'sm' | 'md' | 'lg';
+
+export const FONT_FAMILIES: Record<FontFamily, string> = {
+  'sans-serif': 'Poppins, sans-serif',
+  serif: 'Georgia, serif',
+  monospace: 'ui-monospace, monospace',
+};
+
+export const FONT_SIZES: Record<FontSizeName, number> = { xs: 16, sm: 22, md: 30, lg: 42, xl: 60 };
+export const LINE_HEIGHTS: Record<LineHeightName, number> = { sm: 1.1, md: 1.4, lg: 1.9 };
+
+export const FONT_FAMILY_ORDER: FontFamily[] = ['sans-serif', 'serif', 'monospace'];
+export const FONT_STYLE_ORDER: FontStyleName[] = ['normal', 'bold', 'italic'];
+export const FONT_SIZE_ORDER: FontSizeName[] = ['xs', 'sm', 'md', 'lg', 'xl'];
+export const LINE_HEIGHT_ORDER: LineHeightName[] = ['sm', 'md', 'lg'];
 
 export type ArrowEnd = 'none' | 'bar' | 'arrow' | 'arrow-solid' | 'circle' | 'circle-solid' | 'square' | 'square-solid';
 
@@ -92,7 +122,19 @@ export type Annotation =
       lineWidth?: LineWidth;
       end?: ArrowEnd;
     }
-  | { id: string; type: 'text'; x: number; y: number; text: string; color: string; size: number; weight?: number }
+  | {
+      id: string;
+      type: 'text';
+      x: number;
+      y: number;
+      text: string;
+      color: string;
+      size: number;
+      fontSize?: FontSizeName;
+      fontFamily?: FontFamily;
+      fontStyle?: FontStyleName;
+      lineHeight?: LineHeightName;
+    }
   | { id: string; type: 'freehand'; points: number[]; color: string; lineWidth?: LineWidth }
   | { id: string; type: 'redact'; x: number; y: number; w: number; h: number; style: 'blur' | 'solid' }
   | { id: string; type: 'target'; x: number; y: number; w: number; h: number; color: string; border: TargetBorder };

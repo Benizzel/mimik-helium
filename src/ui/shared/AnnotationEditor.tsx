@@ -31,8 +31,28 @@ import {
   resizeAnnotation,
   resolveTarget,
 } from '@/core/screenshot/geometry';
-import type { Annotation, ArrowEnd, LineWidth, ScreenshotEdits, TargetBorder } from '@/core/screenshot/types';
-import { ARROW_ENDS, SHAPE_COLORS, TARGET_COLORS } from '@/core/screenshot/types';
+import type {
+  Annotation,
+  ArrowEnd,
+  FontFamily,
+  FontSizeName,
+  FontStyleName,
+  LineHeightName,
+  LineWidth,
+  ScreenshotEdits,
+  TargetBorder,
+} from '@/core/screenshot/types';
+import {
+  ARROW_ENDS,
+  FONT_FAMILY_ORDER,
+  FONT_SIZE_ORDER,
+  FONT_SIZES,
+  FONT_STYLE_ORDER,
+  LINE_HEIGHT_ORDER,
+  LINE_WIDTH_ORDER,
+  SHAPE_COLORS,
+  TARGET_COLORS,
+} from '@/core/screenshot/types';
 
 type EditorMode = 'crop' | 'annotate' | 'redact';
 type EditorTool = 'select' | 'eraser' | 'box' | 'ellipse' | 'arrow' | 'text' | 'freehand';
@@ -85,8 +105,6 @@ const TOOLS: { id: EditorTool; icon: ComponentType<{ size?: number }>; labelKey:
   { id: 'text', icon: Type, labelKey: 'annotationEditor.toolText' },
   { id: 'freehand', icon: PenTool, labelKey: 'annotationEditor.toolFreehand' },
 ];
-
-const LINE_WIDTH_OPTIONS: LineWidth[] = ['small', 'medium', 'large'];
 
 function initialModeFor(tool: 'annotate' | 'redact' | 'crop' | 'target'): EditorMode {
   if (tool === 'redact') return 'redact';
@@ -219,10 +237,13 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const [targetPicker, setTargetPicker] = useState(false);
   const [mode, setMode] = useState<EditorMode>(initialModeFor(tool));
   const [fill, setFill] = useState('transparent');
-  const [lineWidth, setLineWidth] = useState<LineWidth>('small');
+  const [lineWidth, setLineWidth] = useState<LineWidth>('ms');
   const [radius, setRadius] = useState(0);
   const [arrowEnd, setArrowEnd] = useState<ArrowEnd>('arrow-solid');
-  const [textSize, setTextSize] = useState(DEFAULT_TEXT_SIZE);
+  const [fontFamily, setFontFamily] = useState<FontFamily>('sans-serif');
+  const [fontStyle, setFontStyle] = useState<FontStyleName>('normal');
+  const [fontSize, setFontSize] = useState<FontSizeName>('md');
+  const [lineHeight, setLineHeight] = useState<LineHeightName>('md');
   const [past, setPast] = useState<Annotation[][]>([]);
   const [future, setFuture] = useState<Annotation[][]>([]);
 
@@ -250,6 +271,12 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
   const selected = annotations.find((a) => a.id === selectedId);
   const selectedTarget = selected?.type === 'target' ? selected : null;
+
+  const patchSelected = (patch: Record<string, unknown>) => {
+    if (!selectedId || selectedId === TARGET_ID) return;
+    pushHistory();
+    setAnnotations((prev) => prev.map((a) => (a.id === selectedId ? ({ ...a, ...patch } as Annotation) : a)));
+  };
 
   const updateTarget = (patch: { color?: string; border?: TargetBorder }) => {
     setAnnotations((prev) => prev.map((a) => (a.id === TARGET_ID && a.type === 'target' ? { ...a, ...patch } : a)));
@@ -433,7 +460,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       const rect = canvasRef.current?.getBoundingClientRect();
       setTextEditor({
         x: p.x,
-        y: p.y + textSize,
+        y: p.y + FONT_SIZES[fontSize],
         left: rect ? e.clientX - rect.left : 0,
         top: rect ? e.clientY - rect.top : 0,
       });
@@ -574,6 +601,10 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     setCropDraft(null);
   };
 
+  const setProp = (key: string, value: unknown) => {
+    patchSelected({ [key]: value });
+  };
+
   const handleColorSelect = (c: string) => {
     setColor(c);
     setAnnotations((prev) => prev.map((a) => (a.id === selectedId && a.type !== 'redact' ? { ...a, color: c } : a)));
@@ -590,7 +621,11 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
           y: textEditor.y,
           text: textValue.trim(),
           color,
-          size: textSize,
+          size: FONT_SIZES[fontSize],
+          fontSize,
+          fontFamily,
+          fontStyle,
+          lineHeight,
         },
       ]);
     }
@@ -793,7 +828,10 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 {i18n.t('annotationEditor.fillColor')}
                 <select
                   value={fill}
-                  onChange={(e) => setFill(e.target.value)}
+                  onChange={(e) => {
+                    setFill(e.target.value);
+                    setProp('fill', e.target.value);
+                  }}
                   className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
                   style={{ color: fill === 'transparent' ? undefined : fill }}
                 >
@@ -810,10 +848,13 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 {i18n.t('annotationEditor.lineWidth')}
                 <select
                   value={lineWidth}
-                  onChange={(e) => setLineWidth(e.target.value as LineWidth)}
+                  onChange={(e) => {
+                    setLineWidth(e.target.value as LineWidth);
+                    setProp('lineWidth', e.target.value);
+                  }}
                   className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none capitalize"
                 >
-                  {LINE_WIDTH_OPTIONS.map((w) => (
+                  {LINE_WIDTH_ORDER.map((w) => (
                     <option key={w} value={w}>
                       {i18n.t(`annotationEditor.width_${w}`)}
                     </option>
@@ -829,7 +870,10 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                   min={0}
                   max={60}
                   value={radius}
-                  onChange={(e) => setRadius(Number(e.target.value))}
+                  onChange={(e) => {
+                    setRadius(Number(e.target.value));
+                    setProp('radius', Number(e.target.value));
+                  }}
                   className="w-24 h-7 accent-accent"
                 />
               </label>
@@ -839,7 +883,10 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 {i18n.t('annotationEditor.arrowEnd')}
                 <select
                   value={arrowEnd}
-                  onChange={(e) => setArrowEnd(e.target.value as ArrowEnd)}
+                  onChange={(e) => {
+                    setArrowEnd(e.target.value as ArrowEnd);
+                    setProp('end', e.target.value);
+                  }}
                   className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
                 >
                   {ARROW_ENDS.map((end) => (
@@ -851,17 +898,76 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
               </label>
             )}
             {activeTool === 'text' && (
-              <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-                {i18n.t('annotationEditor.fontSize')}
-                <input
-                  type="range"
-                  min={12}
-                  max={96}
-                  value={textSize}
-                  onChange={(e) => setTextSize(Number(e.target.value))}
-                  className="w-24 h-7 accent-accent"
-                />
-              </label>
+              <>
+                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                  {i18n.t('annotationEditor.font')}
+                  <select
+                    value={fontFamily}
+                    onChange={(e) => {
+                      setFontFamily(e.target.value as FontFamily);
+                      setProp('fontFamily', e.target.value);
+                    }}
+                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
+                  >
+                    {FONT_FAMILY_ORDER.map((f) => (
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                  {i18n.t('annotationEditor.fontStyle')}
+                  <select
+                    value={fontStyle}
+                    onChange={(e) => {
+                      setFontStyle(e.target.value as FontStyleName);
+                      setProp('fontStyle', e.target.value);
+                    }}
+                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
+                  >
+                    {FONT_STYLE_ORDER.map((f) => (
+                      <option key={f} value={f}>
+                        {i18n.t(`annotationEditor.style_${f}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                  {i18n.t('annotationEditor.fontSize')}
+                  <select
+                    value={fontSize}
+                    onChange={(e) => {
+                      setFontSize(e.target.value as FontSizeName);
+                      setProp('fontSize', e.target.value);
+                    }}
+                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
+                  >
+                    {FONT_SIZE_ORDER.map((f) => (
+                      <option key={f} value={f}>
+                        {i18n.t(`annotationEditor.size_${f}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                  {i18n.t('annotationEditor.lineHeight')}
+                  <select
+                    value={lineHeight}
+                    onChange={(e) => {
+                      setLineHeight(e.target.value as LineHeightName);
+                      setProp('lineHeight', e.target.value);
+                    }}
+                    className="h-7 rounded-lg border border-border bg-card px-1.5 text-[11px] text-foreground outline-none"
+                  >
+                    {LINE_HEIGHT_ORDER.map((f) => (
+                      <option key={f} value={f}>
+                        {i18n.t(`annotationEditor.height_${f}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
             )}
           </div>
         )}

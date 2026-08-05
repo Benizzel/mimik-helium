@@ -1,7 +1,7 @@
 import type { Screenshot } from '@/core/guides/types';
 import { resolveTarget, resolveViewport } from './geometry';
 import type { Annotation, ArrowEnd } from './types';
-import { LINE_WIDTHS } from './types';
+import { FONT_FAMILIES, FONT_SIZES, LINE_HEIGHTS, LINE_WIDTHS } from './types';
 
 const TARGET_STROKE = 3.5;
 const TARGET_RADIUS = 12;
@@ -87,18 +87,20 @@ function drawAnnotation(ctx: OffscreenCanvasRenderingContext2D, a: Annotation, o
   ctx.save();
   switch (a.type) {
     case 'box':
-      ctx.lineWidth = LINE_WIDTHS[a.lineWidth ?? 'small'];
+      ctx.lineWidth = LINE_WIDTHS[a.lineWidth ?? 'ms'];
       if (a.fill && a.fill !== 'transparent') {
         ctx.fillStyle = a.fill;
         drawRoundedRect(ctx, a.x, a.y, a.w, a.h, a.radius ?? 0);
         ctx.fill();
       }
-      ctx.strokeStyle = a.color;
-      drawRoundedRect(ctx, a.x, a.y, a.w, a.h, a.radius ?? 0);
-      ctx.stroke();
+      if (ctx.lineWidth > 0) {
+        ctx.strokeStyle = a.color;
+        drawRoundedRect(ctx, a.x, a.y, a.w, a.h, a.radius ?? 0);
+        ctx.stroke();
+      }
       break;
     case 'ellipse':
-      ctx.lineWidth = LINE_WIDTHS[a.lineWidth ?? 'small'];
+      ctx.lineWidth = LINE_WIDTHS[a.lineWidth ?? 'ms'];
       ctx.beginPath();
       ctx.ellipse(a.x + a.w / 2, a.y + a.h / 2, Math.abs(a.w / 2), Math.abs(a.h / 2), 0, 0, Math.PI * 2);
       if (a.fill && a.fill !== 'transparent') {
@@ -116,7 +118,7 @@ function drawAnnotation(ctx: OffscreenCanvasRenderingContext2D, a: Annotation, o
       ctx.stroke();
       break;
     case 'arrow': {
-      const w = LINE_WIDTHS[a.lineWidth ?? 'small'];
+      const w = LINE_WIDTHS[a.lineWidth ?? 'ms'];
       ctx.strokeStyle = a.color;
       ctx.fillStyle = a.color;
       ctx.lineWidth = w;
@@ -128,14 +130,22 @@ function drawAnnotation(ctx: OffscreenCanvasRenderingContext2D, a: Annotation, o
       drawArrowEnd(ctx, a.x1, a.y1, a.x2, a.y2, w, a.end ?? 'arrow-solid');
       break;
     }
-    case 'text':
+    case 'text': {
+      const px = a.fontSize ? FONT_SIZES[a.fontSize] : a.size;
+      const family = FONT_FAMILIES[a.fontFamily ?? 'sans-serif'];
+      const style = a.fontStyle === 'italic' ? 'italic ' : '';
+      const weight = a.fontStyle === 'bold' ? 700 : 500;
       ctx.fillStyle = a.color;
-      ctx.font = `${a.weight ?? 600} ${a.size}px Poppins, sans-serif`;
-      ctx.fillText(a.text, a.x, a.y);
+      ctx.font = `${style}${weight} ${px}px ${family}`;
+      const lh = px * LINE_HEIGHTS[a.lineHeight ?? 'md'];
+      a.text.split('\n').forEach((line, i) => {
+        ctx.fillText(line, a.x, a.y + i * lh);
+      });
       break;
+    }
     case 'freehand':
       ctx.strokeStyle = a.color;
-      ctx.lineWidth = LINE_WIDTHS[a.lineWidth ?? 'medium'];
+      ctx.lineWidth = LINE_WIDTHS[a.lineWidth ?? 'md'];
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
       ctx.beginPath();
