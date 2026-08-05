@@ -163,6 +163,9 @@ screenshotView:
   saved: Guardado
   editMenu: Editar captura
   clickTarget: Objetivo de clic
+  editClickTarget: "Editar objetivo de clic"
+  downloadEdited: "Imagen editada"
+  downloadOriginal: "Imagen original"
   annotate: Anotar
   redact: Ocultar
   crop: Recortar

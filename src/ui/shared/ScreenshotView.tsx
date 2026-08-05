@@ -12,6 +12,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/ui/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
@@ -272,12 +275,13 @@ export default function ScreenshotView({
     await updateScreenshotEdits(screenshot.id, nextEdits);
   };
 
-  const handleDownload = async () => {
-    const blob = await renderScreenshot(effectiveScreenshot);
+  const handleDownload = async (which: 'edited' | 'original') => {
+    const blob = which === 'original' ? baseScreenshot.blob : await renderScreenshot(effectiveScreenshot);
+    const ext = which === 'original' ? (baseScreenshot.mimeType.split('/')[1] ?? 'png') : 'webp';
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `mimik-screenshot-${screenshot.id}.webp`;
+    a.download = `mimik-screenshot-${screenshot.id}-${which}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -398,7 +402,7 @@ export default function ScreenshotView({
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
               <DropdownMenuItem onSelect={handleClickTarget}>
                 <Target size={14} />
-                {i18n.t('screenshotView.clickTarget')}
+                {i18n.t(effectiveEdits?.target ? 'screenshotView.editClickTarget' : 'screenshotView.clickTarget')}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => onOpenEditor?.('annotate')}>
                 <Highlighter size={14} />
@@ -417,10 +421,20 @@ export default function ScreenshotView({
                 <ImageUp size={14} />
                 {i18n.t('screenshotView.replaceImage')}
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={handleDownload}>
-                <Download size={14} />
-                {i18n.t('screenshotView.download')}
-              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Download size={14} />
+                  {i18n.t('screenshotView.download')}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onSelect={() => handleDownload('edited')}>
+                    {i18n.t('screenshotView.downloadEdited')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleDownload('original')}>
+                    {i18n.t('screenshotView.downloadOriginal')}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onSelect={() => setConfirmDelete(true)}>
                 <Trash2 size={14} />

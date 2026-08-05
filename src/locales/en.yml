@@ -163,6 +163,9 @@ screenshotView:
   saved: Saved
   editMenu: Edit screenshot
   clickTarget: Click target
+  editClickTarget: "Edit click target"
+  downloadEdited: "Edited image"
+  downloadOriginal: "Original image"
   annotate: Annotate
   redact: Redact
   crop: Crop
