@@ -111,7 +111,12 @@ export function annotationBounds(a: Annotation): ScreenshotBounds {
         height: Math.abs(a.y2 - a.y1),
       };
     case 'text':
-      return { x: a.x, y: a.y - a.size, width: a.text.length * a.size * 0.6, height: a.size * 1.4 };
+      return {
+        x: a.x,
+        y: a.y - a.size,
+        width: a.w ?? a.text.length * a.size * 0.6,
+        height: a.h ?? a.size * 1.4,
+      };
     case 'freehand': {
       const xs = a.points.filter((_, i) => i % 2 === 0);
       const ys = a.points.filter((_, i) => i % 2 === 1);
@@ -148,6 +153,19 @@ export function moveAnnotation(a: Annotation, dx: number, dy: number): Annotatio
 }
 
 export function resizeAnnotation(a: Annotation, handle: Handle, dx: number, dy: number): Annotation {
+  if (a.type === 'text') {
+    const b = annotationBounds(a);
+    const top = handle === 'nw' || handle === 'ne';
+    const height = Math.max(MIN_ANNOTATION, top ? b.height - dy : b.height + dy);
+    const scale = height / b.height;
+    return {
+      ...a,
+      y: top ? a.y + dy : a.y,
+      size: Math.max(MIN_ANNOTATION, a.size * scale),
+      w: (a.w ?? b.width) * scale,
+      h: height,
+    };
+  }
   if (a.type !== 'box' && a.type !== 'ellipse' && a.type !== 'redact' && a.type !== 'target') return a;
   const left = handle === 'nw' || handle === 'sw';
   const top = handle === 'nw' || handle === 'ne';

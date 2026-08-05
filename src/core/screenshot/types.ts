@@ -130,6 +130,8 @@ export type Annotation =
       text: string;
       color: string;
       size: number;
+      w?: number;
+      h?: number;
       fontSize?: FontSizeName;
       fontFamily?: FontFamily;
       fontStyle?: FontStyleName;

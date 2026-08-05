@@ -183,7 +183,6 @@ screenshotView:
 
 annotationEditor:
   title: Edit screenshot
-  toolSelect: Select
   toolBox: Box
   toolArrow: Arrow
   toolText: Text
@@ -196,6 +195,8 @@ annotationEditor:
   targetBorder: Border style
   modeAnnotate: "Annotate"
   toolEraser: "Eraser"
+  toolLine: "Line"
+  duplicate: "Duplicate"
   toolEllipse: "Ellipse"
   lineColor: "line color"
   fillColor: "fill color"

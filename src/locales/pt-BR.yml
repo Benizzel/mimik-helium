@@ -183,7 +183,6 @@ screenshotView:
 
 annotationEditor:
   title: Editar captura
-  toolSelect: Selecionar
   toolBox: Retângulo
   toolArrow: Seta
   toolText: Texto
@@ -196,6 +195,8 @@ annotationEditor:
   targetBorder: Estilo da borda
   modeAnnotate: "Anotar"
   toolEraser: "Borracha"
+  toolLine: "Linha"
+  duplicate: "Duplicar"
   toolEllipse: "Elipse"
   lineColor: "cor da linha"
   fillColor: "preenchimento"

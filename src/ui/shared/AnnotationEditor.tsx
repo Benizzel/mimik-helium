@@ -2,10 +2,11 @@ import {
   ArrowUpRight,
   Check,
   Circle as CircleIcon,
+  CopyPlus,
   Crop,
   Eraser,
   EyeOff,
-  MousePointer2,
+  Minus,
   Pencil,
   PenTool,
   Redo2,
@@ -44,6 +45,7 @@ import type {
 } from '@/core/screenshot/types';
 import {
   ARROW_ENDS,
+  FONT_FAMILIES,
   FONT_FAMILY_ORDER,
   FONT_SIZE_ORDER,
   FONT_SIZES,
@@ -55,7 +57,7 @@ import {
 } from '@/core/screenshot/types';
 
 type EditorMode = 'crop' | 'annotate' | 'redact';
-type EditorTool = 'select' | 'eraser' | 'box' | 'ellipse' | 'arrow' | 'text' | 'freehand';
+type EditorTool = 'eraser' | 'line' | 'arrow' | 'box' | 'ellipse' | 'text' | 'freehand';
 
 interface AnnotationEditorProps {
   screenshot: Screenshot;
@@ -96,8 +98,8 @@ const MODES: { id: EditorMode; icon: ComponentType<{ size?: number }>; labelKey:
 ];
 
 const TOOLS: { id: EditorTool; icon: ComponentType<{ size?: number }>; labelKey: string }[] = [
-  { id: 'select', icon: MousePointer2, labelKey: 'annotationEditor.toolSelect' },
   { id: 'eraser', icon: Eraser, labelKey: 'annotationEditor.toolEraser' },
+  { id: 'line', icon: Minus, labelKey: 'annotationEditor.toolLine' },
   { id: 'arrow', icon: ArrowUpRight, labelKey: 'annotationEditor.toolArrow' },
   { id: 'box', icon: Square, labelKey: 'annotationEditor.toolBox' },
   { id: 'ellipse', icon: CircleIcon, labelKey: 'annotationEditor.toolEllipse' },
@@ -111,14 +113,8 @@ function initialModeFor(tool: 'annotate' | 'redact' | 'crop' | 'target'): Editor
   return 'annotate';
 }
 
-function initialToolFor(tool: 'annotate' | 'redact' | 'crop' | 'target'): EditorTool {
-  if (tool === 'target') return 'select';
-  return 'box';
-}
-
 function cursorFor(mode: EditorMode, tool: EditorTool): string {
   if (mode !== 'annotate') return 'crosshair';
-  if (tool === 'select') return 'default';
   if (tool === 'eraser') return 'pointer';
   if (tool === 'text') return 'text';
   return 'crosshair';
@@ -214,7 +210,7 @@ function drawShape(ctx: CanvasRenderingContext2D, a: Annotation, alpha: number) 
 }
 
 export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }: AnnotationEditorProps) {
-  const [activeTool, setActiveTool] = useState<EditorTool>(initialToolFor(tool));
+  const [activeTool, setActiveTool] = useState<EditorTool>('box');
   const [annotations, setAnnotations] = useState<Annotation[]>(() => {
     const existing = screenshot.edits?.annotations ?? [];
     const t = resolveTarget(screenshot);
@@ -396,28 +392,6 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     e.currentTarget.setPointerCapture(e.pointerId);
     const p = toImageSpace(e);
 
-    if (activeTool === 'select') {
-      const selected = annotations.find((a) => a.id === selectedId);
-      if (selected && isResizable(selected)) {
-        const scale = getScale();
-        const handle = hitHandle(selectionBounds(selected, scale), p.x, p.y, HANDLE_HIT_PX * scale);
-        if (handle) {
-          pushHistory();
-          dragRef.current = { mode: 'resize', id: selected.id, handle, lastX: p.x, lastY: p.y };
-          return;
-        }
-      }
-      const hit = hitTest(annotations, p.x, p.y);
-      if (hit) {
-        pushHistory();
-        setSelectedId(hit.id);
-        dragRef.current = { mode: 'move', id: hit.id, lastX: p.x, lastY: p.y };
-      } else {
-        setSelectedId(null);
-      }
-      return;
-    }
-
     if (mode === 'crop') {
       const scale = getScale();
       const frame = viewport ?? { x: 0, y: 0, width: screenshot.width, height: screenshot.height };
@@ -444,6 +418,26 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       setDraft(shape);
       return;
     }
+
+    const current = annotations.find((a) => a.id === selectedId);
+    if (current && isResizable(current)) {
+      const scale = getScale();
+      const handle = hitHandle(selectionBounds(current, scale), p.x, p.y, HANDLE_HIT_PX * scale);
+      if (handle) {
+        pushHistory();
+        dragRef.current = { mode: 'resize', id: current.id, handle, lastX: p.x, lastY: p.y };
+        return;
+      }
+    }
+
+    const hit = hitTest(annotations, p.x, p.y);
+    if (hit) {
+      pushHistory();
+      setSelectedId(hit.id);
+      dragRef.current = { mode: 'move', id: hit.id, lastX: p.x, lastY: p.y };
+      return;
+    }
+    setSelectedId(null);
 
     if (activeTool === 'eraser') {
       const hit = hitTest(annotations, p.x, p.y);
@@ -472,8 +466,18 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       shape = { id: DRAFT_ID, type: 'box', x: p.x, y: p.y, w: 0, h: 0, color, fill, lineWidth, radius };
     } else if (activeTool === 'ellipse') {
       shape = { id: DRAFT_ID, type: 'ellipse', x: p.x, y: p.y, w: 0, h: 0, color, fill, lineWidth };
-    } else if (activeTool === 'arrow') {
-      shape = { id: DRAFT_ID, type: 'arrow', x1: p.x, y1: p.y, x2: p.x, y2: p.y, color, lineWidth, end: arrowEnd };
+    } else if (activeTool === 'arrow' || activeTool === 'line') {
+      shape = {
+        id: DRAFT_ID,
+        type: 'arrow',
+        x1: p.x,
+        y1: p.y,
+        x2: p.x,
+        y2: p.y,
+        color,
+        lineWidth,
+        end: activeTool === 'line' ? 'none' : arrowEnd,
+      };
     } else {
       shape = { id: DRAFT_ID, type: 'freehand', points: [p.x, p.y], color, lineWidth };
     }
@@ -609,6 +613,18 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     setAnnotations((prev) => prev.map((a) => (a.id === selectedId && a.type !== 'redact' ? { ...a, color: c } : a)));
   };
 
+  const measureText = (value: string, px: number, family: FontFamily, style: FontStyleName) => {
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return { w: value.length * px * 0.6, h: px * 1.4 };
+    ctx.save();
+    const italic = style === 'italic' ? 'italic ' : '';
+    const weight = style === 'bold' ? 700 : 500;
+    ctx.font = `${italic}${weight} ${px}px ${FONT_FAMILIES[family]}`;
+    const w = ctx.measureText(value).width;
+    ctx.restore();
+    return { w, h: px * 1.4 };
+  };
+
   const commitText = () => {
     if (textEditor && textValue.trim()) {
       setAnnotations((prev) => [
@@ -621,6 +637,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
           text: textValue.trim(),
           color,
           size: FONT_SIZES[fontSize],
+          ...measureText(textValue.trim(), FONT_SIZES[fontSize], fontFamily, fontStyle),
           fontSize,
           fontFamily,
           fontStyle,
@@ -733,12 +750,12 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                 style={{ left: textEditor.left, top: textEditor.top }}
               />
             )}
-            {selectedTarget && (
+            {selected && (
               <div
                 className="absolute z-20 -translate-x-1/2 flex flex-col items-center gap-1.5"
                 style={{
-                  left: `${((selectedTarget.x + selectedTarget.w / 2) / screenshot.width) * 100}%`,
-                  top: `${((selectedTarget.y + selectedTarget.h) / screenshot.height) * 100}%`,
+                  left: `${((annotationBounds(selected).x + annotationBounds(selected).width / 2) / screenshot.width) * 100}%`,
+                  top: `${((annotationBounds(selected).y + annotationBounds(selected).height) / screenshot.height) * 100}%`,
                 }}
               >
                 <div className="mt-2 flex items-center gap-1 rounded-xl bg-primary px-2 py-1.5 shadow-xl">
@@ -747,21 +764,38 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                     title={i18n.t('annotationEditor.targetColor')}
                     onClick={() => setTargetPicker((v) => !v)}
                     className="w-6 h-6 rounded-full border-2 border-primary-foreground/20"
-                    style={{ backgroundColor: selectedTarget.color }}
+                    style={{ backgroundColor: selected.type === 'redact' ? '#1E1B4B' : selected.color }}
                   />
-                  <button
-                    type="button"
-                    title={i18n.t('annotationEditor.targetBorder')}
-                    onClick={() => updateTarget({ border: selectedTarget.border === 'dashed' ? 'solid' : 'dashed' })}
-                    className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
-                  >
-                    {selectedTarget.border === 'dashed' ? <SquareDashed size={14} /> : <Square size={14} />}
-                  </button>
+                  {selectedTarget ? (
+                    <button
+                      type="button"
+                      title={i18n.t('annotationEditor.targetBorder')}
+                      onClick={() => updateTarget({ border: selectedTarget.border === 'dashed' ? 'solid' : 'dashed' })}
+                      className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
+                    >
+                      {selectedTarget.border === 'dashed' ? <SquareDashed size={14} /> : <Square size={14} />}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      title={i18n.t('annotationEditor.duplicate')}
+                      onClick={() => {
+                        pushHistory();
+                        const copy = { ...moveAnnotation(selected, 24, 24), id: crypto.randomUUID() };
+                        setAnnotations((prev) => [...prev, copy]);
+                        setSelectedId(copy.id);
+                      }}
+                      className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
+                    >
+                      <CopyPlus size={14} />
+                    </button>
+                  )}
                   <button
                     type="button"
                     title={i18n.t('common.delete')}
                     onClick={() => {
-                      setAnnotations((prev) => prev.filter((a) => a.id !== TARGET_ID));
+                      pushHistory();
+                      setAnnotations((prev) => prev.filter((a) => a.id !== selected.id));
                       setSelectedId(null);
                       setTargetPicker(false);
                     }}
@@ -776,14 +810,16 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                       <button
                         key={c}
                         type="button"
-                        onClick={() => updateTarget({ color: c })}
-                        className={`w-5 h-5 rounded-full ${selectedTarget.color === c ? 'ring-2 ring-primary-foreground ring-offset-2 ring-offset-primary' : ''}`}
+                        onClick={() => (selectedTarget ? updateTarget({ color: c }) : handleColorSelect(c))}
+                        className={`w-5 h-5 rounded-full ${(selectedTarget ? selectedTarget.color : selected.type !== 'redact' && selected.color) === c ? 'ring-2 ring-primary-foreground ring-offset-2 ring-offset-primary' : ''}`}
                         style={{ backgroundColor: c }}
                       />
                     ))}
                     <input
-                      value={selectedTarget.color}
-                      onChange={(e) => updateTarget({ color: e.target.value })}
+                      value={selectedTarget ? selectedTarget.color : selected.type === 'redact' ? '' : selected.color}
+                      onChange={(e) =>
+                        selectedTarget ? updateTarget({ color: e.target.value }) : handleColorSelect(e.target.value)
+                      }
                       className="w-20 rounded-md bg-primary-foreground/10 px-1.5 py-0.5 text-[11px] text-primary-foreground outline-none"
                     />
                   </div>
