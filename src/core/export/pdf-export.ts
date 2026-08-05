@@ -173,6 +173,8 @@ export async function exportGuideAsPDF(
       }
 
       doc.addImage(imgDataUrl, 'JPEG', margin + stepIndent, y, imgWidth, imgHeight);
+      const altText = screenshot?.edits?.alt || i18n.t('export.stepLabel', [stepNum]);
+      doc.text(doc.splitTextToSize(altText, imgWidth), margin + stepIndent, y + 4, { renderingMode: 'invisible' });
       y += imgHeight + stepSpacing;
     } else {
       y += stepSpacing;

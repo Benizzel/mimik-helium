@@ -5,6 +5,7 @@ import type { Screenshot, Step } from '@/core/guides/types';
 import { renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
+import ImagePlaceholder from '@/ui/shared/ImagePlaceholder';
 import ScreenshotView from '@/ui/shared/ScreenshotView';
 
 interface DragHandleProps {
@@ -100,9 +101,10 @@ export default function StepCard({
           onOpenEditor={onOpenEditor ? (tool) => onOpenEditor(step.id, tool) : undefined}
         />
       ) : (
-        <div className="w-full h-32 flex items-center justify-center text-sm bg-secondary text-purple">
-          {i18n.t('editor.noScreenshot')}
-        </div>
+        <ImagePlaceholder
+          label={i18n.t('editor.noScreenshot')}
+          className="w-full h-32 !rounded-none border-x-0 border-t-0"
+        />
       )}
 
       <div className="px-3 pt-2 pb-2">

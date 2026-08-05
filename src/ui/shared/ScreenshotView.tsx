@@ -18,6 +18,7 @@ import {
 } from '@/ui/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
+import ImagePlaceholder from '@/ui/shared/ImagePlaceholder';
 import ReplaceImageDialog from '@/ui/shared/ReplaceImageDialog';
 
 interface ScreenshotViewProps {
@@ -266,14 +267,7 @@ export default function ScreenshotView({
   const ratio = baseScreenshot.width && baseScreenshot.height ? baseScreenshot.width / baseScreenshot.height : 16 / 9;
 
   if (deleted) {
-    return (
-      <div
-        className={`rounded-lg border border-border bg-secondary flex items-center justify-center text-sm text-muted-foreground ${className}`}
-        style={{ aspectRatio: ratio }}
-      >
-        {i18n.t('screenshotView.imageDeleted')}
-      </div>
-    );
+    return <ImagePlaceholder label={i18n.t('screenshotView.imageDeleted')} ratio={ratio} className={className} />;
   }
 
   if (!fullUrl) {
