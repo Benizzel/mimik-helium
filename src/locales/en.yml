@@ -45,6 +45,7 @@ library:
 guideme:
   live: Live
   roadblock: "We hit a roadblock. Try taking action on the screen to move forward."
+  manualStep: "This step was edited, so it cannot be detected automatically. Mark it complete when you are done."
   markComplete: "Mark as complete"
   stepOf: "Step $1 of $2"
   noDescription: No description

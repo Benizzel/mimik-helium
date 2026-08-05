@@ -1,7 +1,14 @@
 import { browser, defineBackground, i18n } from '#imports';
 import { generateGuideTitle } from '@/core/capture/ai/title';
 import { advanceSession, cancelSession, completeSession, getSession, startSession } from '@/core/guideme/session';
-import { createGuide, getGuideDomain, getStepsForGuide, updateGuideTitle } from '@/core/guides/service';
+import {
+  createGuide,
+  getGuideDomain,
+  getScreenshotsForSteps,
+  getStepsForGuide,
+  updateGuideTitle,
+} from '@/core/guides/service';
+import type { Step } from '@/core/guides/types';
 import { getActiveTab, localStorage, sendMessageToTab, setSidePanelBehavior, updateTab } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import { onMessage } from '@/lib/messaging';
@@ -49,6 +56,13 @@ async function generateTitleInBackground(guideId: string) {
       domain ? i18n.t('background.guideOnDomain', [domain]) : i18n.t('background.newGuide'),
     );
   }
+}
+
+async function stepRequiresManual(step: Step): Promise<boolean> {
+  if (!step.elementMeta) return true;
+  if (!step.screenshotId) return false;
+  const screenshots = await getScreenshotsForSteps([step.screenshotId]);
+  return screenshots.get(step.id)?.edits?.requiresManual === true;
 }
 
 export default defineBackground(() => {
@@ -184,7 +198,7 @@ export default defineBackground(() => {
     const firstStep = steps.find((s) => s.elementMeta) ?? steps[0];
     if (!steps.some((s) => s.elementMeta)) return { started: false, error: 'Guide lacks element metadata' };
 
-    await startSession(data.guideId, steps.length, firstStep);
+    await startSession(data.guideId, steps.length, firstStep, await stepRequiresManual(firstStep));
 
     const activeTab = await getActiveTab();
     if (activeTab?.id && firstStep.url) {
@@ -212,7 +226,7 @@ export default defineBackground(() => {
       await completeSession();
       return { advanced: true, completed: true };
     }
-    await advanceSession(nextStep, nextIndex);
+    await advanceSession(nextStep, nextIndex, await stepRequiresManual(nextStep));
 
     const currentTab = await getActiveTab();
     if (currentTab?.id && nextStep.url && nextStep.url !== currentTab.url) {
@@ -238,7 +252,7 @@ export default defineBackground(() => {
     const prevIndex = data.stepIndex - 1;
     const prevStep = steps[prevIndex];
     if (!prevStep) return { moved: false };
-    await advanceSession(prevStep, prevIndex);
+    await advanceSession(prevStep, prevIndex, await stepRequiresManual(prevStep));
 
     const currentTab = await getActiveTab();
     if (currentTab?.id && prevStep.url && prevStep.url !== currentTab.url) {

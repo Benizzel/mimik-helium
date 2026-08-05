@@ -45,6 +45,7 @@ library:
 guideme:
   live: En direct
   roadblock: "Nous avons rencontré un obstacle. Agissez à l'écran pour continuer."
+  manualStep: "Cette étape a été modifiée, elle ne peut donc pas être détectée automatiquement. Marquez-la comme terminée une fois faite."
   markComplete: "Marquer comme terminé"
   stepOf: "Étape $1 sur $2"
   noDescription: Aucune description

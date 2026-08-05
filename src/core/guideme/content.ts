@@ -5,7 +5,7 @@ import { sendMessage } from '@/lib/messaging';
 import { findElement } from './finder';
 import { GuideMeOverlay } from './overlay';
 import type { GuideMeSession } from './session';
-import { BLOCKED_KEY, SESSION_KEY, STEP_KEY } from './session';
+import { BLOCKED_KEY, MANUAL_KEY, SESSION_KEY, STEP_KEY } from './session';
 
 const MAX_RETRIES = 5;
 const RETRY_INTERVAL_MS = 1000;
@@ -41,16 +41,16 @@ export class GuideMeController {
   }
 
   private async checkForActiveSession() {
-    const data = await browser.storage.local.get([SESSION_KEY, STEP_KEY]);
+    const data = await browser.storage.local.get([SESSION_KEY, STEP_KEY, MANUAL_KEY]);
     const session = data[SESSION_KEY] as GuideMeSession | null;
     const step = data[STEP_KEY] as Step | null;
     if (session?.active && step) {
-      this.showStep(step, session.activeStepIndex);
+      this.showStep(step, session.activeStepIndex, data[MANUAL_KEY] === true);
     }
   }
 
   private async onStorageChange() {
-    const data = await browser.storage.local.get([SESSION_KEY, STEP_KEY]);
+    const data = await browser.storage.local.get([SESSION_KEY, STEP_KEY, MANUAL_KEY]);
     const session = data[SESSION_KEY] as GuideMeSession | null;
     const step = data[STEP_KEY] as Step | null;
 
@@ -62,17 +62,17 @@ export class GuideMeController {
       return;
     }
 
-    this.showStep(step, session.activeStepIndex);
+    this.showStep(step, session.activeStepIndex, data[MANUAL_KEY] === true);
   }
 
-  private showStep(step: Step, stepIndex: number) {
+  private showStep(step: Step, stepIndex: number, requiresManual: boolean) {
     this.removeActionDetection();
     this.destroyOverlay();
     this.stopWatching();
     this.currentStepIndex = stepIndex;
 
     const meta = step.elementMeta;
-    if (!meta) {
+    if (!meta || requiresManual) {
       this.setBlocked(stepIndex);
       return;
     }
