@@ -158,6 +158,46 @@ editor:
   deleteThisStep: "Diesen Schritt löschen?"
   copyScreenshot: Screenshot kopieren
   noScreenshot: Kein Screenshot
+  edit: Bearbeiten
+  done: Fertig
+  versionHistory: Versionsverlauf
+  moreActions: Weitere Aktionen
+
+history:
+  title: Versionsverlauf
+  current: Aktuell
+  restore: Wiederherstellen
+  unchangedVersions: "Unveränderte Versionen ($1)"
+  readOnlyBanner: "Du siehst eine frühere Version. Schließe den Versionsverlauf, um zur aktuellen Anleitung zurückzukehren."
+  loadError: Versionsverlauf konnte nicht geladen werden. Versuche es erneut.
+  restoreError: Wiederherstellen hat nicht geklappt. Versuche es gleich noch einmal.
+  storageFull: Zu wenig Speicher für einen Rückgängig-Punkt. Lösche eine Anleitung und versuche es erneut.
+  empty: Noch keine früheren Versionen. Sie erscheinen hier, sobald du diese Anleitung bearbeitest.
+  nameVersion: Version benennen
+  namePlaceholder: Versionsname
+  allVersions: Alle Versionen
+  namedOnly: Nur benannte Versionen
+  emptyNamed: Noch keine benannten Versionen. Benenne eine, um sie später wiederzufinden.
+  renameError: Name konnte nicht gespeichert werden. Versuche es erneut.
+  changeTitle: Titel geändert
+  changeStepAdded: "$1 Schritt hinzugefügt"
+  changeStepsAdded: "$1 Schritte hinzugefügt"
+  changeStepRemoved: "$1 Schritt gelöscht"
+  changeStepsRemoved: "$1 Schritte gelöscht"
+  changeStepEdited: "$1 Schritt bearbeitet"
+  changeStepsEdited: "$1 Schritte bearbeitet"
+  changeStepReordered: Schritte neu sortiert
+  changeLink: "$1 Link geändert"
+  changeLinks: "$1 Links geändert"
+  changeImageReplaced: "$1 Bild ersetzt"
+  changeImagesReplaced: "$1 Bilder ersetzt"
+  changeImageCropped: "$1 Bild zugeschnitten"
+  changeImagesCropped: "$1 Bilder zugeschnitten"
+  changeImageAnnotated: "$1 Bild kommentiert"
+  changeImagesAnnotated: "$1 Bilder kommentiert"
+  changeImageBlurred: "$1 Bild unkenntlich gemacht"
+  changeImagesBlurred: "$1 Bilder unkenntlich gemacht"
+  changeAltText: Alternativtext bearbeitet
 
 emptyGuide:
   title: Diese Anleitung ist leer
@@ -317,6 +357,7 @@ screenshotView:
   downloadEdited: "Bearbeitetes Bild"
   downloadOriginal: "Originalbild"
   edit: "Bearbeiten"
+  addImage: "Bild hinzufügen"
   replaceImage: "Bild ersetzen"
   replaceHint: "Wähle ein neues Bild für diesen Schritt"
   replaceDrop: "Klicken zum Auswählen oder Bild hierher ziehen"

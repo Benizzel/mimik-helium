@@ -7,6 +7,13 @@ interface RenderOptions {
   quality?: number;
 }
 
+export async function imageDimensions(file: Blob): Promise<{ width: number; height: number }> {
+  const bitmap = await createImageBitmap(file);
+  const { width, height } = bitmap;
+  bitmap.close();
+  return { width, height };
+}
+
 export async function renderScreenshot(screenshot: Screenshot, opts: RenderOptions = {}): Promise<Blob> {
   const { format = 'image/webp', quality = 0.85 } = opts;
   const viewport = resolveViewport(screenshot);

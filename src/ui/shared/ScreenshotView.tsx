@@ -1,10 +1,10 @@
 import { Download, ImageUp, Pencil, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
-import { deleteScreenshot, updateScreenshotBlob, updateScreenshotEdits } from '@/core/guides/service';
+import { deleteScreenshot, replaceScreenshot, updateScreenshotEdits } from '@/core/guides/service';
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
 import { panBy, resolveViewport, zoomBy } from '@/core/screenshot/geometry';
-import { renderScreenshot } from '@/core/screenshot/render';
+import { imageDimensions, renderScreenshot } from '@/core/screenshot/render';
 import type { ScreenshotEdits } from '@/core/screenshot/types';
 import {
   DropdownMenu,
@@ -27,8 +27,10 @@ interface ScreenshotViewProps {
   alt?: string;
   animate?: boolean;
   crop?: boolean;
+  frameRatio?: number;
   readOnly?: boolean;
   onOpenEditor?: (tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
+  onChanged?: () => void;
 }
 
 interface DragState {
@@ -46,6 +48,7 @@ const ZOOM_OUT_FACTOR = 0.8;
 const VIEWPORT_EPSILON = 0.5;
 const FRAME_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const FRAME_TRANSITION = `width 0.4s ${FRAME_EASING}, height 0.4s ${FRAME_EASING}, left 0.4s ${FRAME_EASING}, top 0.4s ${FRAME_EASING}`;
+const FRAME_RATIO_EPSILON = 0.01;
 
 function withFullViewport(screenshot: Screenshot): Screenshot {
   return {
@@ -60,8 +63,10 @@ export default function ScreenshotView({
   alt = '',
   animate = false,
   crop = false,
+  frameRatio,
   readOnly = false,
   onOpenEditor,
+  onChanged,
 }: ScreenshotViewProps) {
   const [fullUrl, setFullUrl] = useState<string | null>(null);
   const [showViewport, setShowViewport] = useState(false);
@@ -74,8 +79,7 @@ export default function ScreenshotView({
   const [replaceOpen, setReplaceOpen] = useState(false);
   const processedKeyRef = useRef<string | null>(null);
   const urlRef = useRef<string | null>(null);
-  const idRef = useRef(screenshot.id);
-  const propEditsRef = useRef(screenshot.edits);
+  const propScreenshotRef = useRef(screenshot);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -85,20 +89,13 @@ export default function ScreenshotView({
   const effectiveScreenshot: Screenshot = { ...baseScreenshot, edits: effectiveEdits };
 
   useEffect(() => {
-    if (idRef.current !== screenshot.id) {
-      idRef.current = screenshot.id;
+    if (propScreenshotRef.current !== screenshot) {
+      propScreenshotRef.current = screenshot;
       setEditsOverride(undefined);
       setScreenshotOverride(null);
       setDeleted(false);
     }
-  }, [screenshot.id]);
-
-  useEffect(() => {
-    if (propEditsRef.current !== screenshot.edits) {
-      propEditsRef.current = screenshot.edits;
-      setEditsOverride(undefined);
-    }
-  }, [screenshot.edits]);
+  }, [screenshot]);
 
   useEffect(() => {
     setAltDraft(effectiveEdits?.alt ?? '');
@@ -169,7 +166,7 @@ export default function ScreenshotView({
   const scheduleSave = (edits: ScreenshotEdits) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      updateScreenshotEdits(screenshot.id, edits).then(() => {
+      updateScreenshotEdits(baseScreenshot.id, edits).then(() => {
         setSaved(true);
         if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         savedTimerRef.current = setTimeout(() => setSaved(false), SAVED_MESSAGE_MS);
@@ -230,22 +227,28 @@ export default function ScreenshotView({
   };
 
   const handleReplaceFile = async (file: File) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setReplaceOpen(false);
 
-    const bitmap = await createImageBitmap(file);
-    const { width, height } = bitmap;
-    bitmap.close();
+    const { width, height } = await imageDimensions(file);
 
     const nextEdits: ScreenshotEdits = { ...effectiveEdits, target: null };
     delete nextEdits.viewport;
     delete nextEdits.alt;
-    const nextScreenshot: Screenshot = { ...baseScreenshot, blob: file, mimeType: file.type, width, height };
 
-    setScreenshotOverride(nextScreenshot);
+    const newId = await replaceScreenshot(screenshot.stepId, file, { width, height }, nextEdits);
+
+    setScreenshotOverride({
+      ...baseScreenshot,
+      id: newId,
+      blob: file,
+      mimeType: file.type,
+      width,
+      height,
+    });
     setEditsOverride(nextEdits);
-
-    await updateScreenshotBlob(screenshot.id, file, { width, height });
-    await updateScreenshotEdits(screenshot.id, nextEdits);
+    setDeleted(false);
+    onChanged?.();
   };
 
   const handleDownload = async (which: 'edited' | 'original') => {
@@ -260,15 +263,26 @@ export default function ScreenshotView({
   };
 
   const handleDeleteImage = async () => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setConfirmDelete(false);
-    await deleteScreenshot(screenshot.id, screenshot.stepId);
+    await deleteScreenshot(screenshot.stepId);
     setDeleted(true);
+    onChanged?.();
   };
 
-  const ratio = baseScreenshot.width && baseScreenshot.height ? baseScreenshot.width / baseScreenshot.height : 16 / 9;
+  const ownRatio =
+    baseScreenshot.width && baseScreenshot.height ? baseScreenshot.width / baseScreenshot.height : 16 / 9;
+  const ratio = frameRatio ?? ownRatio;
 
   if (deleted) {
-    return <ImagePlaceholder label={i18n.t('screenshotView.imageDeleted')} ratio={ratio} className={className} />;
+    return (
+      <ImagePlaceholder
+        label={i18n.t('screenshotView.imageDeleted')}
+        ratio={ratio}
+        className={className}
+        onUpload={readOnly ? undefined : handleReplaceFile}
+      />
+    );
   }
 
   if (!fullUrl) {
@@ -311,25 +325,41 @@ export default function ScreenshotView({
     transition: animate ? FRAME_TRANSITION : undefined,
   };
 
+  const vpRatio = displayedViewport.width / displayedViewport.height;
+  const letterbox =
+    frameRatio !== undefined && Math.abs(vpRatio - frameRatio) > FRAME_RATIO_EPSILON ? frameRatio : undefined;
+  const frameFit: React.CSSProperties | undefined =
+    letterbox === undefined ? undefined : vpRatio >= letterbox ? { width: '100%' } : { height: '100%' };
+
+  const frame = (
+    <div
+      data-screenshot-frame=""
+      className={letterbox === undefined ? 'relative overflow-hidden w-full' : 'relative overflow-hidden'}
+      style={{ aspectRatio: `${displayedViewport.width} / ${displayedViewport.height}`, ...frameFit }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerCancel={handlePointerEnd}
+    >
+      <img
+        src={fullUrl}
+        alt={altText}
+        draggable={false}
+        className={`absolute block max-w-none ${showZoomControls && isZoomed ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        style={imgStyle}
+      />
+    </div>
+  );
+
   return (
     <div className={`relative overflow-hidden rounded-lg border border-border ${className}`}>
-      <div
-        data-screenshot-frame=""
-        className="relative overflow-hidden w-full"
-        style={{ aspectRatio: `${displayedViewport.width} / ${displayedViewport.height}` }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerEnd}
-        onPointerCancel={handlePointerEnd}
-      >
-        <img
-          src={fullUrl}
-          alt={altText}
-          draggable={false}
-          className={`absolute block max-w-none ${showZoomControls && isZoomed ? 'cursor-grab active:cursor-grabbing' : ''}`}
-          style={imgStyle}
-        />
-      </div>
+      {letterbox === undefined ? (
+        frame
+      ) : (
+        <div className="w-full flex items-center justify-center bg-secondary" style={{ aspectRatio: letterbox }}>
+          {frame}
+        </div>
+      )}
       {showTopControls && (
         <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
           <Popover>

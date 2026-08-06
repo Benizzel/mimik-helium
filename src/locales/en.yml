@@ -158,6 +158,46 @@ editor:
   deleteThisStep: "Delete this step?"
   copyScreenshot: Copy screenshot
   noScreenshot: No screenshot
+  edit: Edit
+  done: Done
+  versionHistory: Version history
+  moreActions: More actions
+
+history:
+  title: Version History
+  current: Current
+  restore: Restore
+  unchangedVersions: "Unchanged versions ($1)"
+  readOnlyBanner: "You're viewing an earlier version. Close Version History to return to the current guide."
+  loadError: Unable to load version history. Try again.
+  restoreError: Unable to restore. Try again in a moment.
+  storageFull: Not enough storage to save an undo point. Delete a guide and try again.
+  empty: No earlier versions yet. They appear here once you edit this guide.
+  nameVersion: Name this version
+  namePlaceholder: Version name
+  allVersions: All versions
+  namedOnly: Named versions only
+  emptyNamed: No named versions yet. Name one to find it again later.
+  renameError: Unable to save that name. Try again.
+  changeTitle: Title changed
+  changeStepAdded: "$1 step added"
+  changeStepsAdded: "$1 steps added"
+  changeStepRemoved: "$1 step deleted"
+  changeStepsRemoved: "$1 steps deleted"
+  changeStepEdited: "$1 step edited"
+  changeStepsEdited: "$1 steps edited"
+  changeStepReordered: Steps reordered
+  changeLink: "$1 link changed"
+  changeLinks: "$1 links changed"
+  changeImageReplaced: "$1 image replaced"
+  changeImagesReplaced: "$1 images replaced"
+  changeImageCropped: "$1 image cropped"
+  changeImagesCropped: "$1 images cropped"
+  changeImageAnnotated: "$1 image annotated"
+  changeImagesAnnotated: "$1 images annotated"
+  changeImageBlurred: "$1 image blurred"
+  changeImagesBlurred: "$1 images blurred"
+  changeAltText: Alt text edited
 
 emptyGuide:
   title: This guide is empty
@@ -179,6 +219,7 @@ screenshotView:
   downloadEdited: "Edited image"
   downloadOriginal: "Original image"
   edit: "Edit"
+  addImage: Add image
   replaceImage: Replace image
   replaceHint: "Choose a new image for this step"
   replaceDrop: "Click to browse or drop an image here"

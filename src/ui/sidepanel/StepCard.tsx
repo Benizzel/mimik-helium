@@ -1,8 +1,9 @@
 import { Check, Copy, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
+import { replaceScreenshot } from '@/core/guides/service';
 import type { Screenshot, Step } from '@/core/guides/types';
-import { renderScreenshot } from '@/core/screenshot/render';
+import { imageDimensions, renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
 import ImagePlaceholder from '@/ui/shared/ImagePlaceholder';
@@ -23,6 +24,9 @@ interface StepCardProps {
   onOpenEditor?: (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
   onCopy?: (stepId: string) => void;
   placeholderRatio?: number;
+  frameRatio?: number;
+  readOnly?: boolean;
+  onChanged?: () => void;
 }
 
 export default function StepCard({
@@ -33,6 +37,9 @@ export default function StepCard({
   dragHandleProps,
   onOpenEditor,
   placeholderRatio,
+  frameRatio,
+  readOnly,
+  onChanged,
 }: StepCardProps) {
   const [description, setDescription] = useState(step.description);
   const [dragOver, setDragOver] = useState(false);
@@ -63,6 +70,11 @@ export default function StepCard({
     } catch (err) {
       logger.error(' Copy to clipboard failed', err);
     }
+  };
+
+  const handleUpload = async (file: File) => {
+    await replaceScreenshot(step.id, file, await imageDimensions(file));
+    onChanged?.();
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -100,13 +112,17 @@ export default function StepCard({
           alt={`Step ${step.index + 1} screenshot`}
           className="!rounded-none !border-0"
           crop
-          onOpenEditor={onOpenEditor ? (tool) => onOpenEditor(step.id, tool) : undefined}
+          frameRatio={frameRatio}
+          readOnly={readOnly}
+          onOpenEditor={!readOnly && onOpenEditor ? (tool) => onOpenEditor(step.id, tool) : undefined}
+          onChanged={onChanged}
         />
       ) : (
         <ImagePlaceholder
           label={i18n.t('editor.noScreenshot')}
           ratio={placeholderRatio}
           className="w-full !rounded-none border-x-0 border-t-0"
+          onUpload={readOnly ? undefined : handleUpload}
         />
       )}
 
@@ -115,13 +131,19 @@ export default function StepCard({
           <span className="flex items-center justify-center w-[22px] h-[22px] rounded-full text-[11px] font-bold shrink-0 bg-primary text-primary-foreground">
             {step.index + 1}
           </span>
-          <textarea
-            className="w-full text-[13px] font-medium resize-none outline-none border-0 bg-transparent p-0 leading-snug flex-1 text-foreground"
-            value={description}
-            rows={1}
-            onChange={(e) => setDescription(e.target.value)}
-            onBlur={handleDescriptionBlur}
-          />
+          {readOnly ? (
+            <p className="text-[13px] font-medium leading-snug flex-1 text-foreground whitespace-pre-wrap">
+              {step.description}
+            </p>
+          ) : (
+            <textarea
+              className="w-full text-[13px] font-medium resize-none outline-none border-0 bg-transparent p-0 leading-snug flex-1 text-foreground"
+              value={description}
+              rows={1}
+              onChange={(e) => setDescription(e.target.value)}
+              onBlur={handleDescriptionBlur}
+            />
+          )}
         </div>
         <div className="flex items-center justify-end mt-1">
           <div className="flex items-center gap-0.5">
@@ -134,13 +156,15 @@ export default function StepCard({
                 {copied ? <Check size={13} /> : <Copy size={13} />}
               </button>
             )}
-            <button
-              onClick={() => setConfirmDelete(true)}
-              className="p-1 rounded-md transition-colors text-border hover:text-destructive"
-              title={i18n.t('recording.deleteStep')}
-            >
-              <Trash2 size={13} />
-            </button>
+            {!readOnly && (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="p-1 rounded-md transition-colors text-border hover:text-destructive"
+                title={i18n.t('recording.deleteStep')}
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
           </div>
         </div>
       </div>

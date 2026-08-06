@@ -158,6 +158,46 @@ editor:
   deleteThisStep: "Supprimer cette étape ?"
   copyScreenshot: "Copier la capture"
   noScreenshot: "Pas de capture"
+  edit: Modifier
+  done: Terminé
+  versionHistory: Historique des versions
+  moreActions: "Plus d'actions"
+
+history:
+  title: Historique des versions
+  current: Actuelle
+  restore: Restaurer
+  unchangedVersions: "Versions inchangées ($1)"
+  readOnlyBanner: "Vous consultez une version antérieure. Fermez l'historique des versions pour revenir au guide actuel."
+  loadError: "Impossible de charger l'historique des versions. Réessayez."
+  restoreError: Impossible de restaurer. Réessayez dans un instant.
+  storageFull: "Espace insuffisant pour enregistrer un point d'annulation. Supprimez un guide et réessayez."
+  empty: Pas encore de version antérieure. Elles apparaîtront ici dès que vous modifierez ce guide.
+  nameVersion: Nommer cette version
+  namePlaceholder: Nom de la version
+  allVersions: Toutes les versions
+  namedOnly: Versions nommées uniquement
+  emptyNamed: "Aucune version nommée pour l'instant. Nommez-en une pour la retrouver plus tard."
+  renameError: "Impossible d'enregistrer ce nom. Réessayez."
+  changeTitle: Titre modifié
+  changeStepAdded: "$1 étape ajoutée"
+  changeStepsAdded: "$1 étapes ajoutées"
+  changeStepRemoved: "$1 étape supprimée"
+  changeStepsRemoved: "$1 étapes supprimées"
+  changeStepEdited: "$1 étape modifiée"
+  changeStepsEdited: "$1 étapes modifiées"
+  changeStepReordered: Étapes réordonnées
+  changeLink: "$1 lien modifié"
+  changeLinks: "$1 liens modifiés"
+  changeImageReplaced: "$1 image remplacée"
+  changeImagesReplaced: "$1 images remplacées"
+  changeImageCropped: "$1 image recadrée"
+  changeImagesCropped: "$1 images recadrées"
+  changeImageAnnotated: "$1 image annotée"
+  changeImagesAnnotated: "$1 images annotées"
+  changeImageBlurred: "$1 image floutée"
+  changeImagesBlurred: "$1 images floutées"
+  changeAltText: Texte alternatif modifié
 
 emptyGuide:
   title: Ce guide est vide
@@ -179,6 +219,7 @@ screenshotView:
   downloadEdited: "Image modifiée"
   downloadOriginal: "Image originale"
   edit: "Modifier"
+  addImage: "Ajouter une image"
   replaceImage: "Remplacer l'image"
   replaceHint: "Choisissez une nouvelle image pour cette étape"
   replaceDrop: "Cliquez pour parcourir ou déposez une image ici"

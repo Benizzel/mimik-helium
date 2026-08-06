@@ -194,7 +194,9 @@ export function resizeAnnotation(a: Annotation, handle: Handle, dx: number, dy: 
   };
 }
 
-export function resolveTarget(screenshot: Screenshot): ClickTarget | null {
+export type TargetSource = Pick<Screenshot, 'edits' | 'bounds' | 'pixelRatio'>;
+
+export function resolveTarget(screenshot: TargetSource): ClickTarget | null {
   const explicit = screenshot.edits?.target;
   if (explicit !== undefined) return explicit;
 

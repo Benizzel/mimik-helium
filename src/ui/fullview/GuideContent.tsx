@@ -1,17 +1,27 @@
-import { Play } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { History, Play } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TypeAnimation } from 'react-type-animation';
 import { i18n } from '#imports';
-import { deleteStep, getGuide, onGuidesChanged, updateGuideTitle, updateStepDescription } from '@/core/guides/service';
-import type { Guide, Screenshot, Step } from '@/core/guides/types';
+import {
+  deleteStep,
+  getGuide,
+  getScreenshotsForSteps,
+  onGuidesChanged,
+  updateGuideTitle,
+  updateStepDescription,
+} from '@/core/guides/service';
+import type { SnapshotLike } from '@/core/guides/snapshot-diff';
+import type { Guide, Screenshot, Snapshot, Step } from '@/core/guides/types';
 import type { ScreenshotEdits } from '@/core/screenshot/types';
 import { openSidebar } from '@/lib/browser-api';
+import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { formatDate, getMostCommonDomain } from '@/lib/utils';
 import { useFullview } from '@/stores/fullview';
 import AnnotationEditor from '@/ui/shared/AnnotationEditor';
 import FaviconImg from '@/ui/shared/FaviconImg';
 import GuideStepList from './components/GuideStepList';
+import VersionHistoryPanel from './components/VersionHistoryPanel';
 
 interface GuideContentProps {
   guideId: string;
@@ -25,12 +35,48 @@ interface GuideData {
   screenshots: Map<string, Screenshot>;
 }
 
+interface PreviewData {
+  snapshotId: string;
+  steps: Step[];
+  screenshots: Map<string, Screenshot>;
+}
+
+async function buildPreview(snapshot: Snapshot): Promise<PreviewData> {
+  const rows = new Map(snapshot.screenshots.map((row) => [row.id, row]));
+  const steps = [...snapshot.steps].sort((a, b) => a.index - b.index);
+  const wanted = steps.map((s) => s.screenshotId).filter((id): id is string => !!id && rows.has(id));
+  const live = await getScreenshotsForSteps(wanted);
+  const blobs = new Map([...live.values()].map((row) => [row.id, row.blob]));
+  const screenshots = new Map<string, Screenshot>();
+  for (const step of steps) {
+    const row = step.screenshotId ? rows.get(step.screenshotId) : undefined;
+    const blob = row ? blobs.get(row.id) : undefined;
+    if (row && blob) screenshots.set(step.id, { ...row, blob });
+  }
+  return { snapshotId: snapshot.id, steps, screenshots };
+}
+
 export default function GuideContent({ guideId, initialStepId, initialTool }: GuideContentProps) {
-  const { setGuideTitle, setGuideStepCount, setGuideExportData, scrollToStep } = useFullview((s) => ({
+  const {
+    setGuideTitle,
+    setGuideStepCount,
+    setGuideExportData,
+    scrollToStep,
+    editing,
+    setEditing,
+    historyOpen,
+    setHistoryOpen,
+    historyRefreshKey,
+  } = useFullview((s) => ({
     setGuideTitle: s.setGuideTitle,
     setGuideStepCount: s.setGuideStepCount,
     setGuideExportData: s.setGuideExportData,
     scrollToStep: s.scrollToStep,
+    editing: s.editing,
+    setEditing: s.setEditing,
+    historyOpen: s.historyOpen,
+    setHistoryOpen: s.setHistoryOpen,
+    historyRefreshKey: s.historyRefreshKey,
   }));
 
   const [data, setData] = useState<GuideData | null>(null);
@@ -39,6 +85,8 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
   const [typingTitle, setTypingTitle] = useState<string | null>(null);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [editingTool, setEditingTool] = useState<'annotate' | 'redact' | 'crop' | 'target'>('annotate');
+  const [preview, setPreview] = useState<Snapshot | null>(null);
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const titleRef = useRef('');
   const appliedInitialRef = useRef(false);
 
@@ -120,6 +168,26 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
   );
 
   useEffect(() => {
+    if (!preview) {
+      setPreviewData(null);
+      return;
+    }
+    let cancelled = false;
+    buildPreview(preview)
+      .then((built) => {
+        if (!cancelled) setPreviewData(built);
+      })
+      .catch((err) => logger.error(' Version preview failed', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [preview]);
+
+  useEffect(() => {
+    if (editing || !historyOpen) setPreview(null);
+  }, [editing, historyOpen]);
+
+  useEffect(() => {
     if (appliedInitialRef.current || !data || !initialStepId) return;
     if (!data.screenshots.has(initialStepId)) return;
     appliedInitialRef.current = true;
@@ -129,6 +197,16 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
       setEditingTool(initialTool);
     }
   }, [data, initialStepId, initialTool, scrollToStep]);
+
+  const live = useMemo<SnapshotLike>(
+    () => ({
+      title: data?.guide.title ?? '',
+      stepIds: data?.guide.stepIds ?? [],
+      steps: data?.steps ?? [],
+      screenshots: data ? [...data.screenshots.values()] : [],
+    }),
+    [data],
+  );
 
   if (loading)
     return (
@@ -153,8 +231,14 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
     );
   if (!data) return <p className="text-sm py-12 text-center text-purple">{i18n.t('fullview_guideNotFound')}</p>;
 
-  const domain = getMostCommonDomain(data.steps);
+  const previewView = preview && previewData?.snapshotId === preview.id ? previewData : null;
+  const viewSteps = previewView ? previewView.steps : data.steps;
+  const viewScreenshots = previewView ? previewView.screenshots : data.screenshots;
+  const domain = getMostCommonDomain(viewSteps);
   const editingScreenshot = editingStepId ? data.screenshots.get(editingStepId) : undefined;
+  const animatingTitle = preview ? null : typingTitle;
+  const untitledPending =
+    !preview && !typingTitle && title === i18n.t('fullview_untitledGuide') && viewSteps.length > 0;
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)]">
@@ -167,98 +251,126 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
         />
       )}
 
-      <div
-        className={
-          title === i18n.t('fullview_untitledGuide') && !typingTitle && data.steps.length > 0 ? 'min-h-[88px]' : ''
-        }
-      >
-        {title === i18n.t('fullview_untitledGuide') && !typingTitle && data.steps.length > 0 ? (
-          <div className="text-[32px] font-extrabold leading-tight animate-gradient-text bg-[length:300%_100%] bg-clip-text text-transparent bg-gradient-to-r from-muted-foreground via-violet to-muted-foreground max-w-[480px]">
-            {i18n.t('fullview_writingTitle')}
-          </div>
-        ) : typingTitle ? (
-          <div className="relative text-[32px] font-extrabold leading-tight">
-            <div className="invisible" aria-hidden="true">
-              {typingTitle}
+      <div className={historyOpen ? 'flex items-start gap-6' : ''}>
+        <div className={historyOpen ? 'flex-1 min-w-0' : ''}>
+          {preview && (
+            <div className="flex items-center gap-2 rounded-lg bg-secondary border border-border px-4 py-3 mb-4">
+              <History size={15} className="text-accent shrink-0" />
+              <span className="text-[12px] text-foreground">{i18n.t('history.readOnlyBanner')}</span>
             </div>
-            <div className="absolute inset-0 text-foreground">
-              <TypeAnimation
-                sequence={[
-                  typingTitle,
-                  () => {
-                    titleRef.current = typingTitle;
-                    setTitle(typingTitle);
-                    setTypingTitle(null);
-                  },
-                ]}
-                speed={70}
-                cursor={false}
+          )}
+
+          <div className={untitledPending ? 'min-h-[88px]' : ''}>
+            {untitledPending ? (
+              <div className="text-[32px] font-extrabold leading-tight animate-gradient-text bg-[length:300%_100%] bg-clip-text text-transparent bg-gradient-to-r from-muted-foreground via-violet to-muted-foreground max-w-[480px]">
+                {i18n.t('fullview_writingTitle')}
+              </div>
+            ) : animatingTitle ? (
+              <div className="relative text-[32px] font-extrabold leading-tight">
+                <div className="invisible" aria-hidden="true">
+                  {animatingTitle}
+                </div>
+                <div className="absolute inset-0 text-foreground">
+                  <TypeAnimation
+                    sequence={[
+                      animatingTitle,
+                      () => {
+                        titleRef.current = animatingTitle;
+                        setTitle(animatingTitle);
+                        setTypingTitle(null);
+                      },
+                    ]}
+                    speed={70}
+                    cursor={false}
+                  />
+                  <span className="inline-block w-[3px] h-[30px] bg-violet ml-0.5 align-text-bottom animate-blink" />
+                </div>
+              </div>
+            ) : editing && !preview ? (
+              <textarea
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = '0';
+                    el.style.height = `${el.scrollHeight}px`;
+                  }
+                }}
+                value={title}
+                rows={1}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setGuideTitle(e.target.value);
+                  const el = e.target;
+                  el.style.height = '0';
+                  el.style.height = `${el.scrollHeight}px`;
+                }}
+                onBlur={handleTitleBlur}
+                className="text-[32px] font-extrabold bg-transparent border-b-2 border-transparent hover:border-border focus:outline-none focus:border-accent w-full p-0 text-foreground resize-none leading-tight overflow-hidden"
               />
-              <span className="inline-block w-[3px] h-[30px] bg-violet ml-0.5 align-text-bottom animate-blink" />
-            </div>
+            ) : (
+              <h1 className="text-[32px] font-extrabold leading-tight text-foreground whitespace-pre-wrap break-words">
+                {preview ? preview.title : title}
+              </h1>
+            )}
           </div>
-        ) : (
-          <textarea
-            ref={(el) => {
-              if (el) {
-                el.style.height = '0';
-                el.style.height = `${el.scrollHeight}px`;
-              }
+
+          <div className="flex items-center gap-1.5 mt-2 mb-4 flex-wrap">
+            <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-card border border-border px-2.5 py-0.5 rounded-full">
+              {formatDate(data.guide.createdAt)}
+            </span>
+            <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-card border border-border px-2.5 py-0.5 rounded-full">
+              {viewSteps.length !== 1
+                ? i18n.t('fullview_stepCountPlural', [String(viewSteps.length)])
+                : i18n.t('fullview_stepCount', [String(viewSteps.length)])}
+            </span>
+            {domain && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground bg-card border border-border pl-1.5 pr-2.5 py-0.5 rounded-full">
+                <FaviconImg domain={domain} size={14} className="rounded-full" />
+                {domain}
+              </span>
+            )}
+            {!editing && !preview && viewSteps.length > 0 && (
+              <button
+                onClick={() => {
+                  openSidebar();
+                  void sendMessage('startGuideMe', { guideId });
+                }}
+                disabled={!viewSteps.some((s) => s.elementMeta)}
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-0.5 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed ml-auto"
+              >
+                <Play size={11} />
+                {i18n.t('fullview_guideMe')}
+              </button>
+            )}
+          </div>
+
+          <GuideStepList
+            guideId={guideId}
+            steps={viewSteps}
+            screenshots={viewScreenshots}
+            onDescriptionChange={handleDescriptionChange}
+            onDelete={handleDeleteStep}
+            onOpenEditor={handleOpenEditor}
+            onReorder={(newSteps) => setData((prev) => (prev ? { ...prev, steps: newSteps } : prev))}
+            readOnly={!editing || preview !== null}
+            onChanged={loadGuide}
+          />
+        </div>
+
+        {historyOpen && (
+          <VersionHistoryPanel
+            guideId={guideId}
+            selectedId={preview?.id ?? null}
+            refreshKey={historyRefreshKey}
+            live={live}
+            onSelect={(snapshot) => {
+              setPreview(snapshot);
+              if (snapshot) setEditing(false);
             }}
-            value={title}
-            rows={1}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              setGuideTitle(e.target.value);
-              const el = e.target;
-              el.style.height = '0';
-              el.style.height = `${el.scrollHeight}px`;
-            }}
-            onBlur={handleTitleBlur}
-            className="text-[32px] font-extrabold bg-transparent border-b-2 border-transparent hover:border-border focus:outline-none focus:border-accent w-full p-0 text-foreground resize-none leading-tight overflow-hidden"
+            onRestored={loadGuide}
+            onClose={() => setHistoryOpen(false)}
           />
         )}
       </div>
-
-      <div className="flex items-center gap-1.5 mt-2 mb-4 flex-wrap">
-        <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-card border border-border px-2.5 py-0.5 rounded-full">
-          {formatDate(data.guide.createdAt)}
-        </span>
-        <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-card border border-border px-2.5 py-0.5 rounded-full">
-          {data.steps.length !== 1
-            ? i18n.t('fullview_stepCountPlural', [String(data.steps.length)])
-            : i18n.t('fullview_stepCount', [String(data.steps.length)])}
-        </span>
-        {domain && (
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground bg-card border border-border pl-1.5 pr-2.5 py-0.5 rounded-full">
-            <FaviconImg domain={domain} size={14} className="rounded-full" />
-            {domain}
-          </span>
-        )}
-        {data.steps.length > 0 && (
-          <button
-            onClick={() => {
-              openSidebar();
-              void sendMessage('startGuideMe', { guideId });
-            }}
-            disabled={!data.steps.some((s) => s.elementMeta)}
-            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-0.5 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed ml-auto"
-          >
-            <Play size={11} />
-            {i18n.t('fullview_guideMe')}
-          </button>
-        )}
-      </div>
-
-      <GuideStepList
-        guideId={guideId}
-        steps={data.steps}
-        screenshots={data.screenshots}
-        onDescriptionChange={handleDescriptionChange}
-        onDelete={handleDeleteStep}
-        onOpenEditor={handleOpenEditor}
-        onReorder={(newSteps) => setData((prev) => (prev ? { ...prev, steps: newSteps } : prev))}
-      />
     </div>
   );
 }

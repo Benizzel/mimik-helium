@@ -44,6 +44,12 @@ export function formatDateShort(ts: number): string {
   return d.format('MMM D');
 }
 
+export function formatDateTime(ts: number): string {
+  const locale = getDayjsLocale();
+  const d = locale ? dayjs(ts).locale(locale) : dayjs(ts);
+  return d.format('MMM D, YYYY — h:mm A');
+}
+
 export function formatRelativeTime(ts: number): string {
   const locale = getDayjsLocale();
   return locale ? dayjs(ts).locale(locale).fromNow() : dayjs(ts).fromNow();

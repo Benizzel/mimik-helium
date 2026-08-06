@@ -3,7 +3,7 @@ import { reorderSteps } from '@/core/guides/service';
 import type { Screenshot, Step } from '@/core/guides/types';
 import { useFullview } from '@/stores/fullview';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
-import { siblingRatio } from '@/ui/shared/ImagePlaceholder';
+import { dominantRatio } from '@/ui/shared/ImagePlaceholder';
 import StepCard from '@/ui/sidepanel/StepCard';
 
 interface GuideStepListProps {
@@ -14,6 +14,8 @@ interface GuideStepListProps {
   onDelete: (stepId: string) => void;
   onOpenEditor: (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
   onReorder: (newSteps: Step[]) => void;
+  readOnly?: boolean;
+  onChanged?: () => void;
 }
 
 export default function GuideStepList({
@@ -24,6 +26,8 @@ export default function GuideStepList({
   onDelete,
   onOpenEditor,
   onReorder,
+  readOnly,
+  onChanged,
 }: GuideStepListProps) {
   const { scrollToStepId, setActiveStepId } = useFullview((s) => ({
     scrollToStepId: s.scrollToStepId,
@@ -33,7 +37,7 @@ export default function GuideStepList({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const stepRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const placeholderRatio = siblingRatio(screenshots);
+  const frameRatio = dominantRatio(screenshots);
 
   useEffect(() => {
     if (scrollToStepId) {
@@ -93,21 +97,28 @@ export default function GuideStepList({
           <StepCard
             step={step}
             screenshot={screenshots.get(step.id)}
-            placeholderRatio={placeholderRatio}
+            placeholderRatio={frameRatio}
+            frameRatio={frameRatio}
             onDescriptionChange={onDescriptionChange}
             onDelete={onDelete}
             onOpenEditor={onOpenEditor}
-            dragHandleProps={{
-              onDragStart: (e: React.DragEvent) => {
-                setDragIndex(idx);
-                e.dataTransfer.effectAllowed = 'move';
-              },
-              onDragOver: (e: React.DragEvent) => {
-                e.preventDefault();
-                setDragOverIndex(idx);
-              },
-              onDragEnd: handleDragEnd,
-            }}
+            readOnly={readOnly}
+            onChanged={onChanged}
+            dragHandleProps={
+              readOnly
+                ? undefined
+                : {
+                    onDragStart: (e: React.DragEvent) => {
+                      setDragIndex(idx);
+                      e.dataTransfer.effectAllowed = 'move';
+                    },
+                    onDragOver: (e: React.DragEvent) => {
+                      e.preventDefault();
+                      setDragOverIndex(idx);
+                    },
+                    onDragEnd: handleDragEnd,
+                  }
+            }
           />
         </div>
       ))}

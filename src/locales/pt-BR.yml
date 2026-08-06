@@ -158,6 +158,46 @@ editor:
   deleteThisStep: "Excluir esse passo?"
   copyScreenshot: Copiar captura
   noScreenshot: Sem captura
+  edit: Editar
+  done: Pronto
+  versionHistory: Histórico de versões
+  moreActions: Mais ações
+
+history:
+  title: Histórico de versões
+  current: Atual
+  restore: Restaurar
+  unchangedVersions: "Versões sem alterações ($1)"
+  readOnlyBanner: "Você tá vendo uma versão anterior. Fecha o histórico de versões pra voltar pro guia atual."
+  loadError: Não deu pra carregar o histórico de versões. Tenta de novo.
+  restoreError: Não deu pra restaurar. Tenta de novo num instante.
+  storageFull: Sem espaço pra salvar um ponto de desfazer. Exclui um guia e tenta de novo.
+  empty: Nenhuma versão anterior ainda. Elas aparecem aqui quando você editar esse guia.
+  nameVersion: Dar um nome pra essa versão
+  namePlaceholder: Nome da versão
+  allVersions: Todas as versões
+  namedOnly: Só versões com nome
+  emptyNamed: Nenhuma versão com nome ainda. Dá um nome pra uma e acha ela fácil depois.
+  renameError: Não deu pra salvar o nome. Tenta de novo.
+  changeTitle: Título alterado
+  changeStepAdded: "$1 passo adicionado"
+  changeStepsAdded: "$1 passos adicionados"
+  changeStepRemoved: "$1 passo excluído"
+  changeStepsRemoved: "$1 passos excluídos"
+  changeStepEdited: "$1 passo editado"
+  changeStepsEdited: "$1 passos editados"
+  changeStepReordered: Passos reordenados
+  changeLink: "$1 link alterado"
+  changeLinks: "$1 links alterados"
+  changeImageReplaced: "$1 imagem substituída"
+  changeImagesReplaced: "$1 imagens substituídas"
+  changeImageCropped: "$1 imagem recortada"
+  changeImagesCropped: "$1 imagens recortadas"
+  changeImageAnnotated: "$1 imagem anotada"
+  changeImagesAnnotated: "$1 imagens anotadas"
+  changeImageBlurred: "$1 imagem desfocada"
+  changeImagesBlurred: "$1 imagens desfocadas"
+  changeAltText: Texto alternativo editado
 
 emptyGuide:
   title: Esse guia tá vazio
@@ -179,6 +219,7 @@ screenshotView:
   downloadEdited: "Imagem editada"
   downloadOriginal: "Imagem original"
   edit: "Editar"
+  addImage: Adicionar imagem
   replaceImage: Substituir imagem
   replaceHint: "Escolha uma nova imagem para esta etapa"
   replaceDrop: "Clique para procurar ou solte uma imagem aqui"
