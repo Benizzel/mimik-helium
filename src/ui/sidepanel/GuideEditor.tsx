@@ -1,11 +1,26 @@
-import { ArrowLeft, Layers, Maximize2, Play } from 'lucide-react';
+import { ArrowLeft, Check, History, Layers, Maximize2, MoreHorizontal, Pencil, Play } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { i18n } from '#imports';
-import { deleteStep, getGuide, reorderSteps, updateGuideTitle, updateStepDescription } from '@/core/guides/service';
+import {
+  createSnapshot,
+  deleteStep,
+  getGuide,
+  onGuidesChanged,
+  reorderSteps,
+  updateGuideTitle,
+  updateStepDescription,
+} from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { createTab, focusWindow, getExtensionURL, queryTabs, updateTab } from '@/lib/browser-api';
+import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { getMostCommonDomain } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/ui/components/ui/dropdown-menu';
 import { Input } from '@/ui/components/ui/input';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
@@ -19,10 +34,21 @@ interface GuideEditorProps {
   onGuideMe?: (guideId: string) => void;
 }
 
+interface OpenInFullViewOptions {
+  stepId?: string;
+  tool?: 'annotate' | 'redact' | 'crop' | 'target';
+  history?: boolean;
+}
+
 interface GuideData {
   guide: Guide;
   steps: Step[];
   screenshots: Map<string, Screenshot>;
+}
+
+function flushFocusedField() {
+  const el = document.activeElement;
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) el.blur();
 }
 
 export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorProps) {
@@ -30,6 +56,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [title, setTitle] = useState('');
+  const [editing, setEditing] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
@@ -48,6 +75,12 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
   useEffect(() => {
     loadGuide();
   }, [loadGuide]);
+
+  useEffect(() => {
+    return onGuidesChanged(() => {
+      if (!editing) loadGuide();
+    });
+  }, [editing, loadGuide]);
 
   const handleTitleBlur = useCallback(async () => {
     if (!data || title === data.guide.title) return;
@@ -79,23 +112,37 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
     [guideId, loadGuide],
   );
 
-  const openInFullView = useCallback(
-    (targetGuideId: string, stepId?: string, tool?: 'annotate' | 'redact' | 'crop' | 'target') => {
-      const params = new URLSearchParams({ guideId: targetGuideId });
-      if (stepId) params.set('stepId', stepId);
-      if (tool) params.set('tool', tool);
-      const url = getExtensionURL(`/fullview.html?${params.toString()}`);
-      queryTabs({ url: getExtensionURL('/fullview.html') }).then((tabs) => {
-        if (tabs.length > 0 && tabs[0].id) {
-          updateTab(tabs[0].id, { active: true, url });
-          if (tabs[0].windowId) focusWindow(tabs[0].windowId);
-        } else {
-          createTab({ url });
-        }
-      });
-    },
-    [],
-  );
+  const openInFullView = useCallback((targetGuideId: string, options?: OpenInFullViewOptions) => {
+    const params = new URLSearchParams({ guideId: targetGuideId });
+    if (options?.stepId) params.set('stepId', options.stepId);
+    if (options?.tool) params.set('tool', options.tool);
+    if (options?.history) params.set('history', '1');
+    const url = getExtensionURL(`/fullview.html?${params.toString()}`);
+    queryTabs({ url: getExtensionURL('/fullview.html') }).then((tabs) => {
+      if (tabs.length > 0 && tabs[0].id) {
+        updateTab(tabs[0].id, { active: true, url });
+        if (tabs[0].windowId) focusWindow(tabs[0].windowId);
+      } else {
+        createTab({ url });
+      }
+    });
+  }, []);
+
+  const toggleEditing = useCallback(() => {
+    if (editing) {
+      flushFocusedField();
+      setEditing(false);
+      return;
+    }
+    setEditing(true);
+    createSnapshot(guideId).catch((err) => logger.error(' Snapshot before editing failed', err));
+  }, [editing, guideId]);
+
+  const openVersionHistory = useCallback(() => {
+    flushFocusedField();
+    setEditing(false);
+    openInFullView(guideId, { history: true });
+  }, [guideId, openInFullView]);
 
   if (loading) return <p className="text-sm text-purple p-4">{i18n.t('common.loading')}</p>;
 
@@ -122,12 +169,18 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
           >
             <ArrowLeft size={18} />
           </button>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={handleTitleBlur}
-            className="text-lg font-bold bg-transparent border-0 border-b border-transparent hover:border-border focus-visible:ring-0 focus-visible:border-accent shadow-none p-0 h-auto text-foreground"
-          />
+          {editing ? (
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={handleTitleBlur}
+              className="text-lg font-bold bg-transparent border-0 border-b border-transparent hover:border-border focus-visible:ring-0 focus-visible:border-accent shadow-none p-0 h-auto text-foreground"
+            />
+          ) : (
+            <h2 className="flex-1 min-w-0 text-lg font-bold truncate text-foreground" title={title}>
+              {title}
+            </h2>
+          )}
           <button
             onClick={() => openInFullView(guideId)}
             className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
@@ -148,8 +201,35 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
               <Play size={15} />
             </button>
           )}
-          <div className="ml-auto shrink-0">
+          <div className="ml-auto shrink-0 flex items-center gap-1">
+            <button
+              onClick={toggleEditing}
+              className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
+              title={editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
+              aria-label={editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
+            >
+              {editing ? <Check size={15} /> : <Pencil size={15} />}
+            </button>
             <ExportMenu guideId={guideId} guide={data.guide} steps={data.steps} screenshots={data.screenshots} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  onPointerDown={flushFocusedField}
+                  className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
+                  title={i18n.t('editor.moreActions')}
+                  aria-label={i18n.t('editor.moreActions')}
+                >
+                  <MoreHorizontal size={15} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={openVersionHistory}>
+                  <History size={14} />
+                  {i18n.t('editor.versionHistory')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         <div className="text-[11px] flex items-center gap-2 text-muted-foreground" style={{ marginLeft: '34px' }}>
@@ -187,34 +267,39 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
                 placeholderRatio={siblingRatio(data.screenshots)}
                 onDescriptionChange={handleDescriptionChange}
                 onDelete={handleDeleteStep}
-                onOpenEditor={(stepId, tool) => openInFullView(guideId, stepId, tool)}
-                dragHandleProps={{
-                  onDragStart: (e: React.DragEvent) => {
-                    setDragIndex(idx);
-                    e.dataTransfer.effectAllowed = 'move';
-                  },
-                  onDragOver: (e: React.DragEvent) => {
-                    e.preventDefault();
-                    setDragOverIndex(idx);
-                  },
-                  onDragEnd: () => {
-                    if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
-                      setData((prev) => {
-                        if (!prev) return prev;
-                        const newSteps = [...prev.steps];
-                        const [moved] = newSteps.splice(dragIndex, 1);
-                        newSteps.splice(dragOverIndex, 0, moved);
-                        reorderSteps(
-                          guideId,
-                          newSteps.map((s) => s.id),
-                        );
-                        return { ...prev, steps: newSteps };
-                      });
-                    }
-                    setDragIndex(null);
-                    setDragOverIndex(null);
-                  },
-                }}
+                onOpenEditor={(stepId, tool) => openInFullView(guideId, { stepId, tool })}
+                readOnly={!editing}
+                dragHandleProps={
+                  editing
+                    ? {
+                        onDragStart: (e: React.DragEvent) => {
+                          setDragIndex(idx);
+                          e.dataTransfer.effectAllowed = 'move';
+                        },
+                        onDragOver: (e: React.DragEvent) => {
+                          e.preventDefault();
+                          setDragOverIndex(idx);
+                        },
+                        onDragEnd: () => {
+                          if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
+                            setData((prev) => {
+                              if (!prev) return prev;
+                              const newSteps = [...prev.steps];
+                              const [moved] = newSteps.splice(dragIndex, 1);
+                              newSteps.splice(dragOverIndex, 0, moved);
+                              reorderSteps(
+                                guideId,
+                                newSteps.map((s) => s.id),
+                              );
+                              return { ...prev, steps: newSteps };
+                            });
+                          }
+                          setDragIndex(null);
+                          setDragOverIndex(null);
+                        },
+                      }
+                    : undefined
+                }
               />
             </div>
           ))

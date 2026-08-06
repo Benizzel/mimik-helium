@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 
 export type Route =
   | { page: 'library'; category: 'all' | 'starred' | 'trash' }
-  | { page: 'guide'; guideId: string; stepId?: string; tool?: 'annotate' | 'redact' | 'crop' | 'target' };
+  | {
+      page: 'guide';
+      guideId: string;
+      stepId?: string;
+      tool?: 'annotate' | 'redact' | 'crop' | 'target';
+      history?: boolean;
+    };
 
 function parseHash(hash: string): Route {
   const h = hash.replace(/^#\/?/, '');
@@ -32,9 +38,13 @@ export function useRoute(): Route {
     if (guideId) {
       const stepId = params.get('stepId') ?? undefined;
       const toolParam = params.get('tool');
-      const tool = toolParam === 'annotate' || toolParam === 'redact' || toolParam === 'crop' ? toolParam : undefined;
+      const tool =
+        toolParam === 'annotate' || toolParam === 'redact' || toolParam === 'crop' || toolParam === 'target'
+          ? toolParam
+          : undefined;
+      const showHistory = params.get('history') === '1';
       window.history.replaceState(null, '', `${window.location.pathname}#guide/${guideId}`);
-      return { page: 'guide', guideId, stepId, tool };
+      return { page: 'guide', guideId, stepId, tool, history: showHistory };
     }
     return parseHash(window.location.hash);
   });

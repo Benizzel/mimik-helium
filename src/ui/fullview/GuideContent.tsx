@@ -26,6 +26,7 @@ interface GuideContentProps {
   guideId: string;
   initialStepId?: string;
   initialTool?: 'annotate' | 'redact' | 'crop' | 'target';
+  initialHistory?: boolean;
 }
 
 interface GuideData {
@@ -55,7 +56,7 @@ async function buildPreview(snapshot: Snapshot): Promise<PreviewData> {
   return { snapshotId: snapshot.id, steps, screenshots };
 }
 
-export default function GuideContent({ guideId, initialStepId, initialTool }: GuideContentProps) {
+export default function GuideContent({ guideId, initialStepId, initialTool, initialHistory }: GuideContentProps) {
   const {
     setGuideTitle,
     setGuideStepCount,
@@ -86,6 +87,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const titleRef = useRef('');
   const appliedInitialRef = useRef(false);
+  const appliedHistoryRef = useRef(false);
 
   const loadGuide = useCallback(async () => {
     const result = await getGuide(guideId);
@@ -194,6 +196,12 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
       setEditingTool(initialTool);
     }
   }, [data, initialStepId, initialTool, scrollToStep]);
+
+  useEffect(() => {
+    if (appliedHistoryRef.current || !data || !initialHistory) return;
+    appliedHistoryRef.current = true;
+    setHistoryOpen(true);
+  }, [data, initialHistory, setHistoryOpen]);
 
   if (loading)
     return (
