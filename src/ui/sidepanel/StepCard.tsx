@@ -24,6 +24,7 @@ interface StepCardProps {
   onCopy?: (stepId: string) => void;
   placeholderRatio?: number;
   readOnly?: boolean;
+  onChanged?: () => void;
 }
 
 export default function StepCard({
@@ -35,6 +36,7 @@ export default function StepCard({
   onOpenEditor,
   placeholderRatio,
   readOnly,
+  onChanged,
 }: StepCardProps) {
   const [description, setDescription] = useState(step.description);
   const [dragOver, setDragOver] = useState(false);
@@ -104,6 +106,7 @@ export default function StepCard({
           crop
           readOnly={readOnly}
           onOpenEditor={!readOnly && onOpenEditor ? (tool) => onOpenEditor(step.id, tool) : undefined}
+          onChanged={onChanged}
         />
       ) : (
         <ImagePlaceholder

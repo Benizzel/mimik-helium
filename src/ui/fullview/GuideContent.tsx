@@ -350,6 +350,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
             onOpenEditor={handleOpenEditor}
             onReorder={(newSteps) => setData((prev) => (prev ? { ...prev, steps: newSteps } : prev))}
             readOnly={!editing || preview !== null}
+            onChanged={loadGuide}
           />
         </div>
 

@@ -236,6 +236,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
                 onDelete={handleDeleteStep}
                 onOpenEditor={(stepId, tool) => openInFullView(guideId, { stepId, tool })}
                 readOnly={!editing}
+                onChanged={loadGuide}
                 dragHandleProps={
                   editing
                     ? {

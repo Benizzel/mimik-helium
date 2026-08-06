@@ -29,6 +29,7 @@ interface ScreenshotViewProps {
   crop?: boolean;
   readOnly?: boolean;
   onOpenEditor?: (tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
+  onChanged?: () => void;
 }
 
 interface DragState {
@@ -62,6 +63,7 @@ export default function ScreenshotView({
   crop = false,
   readOnly = false,
   onOpenEditor,
+  onChanged,
 }: ScreenshotViewProps) {
   const [fullUrl, setFullUrl] = useState<string | null>(null);
   const [showViewport, setShowViewport] = useState(false);
@@ -244,6 +246,7 @@ export default function ScreenshotView({
       height,
     });
     setEditsOverride(nextEdits);
+    onChanged?.();
   };
 
   const handleDownload = async (which: 'edited' | 'original') => {
@@ -262,6 +265,7 @@ export default function ScreenshotView({
     setConfirmDelete(false);
     await deleteScreenshot(screenshot.stepId);
     setDeleted(true);
+    onChanged?.();
   };
 
   const ratio = baseScreenshot.width && baseScreenshot.height ? baseScreenshot.width / baseScreenshot.height : 16 / 9;

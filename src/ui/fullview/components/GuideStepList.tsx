@@ -15,6 +15,7 @@ interface GuideStepListProps {
   onOpenEditor: (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
   onReorder: (newSteps: Step[]) => void;
   readOnly?: boolean;
+  onChanged?: () => void;
 }
 
 export default function GuideStepList({
@@ -26,6 +27,7 @@ export default function GuideStepList({
   onOpenEditor,
   onReorder,
   readOnly,
+  onChanged,
 }: GuideStepListProps) {
   const { scrollToStepId, setActiveStepId } = useFullview((s) => ({
     scrollToStepId: s.scrollToStepId,
@@ -100,6 +102,7 @@ export default function GuideStepList({
             onDelete={onDelete}
             onOpenEditor={onOpenEditor}
             readOnly={readOnly}
+            onChanged={onChanged}
             dragHandleProps={
               readOnly
                 ? undefined
