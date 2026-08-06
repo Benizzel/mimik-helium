@@ -7,7 +7,6 @@ export type Route =
       guideId: string;
       stepId?: string;
       tool?: 'annotate' | 'redact' | 'crop' | 'target';
-      history?: boolean;
     };
 
 function parseHash(hash: string): Route {
@@ -42,9 +41,8 @@ export function useRoute(): Route {
         toolParam === 'annotate' || toolParam === 'redact' || toolParam === 'crop' || toolParam === 'target'
           ? toolParam
           : undefined;
-      const showHistory = params.get('history') === '1';
       window.history.replaceState(null, '', `${window.location.pathname}#guide/${guideId}`);
-      return { page: 'guide', guideId, stepId, tool, history: showHistory };
+      return { page: 'guide', guideId, stepId, tool };
     }
     return parseHash(window.location.hash);
   });

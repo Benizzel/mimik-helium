@@ -1,27 +1,10 @@
-import {
-  Check,
-  ChevronRight,
-  Download,
-  FileText,
-  History,
-  MoreHorizontal,
-  Pencil,
-  Search,
-  Star,
-  Trash2,
-} from 'lucide-react';
+import { Check, ChevronRight, Download, FileText, History, Pencil, Search, Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { i18n } from '#imports';
 import { createSnapshot } from '@/core/guides/service';
 import { logger } from '@/lib/logger';
 import { useFullview } from '@/stores/fullview';
 import { Button } from '@/ui/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/ui/components/ui/dropdown-menu';
 import MascotIcon from '@/ui/shared/MascotIcon';
 import ExportPreviewModal from './ExportPreviewModal';
 import type { Route } from './router';
@@ -144,6 +127,19 @@ export default function TopNav({ route }: TopNavProps) {
               {editing ? <Check size={14} /> : <Pencil size={14} />}
               {editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
             </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() => {
+                setHistoryOpen(true);
+                setEditing(false);
+              }}
+              aria-label={i18n.t('editor.versionHistory')}
+              title={i18n.t('editor.versionHistory')}
+              className="text-foreground hover:bg-foreground/10"
+            >
+              <History size={16} />
+            </Button>
             <Button size="sm" onClick={() => setExportOpen(true)}>
               <Download size={14} />
               {i18n.t('common.export')}
@@ -155,30 +151,6 @@ export default function TopNav({ route }: TopNavProps) {
               steps={exportData.steps}
               screenshots={exportData.screenshots}
             />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label={i18n.t('editor.moreActions')}
-                  title={i18n.t('editor.moreActions')}
-                  className="text-foreground hover:bg-foreground/10"
-                >
-                  <MoreHorizontal size={16} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onSelect={() => {
-                    setHistoryOpen(true);
-                    setEditing(false);
-                  }}
-                >
-                  <History size={14} />
-                  {i18n.t('editor.versionHistory')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </>
         )}
       </div>

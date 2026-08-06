@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, History, Layers, Maximize2, MoreHorizontal, Pencil, Play } from 'lucide-react';
+import { ArrowLeft, Check, Layers, Maximize2, Pencil, Play } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import {
@@ -15,12 +15,6 @@ import { createTab, focusWindow, getExtensionURL, queryTabs, updateTab } from '@
 import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { getMostCommonDomain } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/ui/components/ui/dropdown-menu';
 import { Input } from '@/ui/components/ui/input';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
@@ -37,7 +31,6 @@ interface GuideEditorProps {
 interface OpenInFullViewOptions {
   stepId?: string;
   tool?: 'annotate' | 'redact' | 'crop' | 'target';
-  history?: boolean;
 }
 
 interface GuideData {
@@ -116,7 +109,6 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
     const params = new URLSearchParams({ guideId: targetGuideId });
     if (options?.stepId) params.set('stepId', options.stepId);
     if (options?.tool) params.set('tool', options.tool);
-    if (options?.history) params.set('history', '1');
     const url = getExtensionURL(`/fullview.html?${params.toString()}`);
     queryTabs({ url: getExtensionURL('/fullview.html') }).then((tabs) => {
       if (tabs.length > 0 && tabs[0].id) {
@@ -137,12 +129,6 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
     setEditing(true);
     createSnapshot(guideId).catch((err) => logger.error(' Snapshot before editing failed', err));
   }, [editing, guideId]);
-
-  const openVersionHistory = useCallback(() => {
-    flushFocusedField();
-    setEditing(false);
-    openInFullView(guideId, { history: true });
-  }, [guideId, openInFullView]);
 
   if (loading) return <p className="text-sm text-purple p-4">{i18n.t('common.loading')}</p>;
 
@@ -211,25 +197,6 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
               {editing ? <Check size={15} /> : <Pencil size={15} />}
             </button>
             <ExportMenu guideId={guideId} guide={data.guide} steps={data.steps} screenshots={data.screenshots} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  onPointerDown={flushFocusedField}
-                  className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
-                  title={i18n.t('editor.moreActions')}
-                  aria-label={i18n.t('editor.moreActions')}
-                >
-                  <MoreHorizontal size={15} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={openVersionHistory}>
-                  <History size={14} />
-                  {i18n.t('editor.versionHistory')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
         <div className="text-[11px] flex items-center gap-2 text-muted-foreground" style={{ marginLeft: '34px' }}>
