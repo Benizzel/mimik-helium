@@ -326,7 +326,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
                 {domain}
               </span>
             )}
-            {!preview && viewSteps.length > 0 && (
+            {!editing && !preview && viewSteps.length > 0 && (
               <button
                 onClick={() => {
                   openSidebar();

@@ -174,7 +174,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
           >
             <Maximize2 size={15} />
           </button>
-          {data.steps.length > 0 && (
+          {!editing && data.steps.length > 0 && (
             <button
               onClick={async () => {
                 await sendMessage('startGuideMe', { guideId });
