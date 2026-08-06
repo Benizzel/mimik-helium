@@ -1,7 +1,7 @@
 import { Download, ImageUp, Pencil, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
-import { deleteScreenshot, updateScreenshotBlob, updateScreenshotEdits } from '@/core/guides/service';
+import { deleteScreenshot, replaceScreenshot, updateScreenshotEdits } from '@/core/guides/service';
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
 import { panBy, resolveViewport, zoomBy } from '@/core/screenshot/geometry';
 import { renderScreenshot } from '@/core/screenshot/render';
@@ -76,6 +76,7 @@ export default function ScreenshotView({
   const urlRef = useRef<string | null>(null);
   const idRef = useRef(screenshot.id);
   const propEditsRef = useRef(screenshot.edits);
+  const propScreenshotRef = useRef(screenshot);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -92,6 +93,13 @@ export default function ScreenshotView({
       setDeleted(false);
     }
   }, [screenshot.id]);
+
+  useEffect(() => {
+    if (propScreenshotRef.current !== screenshot) {
+      propScreenshotRef.current = screenshot;
+      setDeleted(false);
+    }
+  }, [screenshot]);
 
   useEffect(() => {
     if (propEditsRef.current !== screenshot.edits) {
@@ -169,7 +177,7 @@ export default function ScreenshotView({
   const scheduleSave = (edits: ScreenshotEdits) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      updateScreenshotEdits(screenshot.id, edits).then(() => {
+      updateScreenshotEdits(baseScreenshot.id, edits).then(() => {
         setSaved(true);
         if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         savedTimerRef.current = setTimeout(() => setSaved(false), SAVED_MESSAGE_MS);
@@ -230,6 +238,7 @@ export default function ScreenshotView({
   };
 
   const handleReplaceFile = async (file: File) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setReplaceOpen(false);
 
     const bitmap = await createImageBitmap(file);
@@ -239,13 +248,18 @@ export default function ScreenshotView({
     const nextEdits: ScreenshotEdits = { ...effectiveEdits, target: null };
     delete nextEdits.viewport;
     delete nextEdits.alt;
-    const nextScreenshot: Screenshot = { ...baseScreenshot, blob: file, mimeType: file.type, width, height };
 
-    setScreenshotOverride(nextScreenshot);
+    const newId = await replaceScreenshot(screenshot.stepId, file, { width, height }, nextEdits);
+
+    setScreenshotOverride({
+      ...baseScreenshot,
+      id: newId,
+      blob: file,
+      mimeType: file.type,
+      width,
+      height,
+    });
     setEditsOverride(nextEdits);
-
-    await updateScreenshotBlob(screenshot.id, file, { width, height });
-    await updateScreenshotEdits(screenshot.id, nextEdits);
   };
 
   const handleDownload = async (which: 'edited' | 'original') => {
@@ -260,8 +274,9 @@ export default function ScreenshotView({
   };
 
   const handleDeleteImage = async () => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setConfirmDelete(false);
-    await deleteScreenshot(screenshot.id, screenshot.stepId);
+    await deleteScreenshot(screenshot.stepId);
     setDeleted(true);
   };
 
