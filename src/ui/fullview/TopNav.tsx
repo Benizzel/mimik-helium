@@ -128,17 +128,16 @@ export default function TopNav({ route }: TopNavProps) {
               {editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
             </Button>
             <Button
-              size="icon-sm"
-              variant="ghost"
+              size="sm"
+              variant="secondary"
               onClick={() => {
                 setHistoryOpen(true);
                 setEditing(false);
               }}
-              aria-label={i18n.t('editor.versionHistory')}
               title={i18n.t('editor.versionHistory')}
-              className="text-foreground hover:bg-foreground/10"
             >
-              <History size={16} />
+              <History size={14} />
+              {i18n.t('editor.versionHistory')}
             </Button>
             <Button size="sm" onClick={() => setExportOpen(true)}>
               <Download size={14} />
