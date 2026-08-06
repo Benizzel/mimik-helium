@@ -1,5 +1,5 @@
 import { ChevronRight, RotateCcw, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { getSnapshots, revertToSnapshot } from '@/core/guides/service';
 import { groupSnapshots } from '@/core/guides/snapshot-groups';
@@ -13,6 +13,7 @@ function isQuotaError(e: unknown): boolean {
 interface VersionHistoryPanelProps {
   guideId: string;
   selectedId: string | null;
+  refreshKey: number;
   onSelect: (snapshot: Snapshot | null) => void;
   onRestored: () => void;
   onClose: () => void;
@@ -21,6 +22,7 @@ interface VersionHistoryPanelProps {
 export default function VersionHistoryPanel({
   guideId,
   selectedId,
+  refreshKey,
   onSelect,
   onRestored,
   onClose,
@@ -30,11 +32,16 @@ export default function VersionHistoryPanel({
   const [error, setError] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const refreshRef = useRef(refreshKey);
 
   useEffect(() => {
+    const silent = refreshRef.current !== refreshKey;
+    refreshRef.current = refreshKey;
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     getSnapshots(guideId)
       .then((list) => {
         if (!cancelled) setSnapshots(list);
@@ -48,7 +55,7 @@ export default function VersionHistoryPanel({
     return () => {
       cancelled = true;
     };
-  }, [guideId]);
+  }, [guideId, refreshKey]);
 
   const handleRestore = async (snapshot: Snapshot) => {
     if (restoring) return;

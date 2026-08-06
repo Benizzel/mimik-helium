@@ -1,8 +1,27 @@
-import { ChevronRight, Download, FileText, Search, Star, Trash2 } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  Download,
+  FileText,
+  History,
+  MoreHorizontal,
+  Pencil,
+  Search,
+  Star,
+  Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { i18n } from '#imports';
+import { createSnapshot } from '@/core/guides/service';
+import { logger } from '@/lib/logger';
 import { useFullview } from '@/stores/fullview';
 import { Button } from '@/ui/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/ui/components/ui/dropdown-menu';
 import MascotIcon from '@/ui/shared/MascotIcon';
 import ExportPreviewModal from './ExportPreviewModal';
 import type { Route } from './router';
@@ -25,14 +44,35 @@ export default function TopNav({ route }: TopNavProps) {
     guideStepCount,
     guideExportData: exportData,
     setSearchOpen,
+    editing,
+    setEditing,
+    setHistoryOpen,
+    bumpHistoryRefresh,
   } = useFullview((s) => ({
     counts: s.counts,
     guideTitle: s.guideTitle,
     guideStepCount: s.guideStepCount,
     guideExportData: s.guideExportData,
     setSearchOpen: s.setSearchOpen,
+    editing: s.editing,
+    setEditing: s.setEditing,
+    setHistoryOpen: s.setHistoryOpen,
+    bumpHistoryRefresh: s.bumpHistoryRefresh,
   }));
   const [exportOpen, setExportOpen] = useState(false);
+
+  const toggleEditing = (guideId: string) => {
+    if (editing) {
+      setEditing(false);
+      return;
+    }
+    setEditing(true);
+    createSnapshot(guideId)
+      .then((snapshot) => {
+        if (snapshot) bumpHistoryRefresh();
+      })
+      .catch((err) => logger.error(' Snapshot before editing failed', err));
+  };
 
   return (
     <header className="flex items-center gap-5 px-7 h-16 shrink-0 bg-gradient-to-br from-violet to-violet-light">
@@ -100,6 +140,10 @@ export default function TopNav({ route }: TopNavProps) {
         </Button>
         {route.page === 'guide' && exportData && (
           <>
+            <Button size="sm" variant="secondary" onClick={() => toggleEditing(exportData.guideId)}>
+              {editing ? <Check size={14} /> : <Pencil size={14} />}
+              {editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
+            </Button>
             <Button size="sm" onClick={() => setExportOpen(true)}>
               <Download size={14} />
               {i18n.t('common.export')}
@@ -111,6 +155,30 @@ export default function TopNav({ route }: TopNavProps) {
               steps={exportData.steps}
               screenshots={exportData.screenshots}
             />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={i18n.t('editor.moreActions')}
+                  title={i18n.t('editor.moreActions')}
+                  className="text-foreground hover:bg-foreground/10"
+                >
+                  <MoreHorizontal size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setHistoryOpen(true);
+                    setEditing(false);
+                  }}
+                >
+                  <History size={14} />
+                  {i18n.t('editor.versionHistory')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         )}
       </div>
