@@ -14,6 +14,7 @@ interface GuideStepListProps {
   onDelete: (stepId: string) => void;
   onOpenEditor: (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
   onReorder: (newSteps: Step[]) => void;
+  readOnly?: boolean;
 }
 
 export default function GuideStepList({
@@ -24,6 +25,7 @@ export default function GuideStepList({
   onDelete,
   onOpenEditor,
   onReorder,
+  readOnly,
 }: GuideStepListProps) {
   const { scrollToStepId, setActiveStepId } = useFullview((s) => ({
     scrollToStepId: s.scrollToStepId,
@@ -97,17 +99,22 @@ export default function GuideStepList({
             onDescriptionChange={onDescriptionChange}
             onDelete={onDelete}
             onOpenEditor={onOpenEditor}
-            dragHandleProps={{
-              onDragStart: (e: React.DragEvent) => {
-                setDragIndex(idx);
-                e.dataTransfer.effectAllowed = 'move';
-              },
-              onDragOver: (e: React.DragEvent) => {
-                e.preventDefault();
-                setDragOverIndex(idx);
-              },
-              onDragEnd: handleDragEnd,
-            }}
+            readOnly={readOnly}
+            dragHandleProps={
+              readOnly
+                ? undefined
+                : {
+                    onDragStart: (e: React.DragEvent) => {
+                      setDragIndex(idx);
+                      e.dataTransfer.effectAllowed = 'move';
+                    },
+                    onDragOver: (e: React.DragEvent) => {
+                      e.preventDefault();
+                      setDragOverIndex(idx);
+                    },
+                    onDragEnd: handleDragEnd,
+                  }
+            }
           />
         </div>
       ))}
