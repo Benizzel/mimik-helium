@@ -139,9 +139,10 @@ describe('VersionHistoryPanel change summary', () => {
   });
 
   it('uses the plural key for every counted cause above one', async () => {
+    const ids = ['e1', 'e2', 'u1', 'u2', 'rp1', 'rp2', 'cr1', 'cr2', 'an1', 'an2', 'bl1', 'bl2'];
     const snapshot = older({
       title: 'Before',
-      stepIds: ['x1', 'x2', 'e1', 'e2', 'u1', 'u2', 'p1', 'p2'],
+      stepIds: ['x1', 'x2', ...ids],
       steps: [
         step('x1', 'Gone one'),
         step('x2', 'Gone two'),
@@ -149,17 +150,29 @@ describe('VersionHistoryPanel change summary', () => {
         step('e2', 'Old e2'),
         step('u1', 'Same', undefined, 'https://a.test/one'),
         step('u2', 'Same', undefined, 'https://a.test/two'),
-        step('p1', 'Same', 'p1a'),
-        step('p2', 'Same', 'p2a'),
+        step('rp1', 'Same', 'rp1a'),
+        step('rp2', 'Same', 'rp2a'),
+        step('cr1', 'Same', 'cr1s'),
+        step('cr2', 'Same', 'cr2s'),
+        step('an1', 'Same', 'an1s'),
+        step('an2', 'Same', 'an2s'),
+        step('bl1', 'Same', 'bl1s'),
+        step('bl2', 'Same', 'bl2s'),
       ],
       screenshots: [
-        shot('p1a', 'p1', { viewport: viewportA, annotations: [box, redact], alt: 'before' }),
-        shot('p2a', 'p2', { viewport: viewportA, annotations: [box, redact], alt: 'before' }),
+        shot('rp1a', 'rp1'),
+        shot('rp2a', 'rp2'),
+        shot('cr1s', 'cr1', { viewport: viewportA, alt: 'before' }),
+        shot('cr2s', 'cr2', { viewport: viewportA }),
+        shot('an1s', 'an1', { annotations: [box] }),
+        shot('an2s', 'an2', { annotations: [box] }),
+        shot('bl1s', 'bl1', { annotations: [redact] }),
+        shot('bl2s', 'bl2', { annotations: [redact] }),
       ],
     });
     const live: SnapshotLike = {
       title: 'After',
-      stepIds: ['y1', 'y2', 'e2', 'e1', 'u1', 'u2', 'p1', 'p2'],
+      stepIds: ['y1', 'y2', 'e2', 'e1', ...ids.slice(2)],
       steps: [
         step('y1', 'New one'),
         step('y2', 'New two'),
@@ -167,12 +180,24 @@ describe('VersionHistoryPanel change summary', () => {
         step('e1', 'New e1'),
         step('u1', 'Same', undefined, 'https://b.test/one'),
         step('u2', 'Same', undefined, 'https://b.test/two'),
-        step('p1', 'Same', 'p1b'),
-        step('p2', 'Same', 'p2b'),
+        step('rp1', 'Same', 'rp1b'),
+        step('rp2', 'Same', 'rp2b'),
+        step('cr1', 'Same', 'cr1s'),
+        step('cr2', 'Same', 'cr2s'),
+        step('an1', 'Same', 'an1s'),
+        step('an2', 'Same', 'an2s'),
+        step('bl1', 'Same', 'bl1s'),
+        step('bl2', 'Same', 'bl2s'),
       ],
       screenshots: [
-        shot('p1b', 'p1', { viewport: viewportB, annotations: [otherBox, otherRedact], alt: 'after' }),
-        shot('p2b', 'p2', { viewport: viewportB, annotations: [otherBox, otherRedact], alt: 'after' }),
+        shot('rp1b', 'rp1'),
+        shot('rp2b', 'rp2'),
+        shot('cr1s', 'cr1', { viewport: viewportB, alt: 'after' }),
+        shot('cr2s', 'cr2', { viewport: viewportB }),
+        shot('an1s', 'an1', { annotations: [otherBox] }),
+        shot('an2s', 'an2', { annotations: [otherBox] }),
+        shot('bl1s', 'bl1', { annotations: [otherRedact] }),
+        shot('bl2s', 'bl2', { annotations: [otherRedact] }),
       ],
     };
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Annotation, ScreenshotEdits } from '@/core/screenshot/types';
 import { diffSnapshots, type SnapshotLike } from '../snapshot-diff';
-import type { Snapshot } from '../types';
+import type { ScreenshotBounds, Snapshot } from '../types';
 
 type StepInput = SnapshotLike['steps'][number];
 type ShotInput = SnapshotLike['screenshots'][number];
@@ -10,8 +10,13 @@ function step(id: string, description = `${id} description`, screenshotId?: stri
   return { id, description, ...(screenshotId ? { screenshotId } : {}), ...(url ? { url } : {}) };
 }
 
-function shot(id: string, stepId: string, edits?: ScreenshotEdits): ShotInput & { stepId: string } {
-  return edits ? { id, stepId, edits } : { id, stepId };
+function shot(
+  id: string,
+  stepId: string,
+  edits?: ScreenshotEdits,
+  captured?: { bounds?: ScreenshotBounds; pixelRatio?: number },
+): ShotInput & { stepId: string } {
+  return { id, stepId, ...(edits ? { edits } : {}), ...captured };
 }
 
 function like(steps: StepInput[], overrides: Partial<SnapshotLike> = {}): SnapshotLike {
@@ -370,13 +375,140 @@ describe('diffSnapshots', () => {
     expect(diffSnapshots(a, b)).toEqual(empty);
   });
 
-  it('reports a replacement that also clears the edits on the new row', () => {
+  it('does not report the edits left behind on the row a replacement replaced', () => {
     const a = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1', { alt: 'one' })] });
     const b = like([step('s1', 'Same', 'sc2')], {
       screenshots: [shot('sc1', 's1', { alt: 'one' }), shot('sc2', 's1', { alt: 'two' })],
     });
 
+    expect(diffSnapshots(a, b)).toEqual({ ...empty, replaced: 1 });
+  });
+
+  it('reports only the replacement when a pristine screenshot is replaced', () => {
+    const a = like([step('s1', 'Same', 'old')], {
+      screenshots: [shot('old', 's1', undefined, { bounds: { x: 2, y: 3, width: 4, height: 5 }, pixelRatio: 2 })],
+    });
+    const b = like([step('s1', 'Same', 'new')], {
+      screenshots: [
+        shot('old', 's1', undefined, { bounds: { x: 2, y: 3, width: 4, height: 5 }, pixelRatio: 2 }),
+        shot('new', 's1', { target: null }),
+      ],
+    });
+
+    expect(diffSnapshots(a, b)).toEqual({ ...empty, replaced: 1 });
+  });
+
+  it('reports only the replacement when a fully edited screenshot is replaced', () => {
+    const edited: ScreenshotEdits = {
+      viewport: { x: 1, y: 2, width: 30, height: 40 },
+      target: { x: 0, y: 0, width: 5, height: 5, border: 'dashed', color: '#4F46E5' },
+      annotations: [box, redact],
+      alt: 'hello',
+    };
+    const carried: ScreenshotEdits = { ...edited, target: null };
+    delete carried.viewport;
+    delete carried.alt;
+
+    const a = like([step('s1', 'Same', 'old')], { screenshots: [shot('old', 's1', edited)] });
+    const b = like([step('s1', 'Same', 'new')], {
+      screenshots: [shot('old', 's1', edited), shot('new', 's1', carried)],
+    });
+
+    expect(diffSnapshots(a, b)).toEqual({ ...empty, replaced: 1 });
+  });
+
+  it('suppresses the derived causes per step, not per diff', () => {
+    const a = like([step('r1', 'Same', 'old'), step('c1', 'Same', 'kept')], {
+      screenshots: [
+        shot('old', 'r1', { alt: 'gone' }),
+        shot('kept', 'c1', { viewport: { x: 0, y: 0, width: 9, height: 9 } }),
+      ],
+    });
+    const b = like([step('r1', 'Same', 'new'), step('c1', 'Same', 'kept')], {
+      screenshots: [
+        shot('new', 'r1', { target: null }),
+        shot('kept', 'c1', { viewport: { x: 3, y: 0, width: 6, height: 9 } }),
+      ],
+    });
+
+    expect(diffSnapshots(a, b)).toEqual({ ...empty, replaced: 1, cropped: 1 });
+  });
+
+  it('lets a step other than the replaced one set the alt flag', () => {
+    const a = like([step('r1', 'Same', 'old'), step('t1', 'Same', 'text')], {
+      screenshots: [shot('old', 'r1', { alt: 'gone' }), shot('text', 't1', { alt: 'before' })],
+    });
+    const b = like([step('r1', 'Same', 'new'), step('t1', 'Same', 'text')], {
+      screenshots: [shot('new', 'r1', { target: null }), shot('text', 't1', { alt: 'after' })],
+    });
+
     expect(diffSnapshots(a, b)).toEqual({ ...empty, replaced: 1, altEdited: true });
+  });
+
+  it('reports nothing for an annotation editor visit that materialised the derived target', () => {
+    const captured = { bounds: { x: 2, y: 3, width: 4, height: 5 }, pixelRatio: 2 };
+    const a = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1', undefined, captured)] });
+    const b = like([step('s1', 'Same', 'sc1')], {
+      screenshots: [
+        shot(
+          'sc1',
+          's1',
+          {
+            annotations: [],
+            target: { x: 4, y: 6, width: 8, height: 10, border: 'dashed', color: '#4F46E5' },
+          },
+          captured,
+        ),
+      ],
+    });
+
+    expect(diffSnapshots(a, b)).toEqual(empty);
+  });
+
+  it('reports nothing when an absent target and an explicit null both resolve to no target', () => {
+    const a = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1')] });
+    const b = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1', { target: null })] });
+
+    expect(diffSnapshots(a, b)).toEqual(empty);
+  });
+
+  it('still reports a target the user actually moved away from the derived box', () => {
+    const captured = { bounds: { x: 2, y: 3, width: 4, height: 5 }, pixelRatio: 2 };
+    const a = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1', undefined, captured)] });
+    const b = like([step('s1', 'Same', 'sc1')], {
+      screenshots: [
+        shot(
+          'sc1',
+          's1',
+          { target: { x: 40, y: 6, width: 8, height: 10, border: 'dashed', color: '#4F46E5' } },
+          captured,
+        ),
+      ],
+    });
+
+    expect(diffSnapshots(a, b)).toEqual({ ...empty, annotated: 1 });
+  });
+
+  it('still reports a target the user switched off', () => {
+    const captured = { bounds: { x: 2, y: 3, width: 4, height: 5 }, pixelRatio: 2 };
+    const a = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1', undefined, captured)] });
+    const b = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1', { target: null }, captured)] });
+
+    expect(diffSnapshots(a, b)).toEqual({ ...empty, annotated: 1 });
+  });
+
+  it('treats an empty alt string as no alt text', () => {
+    const a = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1')] });
+    const b = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1', { alt: '' })] });
+
+    expect(diffSnapshots(a, b)).toEqual(empty);
+  });
+
+  it('reports clearing an alt text that was really there', () => {
+    const a = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1', { alt: 'described' })] });
+    const b = like([step('s1', 'Same', 'sc1')], { screenshots: [shot('sc1', 's1', { alt: '' })] });
+
+    expect(diffSnapshots(a, b)).toEqual({ ...empty, altEdited: true });
   });
 
   it('ignores screenshots belonging to steps present on only one side', () => {

@@ -1,4 +1,6 @@
+import { resolveTarget } from '@/core/screenshot/geometry';
 import type { Annotation, ScreenshotEdits } from '@/core/screenshot/types';
+import type { ScreenshotBounds } from './types';
 
 interface DiffStep {
   id: string;
@@ -10,6 +12,8 @@ interface DiffStep {
 interface DiffScreenshot {
   id: string;
   edits?: ScreenshotEdits;
+  bounds?: ScreenshotBounds;
+  pixelRatio?: number;
 }
 
 export interface SnapshotLike {
@@ -44,9 +48,13 @@ function stableStringify(value: unknown): string {
   return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(',')}}`;
 }
 
-function editsFor(snapshot: SnapshotLike, screenshotId: string | undefined): ScreenshotEdits {
-  if (!screenshotId) return {};
-  return snapshot.screenshots.find((row) => row.id === screenshotId)?.edits ?? {};
+function rowFor(snapshot: SnapshotLike, screenshotId: string | undefined): DiffScreenshot {
+  if (!screenshotId) return { id: '' };
+  return snapshot.screenshots.find((row) => row.id === screenshotId) ?? { id: screenshotId };
+}
+
+function altOf(edits: ScreenshotEdits): string {
+  return edits.alt ?? '';
 }
 
 function redactions(edits: ScreenshotEdits): Annotation[] {
@@ -87,16 +95,24 @@ export function diffSnapshots(from: SnapshotLike, to: SnapshotLike): SnapshotDif
 
     if (before.description !== step.description) edited++;
     if (before.url !== step.url) urls++;
-    if (before.screenshotId !== step.screenshotId) replaced++;
+    if (before.screenshotId !== step.screenshotId) {
+      replaced++;
+      continue;
+    }
 
-    const beforeEdits = editsFor(from, before.screenshotId);
-    const afterEdits = editsFor(to, step.screenshotId);
+    const beforeRow = rowFor(from, before.screenshotId);
+    const afterRow = rowFor(to, step.screenshotId);
+    const beforeEdits = beforeRow.edits ?? {};
+    const afterEdits = afterRow.edits ?? {};
 
     if (differs(beforeEdits.viewport, afterEdits.viewport)) cropped++;
-    if (differs(drawings(beforeEdits), drawings(afterEdits)) || differs(beforeEdits.target, afterEdits.target))
+    if (
+      differs(drawings(beforeEdits), drawings(afterEdits)) ||
+      differs(resolveTarget(beforeRow), resolveTarget(afterRow))
+    )
       annotated++;
     if (differs(redactions(beforeEdits), redactions(afterEdits))) blurred++;
-    if (differs(beforeEdits.alt, afterEdits.alt)) altEdited = true;
+    if (altOf(beforeEdits) !== altOf(afterEdits)) altEdited = true;
   }
 
   return {
