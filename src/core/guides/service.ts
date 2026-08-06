@@ -74,13 +74,15 @@ export async function updateGuideTitle(id: string, title: string): Promise<void>
 }
 
 export async function addStepToGuide(guideId: string, stepId: string): Promise<void> {
-  const guide = await db.guides.get(guideId);
-  if (guide) {
-    await db.guides.update(guideId, {
-      stepIds: [...guide.stepIds, stepId],
-      updatedAt: Date.now(),
-    });
-  }
+  await db.transaction('rw', db.guides, async () => {
+    const guide = await db.guides.get(guideId);
+    if (guide) {
+      await db.guides.update(guideId, {
+        stepIds: [...guide.stepIds, stepId],
+        updatedAt: Date.now(),
+      });
+    }
+  });
 }
 
 export async function toggleStar(id: string): Promise<boolean> {
@@ -228,4 +230,30 @@ export async function getSnapshots(guideId: string): Promise<Snapshot[]> {
     .between([guideId, -Infinity], [guideId, Infinity])
     .reverse()
     .toArray();
+}
+
+export async function revertToSnapshot(snapshotId: string): Promise<Snapshot | null> {
+  const undo = await db.transaction('rw', db.guides, db.steps, db.screenshots, db.snapshots, async () => {
+    const snapshot = await db.snapshots.get(snapshotId);
+    if (!snapshot) return null;
+    const previous = await createSnapshot(snapshot.guideId);
+    if (!previous) return null;
+    const existing = await db.steps.where('guideId').equals(snapshot.guideId).toArray();
+    const keep = new Set(snapshot.steps.map((s) => s.id));
+    await db.steps.bulkDelete(existing.filter((s) => !keep.has(s.id)).map((s) => s.id));
+    await db.steps.bulkPut(snapshot.steps);
+    const live = await db.screenshots.bulkGet(snapshot.screenshots.map((r) => r.id));
+    const merged = snapshot.screenshots
+      .map((row, i) => (live[i] ? { ...row, blob: live[i]!.blob } : null))
+      .filter((r): r is Screenshot => r !== null);
+    if (merged.length > 0) await db.screenshots.bulkPut(merged);
+    await db.guides.update(snapshot.guideId, {
+      title: snapshot.title,
+      stepIds: snapshot.stepIds,
+      updatedAt: Date.now(),
+    });
+    return previous;
+  });
+  if (undo) notifyGuidesChanged({ type: 'mutated' });
+  return undo;
 }
