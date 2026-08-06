@@ -63,6 +63,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
     setGuideExportData,
     scrollToStep,
     editing,
+    setEditing,
     historyOpen,
     setHistoryOpen,
     historyRefreshKey,
@@ -72,6 +73,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
     setGuideExportData: s.setGuideExportData,
     scrollToStep: s.scrollToStep,
     editing: s.editing,
+    setEditing: s.setEditing,
     historyOpen: s.historyOpen,
     setHistoryOpen: s.setHistoryOpen,
     historyRefreshKey: s.historyRefreshKey,
@@ -182,8 +184,8 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
   }, [preview]);
 
   useEffect(() => {
-    if (editing) setPreview(null);
-  }, [editing]);
+    if (editing || !historyOpen) setPreview(null);
+  }, [editing, historyOpen]);
 
   useEffect(() => {
     if (appliedInitialRef.current || !data || !initialStepId) return;
@@ -360,12 +362,12 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
             selectedId={preview?.id ?? null}
             refreshKey={historyRefreshKey}
             live={live}
-            onSelect={setPreview}
-            onRestored={loadGuide}
-            onClose={() => {
-              setHistoryOpen(false);
-              setPreview(null);
+            onSelect={(snapshot) => {
+              setPreview(snapshot);
+              if (snapshot) setEditing(false);
             }}
+            onRestored={loadGuide}
+            onClose={() => setHistoryOpen(false)}
           />
         )}
       </div>

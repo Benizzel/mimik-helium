@@ -29,6 +29,7 @@ export default function TopNav({ route }: TopNavProps) {
     setSearchOpen,
     editing,
     setEditing,
+    historyOpen,
     setHistoryOpen,
     bumpHistoryRefresh,
   } = useFullview((s) => ({
@@ -39,6 +40,7 @@ export default function TopNav({ route }: TopNavProps) {
     setSearchOpen: s.setSearchOpen,
     editing: s.editing,
     setEditing: s.setEditing,
+    historyOpen: s.historyOpen,
     setHistoryOpen: s.setHistoryOpen,
     bumpHistoryRefresh: s.bumpHistoryRefresh,
   }));
@@ -130,10 +132,7 @@ export default function TopNav({ route }: TopNavProps) {
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => {
-                setHistoryOpen(true);
-                setEditing(false);
-              }}
+              onClick={() => setHistoryOpen(!historyOpen)}
               title={i18n.t('editor.versionHistory')}
             >
               <History size={14} />
