@@ -27,6 +27,7 @@ interface ScreenshotViewProps {
   alt?: string;
   animate?: boolean;
   crop?: boolean;
+  frameRatio?: number;
   readOnly?: boolean;
   onOpenEditor?: (tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
   onChanged?: () => void;
@@ -47,6 +48,7 @@ const ZOOM_OUT_FACTOR = 0.8;
 const VIEWPORT_EPSILON = 0.5;
 const FRAME_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const FRAME_TRANSITION = `width 0.4s ${FRAME_EASING}, height 0.4s ${FRAME_EASING}, left 0.4s ${FRAME_EASING}, top 0.4s ${FRAME_EASING}`;
+const FRAME_RATIO_EPSILON = 0.01;
 
 function withFullViewport(screenshot: Screenshot): Screenshot {
   return {
@@ -61,6 +63,7 @@ export default function ScreenshotView({
   alt = '',
   animate = false,
   crop = false,
+  frameRatio,
   readOnly = false,
   onOpenEditor,
   onChanged,
@@ -268,7 +271,9 @@ export default function ScreenshotView({
     onChanged?.();
   };
 
-  const ratio = baseScreenshot.width && baseScreenshot.height ? baseScreenshot.width / baseScreenshot.height : 16 / 9;
+  const ownRatio =
+    baseScreenshot.width && baseScreenshot.height ? baseScreenshot.width / baseScreenshot.height : 16 / 9;
+  const ratio = frameRatio ?? ownRatio;
 
   if (deleted) {
     return <ImagePlaceholder label={i18n.t('screenshotView.imageDeleted')} ratio={ratio} className={className} />;
@@ -314,25 +319,41 @@ export default function ScreenshotView({
     transition: animate ? FRAME_TRANSITION : undefined,
   };
 
+  const vpRatio = displayedViewport.width / displayedViewport.height;
+  const letterbox =
+    frameRatio !== undefined && Math.abs(vpRatio - frameRatio) > FRAME_RATIO_EPSILON ? frameRatio : undefined;
+  const frameFit: React.CSSProperties | undefined =
+    letterbox === undefined ? undefined : vpRatio >= letterbox ? { width: '100%' } : { height: '100%' };
+
+  const frame = (
+    <div
+      data-screenshot-frame=""
+      className={letterbox === undefined ? 'relative overflow-hidden w-full' : 'relative overflow-hidden'}
+      style={{ aspectRatio: `${displayedViewport.width} / ${displayedViewport.height}`, ...frameFit }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerCancel={handlePointerEnd}
+    >
+      <img
+        src={fullUrl}
+        alt={altText}
+        draggable={false}
+        className={`absolute block max-w-none ${showZoomControls && isZoomed ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        style={imgStyle}
+      />
+    </div>
+  );
+
   return (
     <div className={`relative overflow-hidden rounded-lg border border-border ${className}`}>
-      <div
-        data-screenshot-frame=""
-        className="relative overflow-hidden w-full"
-        style={{ aspectRatio: `${displayedViewport.width} / ${displayedViewport.height}` }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerEnd}
-        onPointerCancel={handlePointerEnd}
-      >
-        <img
-          src={fullUrl}
-          alt={altText}
-          draggable={false}
-          className={`absolute block max-w-none ${showZoomControls && isZoomed ? 'cursor-grab active:cursor-grabbing' : ''}`}
-          style={imgStyle}
-        />
-      </div>
+      {letterbox === undefined ? (
+        frame
+      ) : (
+        <div className="w-full flex items-center justify-center bg-secondary" style={{ aspectRatio: letterbox }}>
+          {frame}
+        </div>
+      )}
       {showTopControls && (
         <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
           <Popover>

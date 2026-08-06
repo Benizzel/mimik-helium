@@ -23,6 +23,7 @@ interface StepCardProps {
   onOpenEditor?: (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
   onCopy?: (stepId: string) => void;
   placeholderRatio?: number;
+  frameRatio?: number;
   readOnly?: boolean;
   onChanged?: () => void;
 }
@@ -35,6 +36,7 @@ export default function StepCard({
   dragHandleProps,
   onOpenEditor,
   placeholderRatio,
+  frameRatio,
   readOnly,
   onChanged,
 }: StepCardProps) {
@@ -104,6 +106,7 @@ export default function StepCard({
           alt={`Step ${step.index + 1} screenshot`}
           className="!rounded-none !border-0"
           crop
+          frameRatio={frameRatio}
           readOnly={readOnly}
           onOpenEditor={!readOnly && onOpenEditor ? (tool) => onOpenEditor(step.id, tool) : undefined}
           onChanged={onChanged}

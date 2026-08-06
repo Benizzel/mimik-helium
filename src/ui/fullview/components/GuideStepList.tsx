@@ -3,7 +3,7 @@ import { reorderSteps } from '@/core/guides/service';
 import type { Screenshot, Step } from '@/core/guides/types';
 import { useFullview } from '@/stores/fullview';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
-import { siblingRatio } from '@/ui/shared/ImagePlaceholder';
+import { dominantRatio, siblingRatio } from '@/ui/shared/ImagePlaceholder';
 import StepCard from '@/ui/sidepanel/StepCard';
 
 interface GuideStepListProps {
@@ -38,6 +38,7 @@ export default function GuideStepList({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const stepRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const placeholderRatio = siblingRatio(screenshots);
+  const frameRatio = dominantRatio(screenshots);
 
   useEffect(() => {
     if (scrollToStepId) {
@@ -98,6 +99,7 @@ export default function GuideStepList({
             step={step}
             screenshot={screenshots.get(step.id)}
             placeholderRatio={placeholderRatio}
+            frameRatio={frameRatio}
             onDescriptionChange={onDescriptionChange}
             onDelete={onDelete}
             onOpenEditor={onOpenEditor}
