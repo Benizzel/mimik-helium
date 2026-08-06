@@ -103,10 +103,16 @@ export default function VersionHistoryPanel({
   const diffs = useMemo(() => {
     const map = new Map<string, SnapshotDiff>();
     snapshots.forEach((snapshot, i) => {
-      map.set(snapshot.id, diffSnapshots(snapshot, i === 0 ? live : snapshots[i - 1]));
+      const older = snapshots[i + 1];
+      if (older) map.set(snapshot.id, diffSnapshots(older, snapshot));
     });
     return map;
-  }, [snapshots, live]);
+  }, [snapshots]);
+
+  const currentSummary = useMemo(
+    () => (snapshots.length > 0 ? changeSummary(diffSnapshots(snapshots[0], live)) : ''),
+    [snapshots, live],
+  );
 
   const named = useMemo(() => snapshots.filter((s) => s.name), [snapshots]);
 
@@ -312,6 +318,7 @@ export default function VersionHistoryPanel({
               >
                 {i18n.t('history.current')}
               </button>
+              {currentSummary && <p className="text-[11px] text-muted-foreground mt-0.5">{currentSummary}</p>}
             </div>
             {namedOnly ? (
               named.length === 0 ? (
