@@ -158,6 +158,21 @@ editor:
   deleteThisStep: "¿Eliminar este paso?"
   copyScreenshot: Copiar captura
   noScreenshot: Sin captura
+  edit: Editar
+  done: Listo
+  versionHistory: Historial de versiones
+  moreActions: Más acciones
+
+history:
+  title: Historial de versiones
+  current: Actual
+  restore: Restaurar
+  unchangedVersions: "Versiones sin cambios ($1)"
+  readOnlyBanner: "Estás viendo una versión anterior. Cierra el historial de versiones para volver a la guía actual."
+  loadError: No se pudo cargar el historial de versiones. Inténtalo de nuevo.
+  restoreError: No se pudo restaurar. Inténtalo de nuevo en un momento.
+  storageFull: No hay espacio para guardar un punto de deshacer. Elimina una guía e inténtalo de nuevo.
+  empty: Todavía no hay versiones anteriores. Aparecerán aquí cuando edites esta guía.
 
 emptyGuide:
   title: Esta guía está vacía

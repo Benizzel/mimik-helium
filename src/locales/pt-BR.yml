@@ -158,6 +158,21 @@ editor:
   deleteThisStep: "Excluir esse passo?"
   copyScreenshot: Copiar captura
   noScreenshot: Sem captura
+  edit: Editar
+  done: Pronto
+  versionHistory: Histórico de versões
+  moreActions: Mais ações
+
+history:
+  title: Histórico de versões
+  current: Atual
+  restore: Restaurar
+  unchangedVersions: "Versões sem alterações ($1)"
+  readOnlyBanner: "Você tá vendo uma versão anterior. Fecha o histórico de versões pra voltar pro guia atual."
+  loadError: Não deu pra carregar o histórico de versões. Tenta de novo.
+  restoreError: Não deu pra restaurar. Tenta de novo num instante.
+  storageFull: Sem espaço pra salvar um ponto de desfazer. Exclui um guia e tenta de novo.
+  empty: Nenhuma versão anterior ainda. Elas aparecem aqui quando você editar esse guia.
 
 emptyGuide:
   title: Esse guia tá vazio
