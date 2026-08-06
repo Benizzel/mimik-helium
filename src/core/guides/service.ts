@@ -1,7 +1,8 @@
 import { i18n } from '#imports';
 import type { ScreenshotEdits } from '@/core/screenshot/types';
 import { db } from './db';
-import type { Guide, Screenshot, Step } from './types';
+import { hashPayload } from './snapshot-hash';
+import type { Guide, Screenshot, Snapshot, Step } from './types';
 
 export type GuideChangeEvent = { type: 'starred'; id: string; starred: boolean } | { type: 'mutated' };
 
@@ -193,4 +194,38 @@ export async function getFirstScreenshot(guideId: string): Promise<Screenshot | 
     }
   }
   return null;
+}
+
+export async function createSnapshot(guideId: string): Promise<Snapshot | null> {
+  return db.transaction('rw', db.guides, db.steps, db.screenshots, db.snapshots, async () => {
+    const guide = await db.guides.get(guideId);
+    if (!guide) return null;
+    const steps = await db.steps.where('guideId').equals(guideId).sortBy('index');
+    const stepIds = steps.map((s) => s.id);
+    const rows = await db.screenshots.where('stepId').anyOf(stepIds).toArray();
+    const screenshots = rows.map(({ blob, ...rest }) => rest);
+    const payload = { title: guide.title, stepIds, steps, screenshots };
+    const latest = await db.snapshots
+      .where('[guideId+createdAt]')
+      .between([guideId, -Infinity], [guideId, Infinity])
+      .last();
+    const now = Date.now();
+    const snapshot: Snapshot = {
+      id: crypto.randomUUID(),
+      guideId,
+      createdAt: latest && latest.createdAt >= now ? latest.createdAt + 1 : now,
+      contentHash: hashPayload(payload),
+      ...payload,
+    };
+    await db.snapshots.add(snapshot);
+    return snapshot;
+  });
+}
+
+export async function getSnapshots(guideId: string): Promise<Snapshot[]> {
+  return db.snapshots
+    .where('[guideId+createdAt]')
+    .between([guideId, -Infinity], [guideId, Infinity])
+    .reverse()
+    .toArray();
 }

@@ -15,7 +15,7 @@ export class MimikDB extends Dexie {
       screenshots: 'id, stepId',
     });
     this.version(2).stores({
-      snapshots: 'id, guideId, createdAt',
+      snapshots: 'id, guideId, createdAt, [guideId+createdAt]',
     });
   }
 }
