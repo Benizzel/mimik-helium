@@ -252,6 +252,11 @@ export async function getSnapshots(guideId: string): Promise<Snapshot[]> {
     .toArray();
 }
 
+export async function renameSnapshot(snapshotId: string, name: string): Promise<void> {
+  const trimmed = name.trim();
+  await db.snapshots.update(snapshotId, { name: trimmed === '' ? undefined : trimmed });
+}
+
 export async function revertToSnapshot(snapshotId: string): Promise<Snapshot | null> {
   const undo = await db.transaction('rw', db.guides, db.steps, db.screenshots, db.snapshots, async () => {
     const snapshot = await db.snapshots.get(snapshotId);

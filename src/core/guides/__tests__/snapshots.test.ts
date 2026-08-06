@@ -31,6 +31,7 @@ import {
   getGuide,
   getSnapshots,
   permanentlyDeleteGuide,
+  renameSnapshot,
   reorderSteps,
   replaceScreenshot,
   revertToSnapshot,
@@ -181,6 +182,79 @@ describe('getSnapshots', () => {
     const list = await getSnapshots('g1');
 
     expect(list.map((s) => s.id)).toEqual(['n2', 'n1']);
+  });
+});
+
+describe('renameSnapshot', () => {
+  it('stores a name on the snapshot without a schema migration', async () => {
+    await seedGuide('g1', { stepIds: [] });
+    const snapshot = await createSnapshot('g1');
+
+    await renameSnapshot(snapshot!.id, 'before rewrite');
+
+    expect((await db.snapshots.get(snapshot!.id))?.name).toBe('before rewrite');
+    expect((await getSnapshots('g1'))[0].name).toBe('before rewrite');
+  });
+
+  it('trims surrounding whitespace', async () => {
+    await seedGuide('g1', { stepIds: [] });
+    const snapshot = await createSnapshot('g1');
+
+    await renameSnapshot(snapshot!.id, '   spaced out  ');
+
+    expect((await db.snapshots.get(snapshot!.id))?.name).toBe('spaced out');
+  });
+
+  it('clears the name when given an empty or whitespace-only value', async () => {
+    await seedGuide('g1', { stepIds: [] });
+    const snapshot = await createSnapshot('g1');
+    await renameSnapshot(snapshot!.id, 'named');
+
+    await renameSnapshot(snapshot!.id, '   ');
+
+    expect((await db.snapshots.get(snapshot!.id))?.name).toBeUndefined();
+  });
+
+  it('leaves createdAt and contentHash untouched', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1' }));
+    const snapshot = await createSnapshot('g1');
+
+    await renameSnapshot(snapshot!.id, 'milestone');
+
+    const stored = await db.snapshots.get(snapshot!.id);
+    expect(stored?.createdAt).toBe(snapshot!.createdAt);
+    expect(stored?.contentHash).toBe(snapshot!.contentHash);
+  });
+
+  it('keeps the content hash out of naming, so a named version still groups with unchanged siblings', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1' }));
+    const first = await createSnapshot('g1');
+
+    await renameSnapshot(first!.id, 'checkpoint');
+    const second = await createSnapshot('g1');
+
+    expect(second?.contentHash).toBe(first?.contentHash);
+    expect(second?.name).toBeUndefined();
+  });
+
+  it('does not rename other snapshots or touch the guide', async () => {
+    await seedGuide('g1', { stepIds: [], updatedAt: 5000 });
+    const first = await createSnapshot('g1');
+    const second = await createSnapshot('g1');
+    await db.guides.update('g1', { updatedAt: 5000 });
+    broadcasts.length = 0;
+
+    await renameSnapshot(second!.id, 'only this one');
+
+    expect((await db.snapshots.get(first!.id))?.name).toBeUndefined();
+    expect((await db.guides.get('g1'))?.updatedAt).toBe(5000);
+    expect(broadcasts.filter((m) => !!m && typeof m === 'object' && 'type' in m)).toEqual([]);
+  });
+
+  it('is a no-op for an unknown snapshot id', async () => {
+    await expect(renameSnapshot('missing', 'ghost')).resolves.toBeUndefined();
   });
 });
 

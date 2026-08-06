@@ -71,6 +71,7 @@ export interface Snapshot {
   guideId: string;
   createdAt: number;
   contentHash: string;
+  name?: string;
   title: string;
   stepIds: string[];
   steps: Step[];

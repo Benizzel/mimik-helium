@@ -173,6 +173,22 @@ history:
   restoreError: No se pudo restaurar. Inténtalo de nuevo en un momento.
   storageFull: No hay espacio para guardar un punto de deshacer. Elimina una guía e inténtalo de nuevo.
   empty: Todavía no hay versiones anteriores. Aparecerán aquí cuando edites esta guía.
+  nameVersion: Ponle nombre a esta versión
+  namePlaceholder: Nombre de la versión
+  allVersions: Todas las versiones
+  namedOnly: Solo versiones con nombre
+  emptyNamed: Todavía no hay versiones con nombre. Ponle nombre a una para encontrarla después.
+  renameError: No se pudo guardar el nombre. Inténtalo de nuevo.
+  changeTitle: Título cambiado
+  changeStepAdded: "$1 paso añadido"
+  changeStepsAdded: "$1 pasos añadidos"
+  changeStepRemoved: "$1 paso eliminado"
+  changeStepsRemoved: "$1 pasos eliminados"
+  changeStepEdited: "$1 paso editado"
+  changeStepsEdited: "$1 pasos editados"
+  changeStepReordered: Pasos reordenados
+  changeImage: "$1 imagen cambiada"
+  changeImages: "$1 imágenes cambiadas"
 
 emptyGuide:
   title: Esta guía está vacía

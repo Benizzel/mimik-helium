@@ -173,6 +173,22 @@ history:
   restoreError: Wiederherstellen hat nicht geklappt. Versuche es gleich noch einmal.
   storageFull: Zu wenig Speicher für einen Rückgängig-Punkt. Lösche eine Anleitung und versuche es erneut.
   empty: Noch keine früheren Versionen. Sie erscheinen hier, sobald du diese Anleitung bearbeitest.
+  nameVersion: Version benennen
+  namePlaceholder: Versionsname
+  allVersions: Alle Versionen
+  namedOnly: Nur benannte Versionen
+  emptyNamed: Noch keine benannten Versionen. Benenne eine, um sie später wiederzufinden.
+  renameError: Name konnte nicht gespeichert werden. Versuche es erneut.
+  changeTitle: Titel geändert
+  changeStepAdded: "$1 Schritt hinzugefügt"
+  changeStepsAdded: "$1 Schritte hinzugefügt"
+  changeStepRemoved: "$1 Schritt gelöscht"
+  changeStepsRemoved: "$1 Schritte gelöscht"
+  changeStepEdited: "$1 Schritt bearbeitet"
+  changeStepsEdited: "$1 Schritte bearbeitet"
+  changeStepReordered: Schritte neu sortiert
+  changeImage: "$1 Bild geändert"
+  changeImages: "$1 Bilder geändert"
 
 emptyGuide:
   title: Diese Anleitung ist leer

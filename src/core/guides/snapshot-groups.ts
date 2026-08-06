@@ -13,6 +13,11 @@ export function groupSnapshots(snapshots: Snapshot[]): SnapshotRow[] {
   };
 
   for (const snapshot of snapshots) {
+    if (snapshot.name) {
+      flush();
+      rows.push({ kind: 'entry', snapshot });
+      continue;
+    }
     if (run.length > 0 && run[0].contentHash !== snapshot.contentHash) flush();
     run.push(snapshot);
   }

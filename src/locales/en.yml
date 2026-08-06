@@ -173,6 +173,22 @@ history:
   restoreError: Unable to restore. Try again in a moment.
   storageFull: Not enough storage to save an undo point. Delete a guide and try again.
   empty: No earlier versions yet. They appear here once you edit this guide.
+  nameVersion: Name this version
+  namePlaceholder: Version name
+  allVersions: All versions
+  namedOnly: Named versions only
+  emptyNamed: No named versions yet. Name one to find it again later.
+  renameError: Unable to save that name. Try again.
+  changeTitle: Title changed
+  changeStepAdded: "$1 step added"
+  changeStepsAdded: "$1 steps added"
+  changeStepRemoved: "$1 step deleted"
+  changeStepsRemoved: "$1 steps deleted"
+  changeStepEdited: "$1 step edited"
+  changeStepsEdited: "$1 steps edited"
+  changeStepReordered: Steps reordered
+  changeImage: "$1 image changed"
+  changeImages: "$1 images changed"
 
 emptyGuide:
   title: This guide is empty

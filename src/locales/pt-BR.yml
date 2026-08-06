@@ -173,6 +173,22 @@ history:
   restoreError: Não deu pra restaurar. Tenta de novo num instante.
   storageFull: Sem espaço pra salvar um ponto de desfazer. Exclui um guia e tenta de novo.
   empty: Nenhuma versão anterior ainda. Elas aparecem aqui quando você editar esse guia.
+  nameVersion: Dar um nome pra essa versão
+  namePlaceholder: Nome da versão
+  allVersions: Todas as versões
+  namedOnly: Só versões com nome
+  emptyNamed: Nenhuma versão com nome ainda. Dá um nome pra uma e acha ela fácil depois.
+  renameError: Não deu pra salvar o nome. Tenta de novo.
+  changeTitle: Título alterado
+  changeStepAdded: "$1 passo adicionado"
+  changeStepsAdded: "$1 passos adicionados"
+  changeStepRemoved: "$1 passo excluído"
+  changeStepsRemoved: "$1 passos excluídos"
+  changeStepEdited: "$1 passo editado"
+  changeStepsEdited: "$1 passos editados"
+  changeStepReordered: Passos reordenados
+  changeImage: "$1 imagem alterada"
+  changeImages: "$1 imagens alteradas"
 
 emptyGuide:
   title: Esse guia tá vazio

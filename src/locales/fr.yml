@@ -173,6 +173,22 @@ history:
   restoreError: Impossible de restaurer. Réessayez dans un instant.
   storageFull: "Espace insuffisant pour enregistrer un point d'annulation. Supprimez un guide et réessayez."
   empty: Pas encore de version antérieure. Elles apparaîtront ici dès que vous modifierez ce guide.
+  nameVersion: Nommer cette version
+  namePlaceholder: Nom de la version
+  allVersions: Toutes les versions
+  namedOnly: Versions nommées uniquement
+  emptyNamed: "Aucune version nommée pour l'instant. Nommez-en une pour la retrouver plus tard."
+  renameError: "Impossible d'enregistrer ce nom. Réessayez."
+  changeTitle: Titre modifié
+  changeStepAdded: "$1 étape ajoutée"
+  changeStepsAdded: "$1 étapes ajoutées"
+  changeStepRemoved: "$1 étape supprimée"
+  changeStepsRemoved: "$1 étapes supprimées"
+  changeStepEdited: "$1 étape modifiée"
+  changeStepsEdited: "$1 étapes modifiées"
+  changeStepReordered: Étapes réordonnées
+  changeImage: "$1 image modifiée"
+  changeImages: "$1 images modifiées"
 
 emptyGuide:
   title: Ce guide est vide
