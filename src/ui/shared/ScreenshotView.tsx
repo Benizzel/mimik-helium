@@ -74,8 +74,6 @@ export default function ScreenshotView({
   const [replaceOpen, setReplaceOpen] = useState(false);
   const processedKeyRef = useRef<string | null>(null);
   const urlRef = useRef<string | null>(null);
-  const idRef = useRef(screenshot.id);
-  const propEditsRef = useRef(screenshot.edits);
   const propScreenshotRef = useRef(screenshot);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -86,29 +84,13 @@ export default function ScreenshotView({
   const effectiveScreenshot: Screenshot = { ...baseScreenshot, edits: effectiveEdits };
 
   useEffect(() => {
-    if (idRef.current !== screenshot.id) {
-      idRef.current = screenshot.id;
-      setEditsOverride(undefined);
-      setScreenshotOverride(null);
-      setDeleted(false);
-    }
-  }, [screenshot.id]);
-
-  useEffect(() => {
     if (propScreenshotRef.current !== screenshot) {
       propScreenshotRef.current = screenshot;
-      setDeleted(false);
-      setScreenshotOverride(null);
       setEditsOverride(undefined);
+      setScreenshotOverride(null);
+      setDeleted(false);
     }
   }, [screenshot]);
-
-  useEffect(() => {
-    if (propEditsRef.current !== screenshot.edits) {
-      propEditsRef.current = screenshot.edits;
-      setEditsOverride(undefined);
-    }
-  }, [screenshot.edits]);
 
   useEffect(() => {
     setAltDraft(effectiveEdits?.alt ?? '');
