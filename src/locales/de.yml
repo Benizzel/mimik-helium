@@ -187,8 +187,17 @@ history:
   changeStepEdited: "$1 Schritt bearbeitet"
   changeStepsEdited: "$1 Schritte bearbeitet"
   changeStepReordered: Schritte neu sortiert
-  changeImage: "$1 Bild geändert"
-  changeImages: "$1 Bilder geändert"
+  changeLink: "$1 Link geändert"
+  changeLinks: "$1 Links geändert"
+  changeImageReplaced: "$1 Bild ersetzt"
+  changeImagesReplaced: "$1 Bilder ersetzt"
+  changeImageCropped: "$1 Bild zugeschnitten"
+  changeImagesCropped: "$1 Bilder zugeschnitten"
+  changeImageAnnotated: "$1 Bild kommentiert"
+  changeImagesAnnotated: "$1 Bilder kommentiert"
+  changeImageBlurred: "$1 Bild unkenntlich gemacht"
+  changeImagesBlurred: "$1 Bilder unkenntlich gemacht"
+  changeAltText: Alternativtext bearbeitet
 
 emptyGuide:
   title: Diese Anleitung ist leer

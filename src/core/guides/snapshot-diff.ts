@@ -1,8 +1,9 @@
-import type { ScreenshotEdits } from '@/core/screenshot/types';
+import type { Annotation, ScreenshotEdits } from '@/core/screenshot/types';
 
 interface DiffStep {
   id: string;
   description: string;
+  url?: string;
   screenshotId?: string;
 }
 
@@ -24,13 +25,40 @@ export interface SnapshotDiff {
   removed: number;
   reordered: boolean;
   edited: number;
-  images: number;
+  urls: number;
+  replaced: number;
+  cropped: number;
+  annotated: number;
+  blurred: number;
+  altEdited: boolean;
 }
 
-function editsKey(snapshot: SnapshotLike, screenshotId: string | undefined): string {
-  if (!screenshotId) return '{}';
-  const row = snapshot.screenshots.find((r) => r.id === screenshotId);
-  return JSON.stringify(row?.edits ?? {});
+function stableStringify(value: unknown): string {
+  if (value === undefined) return 'undefined';
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(record)
+    .filter((key) => record[key] !== undefined)
+    .sort();
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(',')}}`;
+}
+
+function editsFor(snapshot: SnapshotLike, screenshotId: string | undefined): ScreenshotEdits {
+  if (!screenshotId) return {};
+  return snapshot.screenshots.find((row) => row.id === screenshotId)?.edits ?? {};
+}
+
+function redactions(edits: ScreenshotEdits): Annotation[] {
+  return (edits.annotations ?? []).filter((annotation) => annotation.type === 'redact');
+}
+
+function drawings(edits: ScreenshotEdits): Annotation[] {
+  return (edits.annotations ?? []).filter((annotation) => annotation.type !== 'redact');
+}
+
+function differs(before: unknown, after: unknown): boolean {
+  return stableStringify(before) !== stableStringify(after);
 }
 
 export function diffSnapshots(from: SnapshotLike, to: SnapshotLike): SnapshotDiff {
@@ -46,14 +74,42 @@ export function diffSnapshots(from: SnapshotLike, to: SnapshotLike): SnapshotDif
 
   const fromSteps = new Map(from.steps.map((s) => [s.id, s]));
   let edited = 0;
-  let images = 0;
+  let urls = 0;
+  let replaced = 0;
+  let cropped = 0;
+  let annotated = 0;
+  let blurred = 0;
+  let altEdited = false;
+
   for (const step of to.steps) {
     const before = fromSteps.get(step.id);
     if (!before) continue;
+
     if (before.description !== step.description) edited++;
-    if (before.screenshotId !== step.screenshotId) images++;
-    else if (editsKey(from, before.screenshotId) !== editsKey(to, step.screenshotId)) images++;
+    if (before.url !== step.url) urls++;
+    if (before.screenshotId !== step.screenshotId) replaced++;
+
+    const beforeEdits = editsFor(from, before.screenshotId);
+    const afterEdits = editsFor(to, step.screenshotId);
+
+    if (differs(beforeEdits.viewport, afterEdits.viewport)) cropped++;
+    if (differs(drawings(beforeEdits), drawings(afterEdits)) || differs(beforeEdits.target, afterEdits.target))
+      annotated++;
+    if (differs(redactions(beforeEdits), redactions(afterEdits))) blurred++;
+    if (differs(beforeEdits.alt, afterEdits.alt)) altEdited = true;
   }
 
-  return { titleChanged: from.title !== to.title, added, removed, reordered, edited, images };
+  return {
+    titleChanged: from.title !== to.title,
+    added,
+    removed,
+    reordered,
+    edited,
+    urls,
+    replaced,
+    cropped,
+    annotated,
+    blurred,
+    altEdited,
+  };
 }

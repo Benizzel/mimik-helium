@@ -187,8 +187,17 @@ history:
   changeStepEdited: "$1 étape modifiée"
   changeStepsEdited: "$1 étapes modifiées"
   changeStepReordered: Étapes réordonnées
-  changeImage: "$1 image modifiée"
-  changeImages: "$1 images modifiées"
+  changeLink: "$1 lien modifié"
+  changeLinks: "$1 liens modifiés"
+  changeImageReplaced: "$1 image remplacée"
+  changeImagesReplaced: "$1 images remplacées"
+  changeImageCropped: "$1 image recadrée"
+  changeImagesCropped: "$1 images recadrées"
+  changeImageAnnotated: "$1 image annotée"
+  changeImagesAnnotated: "$1 images annotées"
+  changeImageBlurred: "$1 image floutée"
+  changeImagesBlurred: "$1 images floutées"
+  changeAltText: Texte alternatif modifié
 
 emptyGuide:
   title: Ce guide est vide
