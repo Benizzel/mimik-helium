@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import { i18n } from '#imports';
 import { fitLogo, loadBranding } from '@/core/export/branding';
 import { type ExportOptions, IMAGE_SCALE_FACTORS, loadExportOptions } from '@/core/export/options';
-import { blobToDataUrl, extractDomain, formatDate } from '@/core/export/utils';
+import { blobToDataUrl, extractDomain, fitImage, formatDate } from '@/core/export/utils';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { hexToRgb } from '@/core/screenshot/color';
 import { resolveViewport } from '@/core/screenshot/geometry';
@@ -146,18 +146,26 @@ export async function exportGuideAsPDF(
     const screenshot = opts.screenshots ? screenshots.get(step.id) : undefined;
     let imgDataUrl: string | null = null;
     let imgHeight = 0;
+    let stepImgWidth = imgWidth;
+    const textOverhead = 6 + descLines.length * 5 + 4;
     if (screenshot) {
       try {
         const rendered = await renderScreenshot(screenshot, { format: 'image/jpeg', quality: JPEG_QUALITY });
         imgDataUrl = await blobToDataUrl(rendered);
         const viewport = resolveViewport(screenshot);
-        imgHeight = (viewport.height / viewport.width) * imgWidth;
+        const fitted = fitImage(
+          imgWidth,
+          (viewport.height / viewport.width) * imgWidth,
+          FOOTER_Y - 8 - STEP_TOP - textOverhead,
+        );
+        stepImgWidth = fitted.width;
+        imgHeight = fitted.height;
       } catch (err) {
         logger.warn('PDF: failed to load screenshot for step', step.index, err);
       }
     }
 
-    const blockH = 6 + descLines.length * 5 + 4 + imgHeight;
+    const blockH = textOverhead + imgHeight;
     if (sy + blockH > FOOTER_Y - 8 && sy > STEP_TOP) {
       sy = startStepPage();
     }
@@ -204,9 +212,9 @@ export async function exportGuideAsPDF(
 
     let iy = uy + 4;
     if (imgDataUrl) {
-      doc.addImage(imgDataUrl, 'JPEG', TEXT_X, iy, imgWidth, imgHeight);
+      doc.addImage(imgDataUrl, 'JPEG', TEXT_X, iy, stepImgWidth, imgHeight);
       const altText = screenshot?.edits?.alt || i18n.t('export.stepLabel', [stepNum]);
-      doc.text(doc.splitTextToSize(altText, imgWidth), TEXT_X, iy + 4, { renderingMode: 'invisible' });
+      doc.text(doc.splitTextToSize(altText, stepImgWidth), TEXT_X, iy + 4, { renderingMode: 'invisible' });
       iy += imgHeight;
     }
     sy = iy + STEP_GAP;

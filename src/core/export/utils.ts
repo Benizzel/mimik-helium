@@ -66,3 +66,8 @@ export async function fetchFaviconBase64(domain: string): Promise<string | null>
     return null;
   }
 }
+
+export function fitImage(width: number, height: number, maxHeight: number): { width: number; height: number } {
+  if (!Number.isFinite(height) || height <= 0 || height <= maxHeight) return { width, height };
+  return { width: width * (maxHeight / height), height: maxHeight };
+}
