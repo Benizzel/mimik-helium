@@ -18,7 +18,7 @@ import { getMostCommonDomain } from '@/lib/utils';
 import { Input } from '@/ui/components/ui/input';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
-import { dominantRatio, siblingRatio } from '@/ui/shared/ImagePlaceholder';
+import { dominantRatio } from '@/ui/shared/ImagePlaceholder';
 import ExportMenu from './ExportMenu';
 import StepCard from './StepCard';
 
@@ -231,7 +231,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
               <StepCard
                 step={step}
                 screenshot={data.screenshots.get(step.id)}
-                placeholderRatio={siblingRatio(data.screenshots)}
+                placeholderRatio={dominantRatio(data.screenshots)}
                 frameRatio={dominantRatio(data.screenshots)}
                 onDescriptionChange={handleDescriptionChange}
                 onDelete={handleDeleteStep}

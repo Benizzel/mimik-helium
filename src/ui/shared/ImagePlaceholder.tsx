@@ -22,14 +22,6 @@ export default function ImagePlaceholder({ label, ratio = DEFAULT_RATIO, classNa
   );
 }
 
-export function siblingRatio(screenshots: Map<string, Screenshot>): number | undefined {
-  for (const screenshot of screenshots.values()) {
-    const viewport = resolveViewport(screenshot);
-    if (viewport.width && viewport.height) return viewport.width / viewport.height;
-  }
-  return undefined;
-}
-
 const RATIO_BUCKET_PRECISION = 100;
 
 export function dominantRatio(screenshots: Map<string, Screenshot>): number | undefined {
