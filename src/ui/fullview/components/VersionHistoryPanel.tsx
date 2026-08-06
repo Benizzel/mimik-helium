@@ -148,8 +148,21 @@ export default function VersionHistoryPanel({
       ) : (
         <div className="relative border-l border-dashed border-border ml-1 pl-2 flex-1 min-h-0 overflow-y-auto">
           <div className="pl-5 py-2.5 relative">
-            <span className="absolute left-0 top-4 w-2 h-2 rounded-full bg-accent border-2 border-accent" />
-            <span className="text-[12px] font-semibold text-foreground">{i18n.t('history.current')}</span>
+            <span
+              className={`absolute left-0 top-4 w-2 h-2 rounded-full border-2 ${
+                selectedId === null ? 'bg-accent border-accent' : 'bg-card border-border'
+              }`}
+            />
+            <button
+              type="button"
+              aria-pressed={selectedId === null}
+              onClick={() => onSelect(null)}
+              className={`block w-full text-left text-[12px] ${
+                selectedId === null ? 'font-semibold text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {i18n.t('history.current')}
+            </button>
           </div>
           {groupSnapshots(snapshots).map((row) =>
             row.kind === 'entry' ? (
