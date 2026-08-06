@@ -65,3 +65,14 @@ export interface ElementMeta {
   devicePixelRatio: number;
   clickPoint?: { x: number; y: number };
 }
+
+export interface Snapshot {
+  id: string;
+  guideId: string;
+  createdAt: number;
+  contentHash: string;
+  title: string;
+  stepIds: string[];
+  steps: Step[];
+  screenshots: Omit<Screenshot, 'blob'>[];
+}
