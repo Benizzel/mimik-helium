@@ -106,8 +106,16 @@ export async function restoreGuide(id: string): Promise<void> {
 
 export async function permanentlyDeleteGuide(id: string): Promise<void> {
   const steps = await db.steps.where('guideId').equals(id).toArray();
-  const screenshotIds = steps.map((s) => s.screenshotId).filter(Boolean) as string[];
-  await db.screenshots.where('id').anyOf(screenshotIds).delete();
+  const snapshots = await db.snapshots.where('guideId').equals(id).toArray();
+  const stepIds = new Set(steps.map((s) => s.id));
+  for (const snapshot of snapshots) {
+    for (const step of snapshot.steps) stepIds.add(step.id);
+  }
+  await db.screenshots
+    .where('stepId')
+    .anyOf([...stepIds])
+    .delete();
+  await db.snapshots.where('guideId').equals(id).delete();
   await db.steps.where('guideId').equals(id).delete();
   await db.guides.delete(id);
   notifyGuidesChanged({ type: 'mutated' });
@@ -135,9 +143,10 @@ export async function getStepsForGuide(guideId: string): Promise<Step[]> {
 }
 
 export async function deleteStep(guideId: string, stepId: string): Promise<void> {
-  const step = await db.steps.get(stepId);
-  if (step?.screenshotId) {
-    await db.screenshots.delete(step.screenshotId);
+  const snapshotCount = await db.snapshots.where('guideId').equals(guideId).count();
+  if (snapshotCount === 0) {
+    const step = await db.steps.get(stepId);
+    if (step?.screenshotId) await db.screenshots.delete(step.screenshotId);
   }
   await db.steps.delete(stepId);
   const guide = await db.guides.get(guideId);
@@ -163,23 +172,34 @@ export async function saveScreenshot(screenshot: Screenshot): Promise<void> {
   await db.screenshots.add(screenshot);
 }
 
-export async function updateScreenshotBlob(
-  screenshotId: string,
+export async function replaceScreenshot(
+  stepId: string,
   blob: Blob,
-  dimensions?: { width: number; height: number },
-): Promise<void> {
-  await db.screenshots.update(screenshotId, { blob, ...dimensions });
+  dimensions: { width: number; height: number },
+  edits?: ScreenshotEdits,
+): Promise<string> {
+  const id = crypto.randomUUID();
+  await db.transaction('rw', db.screenshots, db.steps, async () => {
+    await db.screenshots.add({
+      id,
+      stepId,
+      blob,
+      mimeType: blob.type,
+      width: dimensions.width,
+      height: dimensions.height,
+      ...(edits ? { edits } : {}),
+    });
+    await db.steps.update(stepId, { screenshotId: id });
+  });
+  return id;
 }
 
 export async function updateScreenshotEdits(screenshotId: string, edits: ScreenshotEdits): Promise<void> {
   await db.screenshots.update(screenshotId, { edits });
 }
 
-export async function deleteScreenshot(screenshotId: string, stepId: string): Promise<void> {
-  await db.transaction('rw', db.screenshots, db.steps, async () => {
-    await db.screenshots.delete(screenshotId);
-    await db.steps.update(stepId, { screenshotId: undefined });
-  });
+export async function deleteScreenshot(stepId: string): Promise<void> {
+  await db.steps.update(stepId, { screenshotId: undefined });
 }
 
 export async function getScreenshotsForSteps(stepIds: string[]): Promise<Map<string, Screenshot>> {

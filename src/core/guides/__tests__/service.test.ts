@@ -85,6 +85,7 @@ afterEach(async () => {
   await db.guides.clear();
   await db.steps.clear();
   await db.screenshots.clear();
+  await db.snapshots.clear();
 });
 
 describe('createGuide', () => {
@@ -150,7 +151,7 @@ describe('addStepToGuide', () => {
 });
 
 describe('deleteStep', () => {
-  it('removes step, re-indexes remaining, cleans up screenshot', async () => {
+  it('removes step, re-indexes remaining, drops the screenshot row when there is no history', async () => {
     await seedGuide('g1', { stepIds: ['s1', 's2', 's3'] });
     await db.steps.bulkAdd([
       makeStep({ id: 's1', guideId: 'g1', index: 0, screenshotId: 'sc1' }),

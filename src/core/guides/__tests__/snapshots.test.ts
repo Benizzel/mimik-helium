@@ -26,11 +26,13 @@ const { broadcasts } = vi.hoisted(() => {
 import { db } from '../db';
 import {
   createSnapshot,
+  deleteScreenshot,
   deleteStep,
   getGuide,
   getSnapshots,
   permanentlyDeleteGuide,
   reorderSteps,
+  replaceScreenshot,
   revertToSnapshot,
   softDeleteGuide,
   toggleStar,
@@ -316,7 +318,9 @@ describe('revertToSnapshot', () => {
     await db.screenshots.add(makeScreenshot({ id: 'sc1', stepId: 's1' }));
     const snapshot = await createSnapshot('g1');
 
-    await permanentlyDeleteGuide('g1');
+    await db.guides.delete('g1');
+    await db.steps.clear();
+    await db.screenshots.clear();
     broadcasts.length = 0;
 
     expect(await revertToSnapshot(snapshot!.id)).toBeNull();
@@ -325,5 +329,123 @@ describe('revertToSnapshot', () => {
     expect(await db.screenshots.count()).toBe(0);
     expect(await db.guides.count()).toBe(0);
     expect(await getSnapshots('g1')).toHaveLength(1);
+  });
+});
+
+describe('append-only screenshots', () => {
+  it('replaceScreenshot keeps the old row and repoints the step', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1', screenshotId: 'sc1' }));
+    await db.screenshots.add(makeScreenshot({ id: 'sc1', stepId: 's1' }));
+
+    const newId = await replaceScreenshot('s1', new Blob(['new'], { type: 'image/webp' }), {
+      width: 100,
+      height: 50,
+    });
+
+    expect(newId).not.toBe('sc1');
+    expect(await db.screenshots.get('sc1')).toBeDefined();
+    expect((await db.steps.get('s1'))?.screenshotId).toBe(newId);
+  });
+
+  it('deleteScreenshot clears the pointer but keeps the row', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1', screenshotId: 'sc1' }));
+    await db.screenshots.add(makeScreenshot({ id: 'sc1', stepId: 's1' }));
+
+    await deleteScreenshot('s1');
+
+    expect((await db.steps.get('s1'))?.screenshotId).toBeUndefined();
+    expect(await db.screenshots.get('sc1')).toBeDefined();
+  });
+
+  it('deleteStep keeps the screenshot row', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1', screenshotId: 'sc1' }));
+    await db.screenshots.add(makeScreenshot({ id: 'sc1', stepId: 's1' }));
+    await createSnapshot('g1');
+
+    await deleteStep('g1', 's1');
+
+    expect(await db.screenshots.get('sc1')).toBeDefined();
+  });
+
+  it('permanentlyDeleteGuide sweeps unreferenced rows and snapshots', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1', screenshotId: 'sc2' }));
+    await db.screenshots.bulkAdd([
+      makeScreenshot({ id: 'sc1', stepId: 's1' }),
+      makeScreenshot({ id: 'sc2', stepId: 's1' }),
+    ]);
+    await createSnapshot('g1');
+
+    await permanentlyDeleteGuide('g1');
+
+    expect(await db.screenshots.count()).toBe(0);
+    expect(await db.snapshots.count()).toBe(0);
+    expect(await db.steps.count()).toBe(0);
+  });
+
+  it('restores the previous image after a replace', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1', screenshotId: 'sc1' }));
+    await db.screenshots.add(makeScreenshot({ id: 'sc1', stepId: 's1' }));
+    const snapshot = await createSnapshot('g1');
+
+    await replaceScreenshot('s1', new Blob(['new'], { type: 'image/webp' }), { width: 100, height: 50 });
+    await revertToSnapshot(snapshot!.id);
+
+    expect((await db.steps.get('s1'))?.screenshotId).toBe('sc1');
+    expect(await (await db.screenshots.get('sc1'))?.blob.text()).toBe('img');
+  });
+
+  it('restores a deleted image', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1', screenshotId: 'sc1' }));
+    await db.screenshots.add(makeScreenshot({ id: 'sc1', stepId: 's1' }));
+    const snapshot = await createSnapshot('g1');
+
+    await deleteScreenshot('s1');
+    await revertToSnapshot(snapshot!.id);
+
+    expect((await db.steps.get('s1'))?.screenshotId).toBe('sc1');
+    const restored = await getGuide('g1');
+    expect(restored?.screenshots.get('s1')?.id).toBe('sc1');
+    expect(await restored?.screenshots.get('s1')?.blob.text()).toBe('img');
+  });
+
+  it('sweeps screenshot rows orphaned by a step deletion', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1', screenshotId: 'sc1' }));
+    await db.screenshots.add(makeScreenshot({ id: 'sc1', stepId: 's1' }));
+    await createSnapshot('g1');
+
+    await deleteStep('g1', 's1');
+    await permanentlyDeleteGuide('g1');
+
+    expect(await db.screenshots.count()).toBe(0);
+  });
+
+  it('sweeps rows added after the snapshot once their step is deleted', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1', screenshotId: 'sc1' }));
+    await db.screenshots.add(makeScreenshot({ id: 'sc1', stepId: 's1' }));
+    await createSnapshot('g1');
+
+    await replaceScreenshot('s1', new Blob(['new'], { type: 'image/webp' }), { width: 10, height: 10 });
+    await deleteStep('g1', 's1');
+    await permanentlyDeleteGuide('g1');
+
+    expect(await db.screenshots.count()).toBe(0);
+  });
+
+  it('drops the screenshot row when a step is deleted before any snapshot exists', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1', screenshotId: 'sc1' }));
+    await db.screenshots.add(makeScreenshot({ id: 'sc1', stepId: 's1' }));
+
+    await deleteStep('g1', 's1');
+
+    expect(await db.screenshots.count()).toBe(0);
   });
 });
