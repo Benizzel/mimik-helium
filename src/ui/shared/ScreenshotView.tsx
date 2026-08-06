@@ -98,6 +98,8 @@ export default function ScreenshotView({
     if (propScreenshotRef.current !== screenshot) {
       propScreenshotRef.current = screenshot;
       setDeleted(false);
+      setScreenshotOverride(null);
+      setEditsOverride(undefined);
     }
   }, [screenshot]);
 
