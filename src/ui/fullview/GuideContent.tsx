@@ -1,5 +1,5 @@
 import { History, Play } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TypeAnimation } from 'react-type-animation';
 import { i18n } from '#imports';
 import {
@@ -10,6 +10,7 @@ import {
   updateGuideTitle,
   updateStepDescription,
 } from '@/core/guides/service';
+import type { SnapshotLike } from '@/core/guides/snapshot-diff';
 import type { Guide, Screenshot, Snapshot, Step } from '@/core/guides/types';
 import type { ScreenshotEdits } from '@/core/screenshot/types';
 import { openSidebar } from '@/lib/browser-api';
@@ -203,6 +204,16 @@ export default function GuideContent({ guideId, initialStepId, initialTool, init
     setHistoryOpen(true);
   }, [data, initialHistory, setHistoryOpen]);
 
+  const live = useMemo<SnapshotLike>(
+    () => ({
+      title: data?.guide.title ?? '',
+      stepIds: data?.guide.stepIds ?? [],
+      steps: data?.steps ?? [],
+      screenshots: data ? [...data.screenshots.values()] : [],
+    }),
+    [data],
+  );
+
   if (loading)
     return (
       <div>
@@ -355,6 +366,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool, init
             guideId={guideId}
             selectedId={preview?.id ?? null}
             refreshKey={historyRefreshKey}
+            live={live}
             onSelect={setPreview}
             onRestored={loadGuide}
             onClose={() => {

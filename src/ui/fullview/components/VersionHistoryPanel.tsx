@@ -1,19 +1,50 @@
-import { ChevronRight, RotateCcw, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ChevronRight, MoreVertical, RotateCcw, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { i18n } from '#imports';
-import { getSnapshots, revertToSnapshot } from '@/core/guides/service';
+import { getSnapshots, renameSnapshot, revertToSnapshot } from '@/core/guides/service';
+import { diffSnapshots, type SnapshotDiff, type SnapshotLike } from '@/core/guides/snapshot-diff';
 import { groupSnapshots } from '@/core/guides/snapshot-groups';
 import type { Snapshot } from '@/core/guides/types';
 import { formatDateTime } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/ui/components/ui/dropdown-menu';
 
 function isQuotaError(e: unknown): boolean {
   return e instanceof Error && (e.name === 'QuotaExceededError' || e.name === 'DexieError2QuotaExceededError');
+}
+
+function changeSummary(diff: SnapshotDiff): string {
+  const parts: string[] = [];
+  if (diff.titleChanged) parts.push(i18n.t('history.changeTitle'));
+  if (diff.added === 1) parts.push(i18n.t('history.changeStepAdded', [String(diff.added)]));
+  else if (diff.added > 1) parts.push(i18n.t('history.changeStepsAdded', [String(diff.added)]));
+  if (diff.removed === 1) parts.push(i18n.t('history.changeStepRemoved', [String(diff.removed)]));
+  else if (diff.removed > 1) parts.push(i18n.t('history.changeStepsRemoved', [String(diff.removed)]));
+  if (diff.edited === 1) parts.push(i18n.t('history.changeStepEdited', [String(diff.edited)]));
+  else if (diff.edited > 1) parts.push(i18n.t('history.changeStepsEdited', [String(diff.edited)]));
+  if (diff.images === 1) parts.push(i18n.t('history.changeImage', [String(diff.images)]));
+  else if (diff.images > 1) parts.push(i18n.t('history.changeImages', [String(diff.images)]));
+  if (diff.reordered) parts.push(i18n.t('history.changeStepReordered'));
+  return parts.join(' · ');
+}
+
+function filterPill(active: boolean): string {
+  return `px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+    active
+      ? 'bg-secondary border-border text-foreground'
+      : 'border-transparent text-muted-foreground hover:text-foreground'
+  }`;
 }
 
 interface VersionHistoryPanelProps {
   guideId: string;
   selectedId: string | null;
   refreshKey: number;
+  live: SnapshotLike;
   onSelect: (snapshot: Snapshot | null) => void;
   onRestored: () => void;
   onClose: () => void;
@@ -23,6 +54,7 @@ export default function VersionHistoryPanel({
   guideId,
   selectedId,
   refreshKey,
+  live,
   onSelect,
   onRestored,
   onClose,
@@ -32,7 +64,12 @@ export default function VersionHistoryPanel({
   const [error, setError] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [namedOnly, setNamedOnly] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
   const refreshRef = useRef(refreshKey);
+  const renamingRef = useRef<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const silent = refreshRef.current !== refreshKey;
@@ -41,6 +78,8 @@ export default function VersionHistoryPanel({
     if (!silent) {
       setLoading(true);
       setError(null);
+      renamingRef.current = null;
+      setRenamingId(null);
     }
     getSnapshots(guideId)
       .then((list) => {
@@ -57,6 +96,20 @@ export default function VersionHistoryPanel({
     };
   }, [guideId, refreshKey]);
 
+  useEffect(() => {
+    if (renamingId) inputRef.current?.focus();
+  }, [renamingId]);
+
+  const diffs = useMemo(() => {
+    const map = new Map<string, SnapshotDiff>();
+    snapshots.forEach((snapshot, i) => {
+      map.set(snapshot.id, diffSnapshots(snapshot, i === 0 ? live : snapshots[i - 1]));
+    });
+    return map;
+  }, [snapshots, live]);
+
+  const named = useMemo(() => snapshots.filter((s) => s.name), [snapshots]);
+
   const handleRestore = async (snapshot: Snapshot) => {
     if (restoring) return;
     setRestoring(true);
@@ -69,12 +122,40 @@ export default function VersionHistoryPanel({
       }
       setSnapshots(await getSnapshots(guideId));
       setExpanded(new Set());
+      renamingRef.current = null;
+      setRenamingId(null);
       onSelect(null);
       onRestored();
     } catch (e) {
       setError(i18n.t(isQuotaError(e) ? 'history.storageFull' : 'history.restoreError'));
     } finally {
       setRestoring(false);
+    }
+  };
+
+  const startRename = (snapshot: Snapshot) => {
+    renamingRef.current = snapshot.id;
+    setRenamingId(snapshot.id);
+    setDraft(snapshot.name ?? '');
+  };
+
+  const cancelRename = () => {
+    renamingRef.current = null;
+    setRenamingId(null);
+  };
+
+  const commitRename = async (snapshot: Snapshot) => {
+    if (renamingRef.current !== snapshot.id) return;
+    renamingRef.current = null;
+    setRenamingId(null);
+    const trimmed = draft.trim();
+    const name = trimmed === '' ? undefined : trimmed;
+    if (name === snapshot.name) return;
+    try {
+      await renameSnapshot(snapshot.id, trimmed);
+      setSnapshots((prev) => prev.map((s) => (s.id === snapshot.id ? { ...s, name } : s)));
+    } catch {
+      setError(i18n.t('history.renameError'));
     }
   };
 
@@ -89,6 +170,8 @@ export default function VersionHistoryPanel({
 
   const entry = (snapshot: Snapshot) => {
     const active = selectedId === snapshot.id;
+    const diff = diffs.get(snapshot.id);
+    const summary = diff ? changeSummary(diff) : '';
     return (
       <div key={snapshot.id} className="relative pl-5 py-2.5">
         <span
@@ -96,27 +179,74 @@ export default function VersionHistoryPanel({
             active ? 'bg-accent border-accent' : 'bg-card border-border'
           }`}
         />
-        <button
-          type="button"
-          aria-pressed={active}
-          onClick={() => onSelect(active ? null : snapshot)}
-          className={`block w-full text-left text-[12px] ${
-            active ? 'font-semibold text-foreground' : 'text-muted-foreground'
-          }`}
-        >
-          {formatDateTime(snapshot.createdAt)}
-        </button>
-        {active && (
-          <button
-            type="button"
-            disabled={restoring}
-            onClick={() => void handleRestore(snapshot)}
-            className="inline-flex items-center gap-1.5 mt-2 text-[11px] font-semibold text-accent disabled:opacity-50"
-          >
-            <RotateCcw size={11} />
-            {i18n.t('history.restore')}
-          </button>
-        )}
+        <div className="flex items-start gap-1">
+          <div className="flex-1 min-w-0">
+            {renamingId === snapshot.id ? (
+              <input
+                ref={inputRef}
+                value={draft}
+                placeholder={i18n.t('history.namePlaceholder')}
+                aria-label={i18n.t('history.namePlaceholder')}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    void commitRename(snapshot);
+                  } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelRename();
+                  }
+                }}
+                onBlur={() => void commitRename(snapshot)}
+                className="w-full text-[12px] font-semibold text-foreground bg-card border border-accent rounded px-1.5 py-0.5 focus:outline-none"
+              />
+            ) : (
+              <button
+                type="button"
+                aria-pressed={active}
+                onClick={() => onSelect(active ? null : snapshot)}
+                className={`block w-full text-left text-[12px] ${
+                  active ? 'font-semibold text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span className="block truncate">{snapshot.name || formatDateTime(snapshot.createdAt)}</span>
+                {snapshot.name && (
+                  <span className="block text-[10px] font-normal text-muted-foreground mt-0.5">
+                    {formatDateTime(snapshot.createdAt)}
+                  </span>
+                )}
+              </button>
+            )}
+            {summary && <p className="text-[10px] text-muted-foreground mt-0.5">{summary}</p>}
+            {active && (
+              <button
+                type="button"
+                disabled={restoring}
+                onClick={() => void handleRestore(snapshot)}
+                className="inline-flex items-center gap-1.5 mt-2 text-[11px] font-semibold text-accent disabled:opacity-50"
+              >
+                <RotateCcw size={11} />
+                {i18n.t('history.restore')}
+              </button>
+            )}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={i18n.t('history.nameVersion')}
+                className="shrink-0 p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <MoreVertical size={13} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+              <DropdownMenuItem onSelect={() => startRename(snapshot)}>
+                {i18n.t('history.nameVersion')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     );
   };
@@ -146,48 +276,76 @@ export default function VersionHistoryPanel({
       ) : snapshots.length === 0 ? (
         <p className="text-[11px] text-muted-foreground py-2">{i18n.t('history.empty')}</p>
       ) : (
-        <div className="relative border-l border-dashed border-border ml-1 pl-2 flex-1 min-h-0 overflow-y-auto">
-          <div className="pl-5 py-2.5 relative">
-            <span
-              className={`absolute left-0 top-4 w-2 h-2 rounded-full border-2 ${
-                selectedId === null ? 'bg-accent border-accent' : 'bg-card border-border'
-              }`}
-            />
+        <>
+          <div className="flex items-center gap-1 pb-1">
             <button
               type="button"
-              aria-pressed={selectedId === null}
-              onClick={() => onSelect(null)}
-              className={`block w-full text-left text-[12px] ${
-                selectedId === null ? 'font-semibold text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
+              aria-pressed={!namedOnly}
+              onClick={() => setNamedOnly(false)}
+              className={filterPill(!namedOnly)}
             >
-              {i18n.t('history.current')}
+              {i18n.t('history.allVersions')}
+            </button>
+            <button
+              type="button"
+              aria-pressed={namedOnly}
+              onClick={() => setNamedOnly(true)}
+              className={filterPill(namedOnly)}
+            >
+              {i18n.t('history.namedOnly')}
             </button>
           </div>
-          {groupSnapshots(snapshots).map((row) =>
-            row.kind === 'entry' ? (
-              entry(row.snapshot)
+          <div className="relative border-l border-dashed border-border ml-1 pl-2 flex-1 min-h-0 overflow-y-auto">
+            <div className="pl-5 py-2.5 relative">
+              <span
+                className={`absolute left-0 top-4 w-2 h-2 rounded-full border-2 ${
+                  selectedId === null ? 'bg-accent border-accent' : 'bg-card border-border'
+                }`}
+              />
+              <button
+                type="button"
+                aria-pressed={selectedId === null}
+                onClick={() => onSelect(null)}
+                className={`block w-full text-left text-[12px] ${
+                  selectedId === null ? 'font-semibold text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {i18n.t('history.current')}
+              </button>
+            </div>
+            {namedOnly ? (
+              named.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground py-2 pl-5">{i18n.t('history.emptyNamed')}</p>
+              ) : (
+                named.map(entry)
+              )
             ) : (
-              <div key={row.snapshots[0].id}>
-                <button
-                  type="button"
-                  aria-expanded={expanded.has(row.snapshots[0].id)}
-                  onClick={() => toggle(row.snapshots[0].id)}
-                  className="flex items-center gap-1 py-2 text-[11px] text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronRight
-                    size={11}
-                    className={
-                      expanded.has(row.snapshots[0].id) ? 'rotate-90 transition-transform' : 'transition-transform'
-                    }
-                  />
-                  {i18n.t('history.unchangedVersions', [String(row.snapshots.length)])}
-                </button>
-                {expanded.has(row.snapshots[0].id) && row.snapshots.map(entry)}
-              </div>
-            ),
-          )}
-        </div>
+              groupSnapshots(snapshots).map((row) =>
+                row.kind === 'entry' ? (
+                  entry(row.snapshot)
+                ) : (
+                  <div key={row.snapshots[0].id}>
+                    <button
+                      type="button"
+                      aria-expanded={expanded.has(row.snapshots[0].id)}
+                      onClick={() => toggle(row.snapshots[0].id)}
+                      className="flex items-center gap-1 py-2 text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      <ChevronRight
+                        size={11}
+                        className={
+                          expanded.has(row.snapshots[0].id) ? 'rotate-90 transition-transform' : 'transition-transform'
+                        }
+                      />
+                      {i18n.t('history.unchangedVersions', [String(row.snapshots.length)])}
+                    </button>
+                    {expanded.has(row.snapshots[0].id) && row.snapshots.map(entry)}
+                  </div>
+                ),
+              )
+            )}
+          </div>
+        </>
       )}
     </aside>
   );
