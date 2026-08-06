@@ -4,7 +4,7 @@ import { i18n } from '#imports';
 import { deleteScreenshot, replaceScreenshot, updateScreenshotEdits } from '@/core/guides/service';
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
 import { panBy, resolveViewport, zoomBy } from '@/core/screenshot/geometry';
-import { renderScreenshot } from '@/core/screenshot/render';
+import { imageDimensions, renderScreenshot } from '@/core/screenshot/render';
 import type { ScreenshotEdits } from '@/core/screenshot/types';
 import {
   DropdownMenu,
@@ -230,9 +230,7 @@ export default function ScreenshotView({
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setReplaceOpen(false);
 
-    const bitmap = await createImageBitmap(file);
-    const { width, height } = bitmap;
-    bitmap.close();
+    const { width, height } = await imageDimensions(file);
 
     const nextEdits: ScreenshotEdits = { ...effectiveEdits, target: null };
     delete nextEdits.viewport;
@@ -249,6 +247,7 @@ export default function ScreenshotView({
       height,
     });
     setEditsOverride(nextEdits);
+    setDeleted(false);
     onChanged?.();
   };
 
@@ -276,7 +275,14 @@ export default function ScreenshotView({
   const ratio = frameRatio ?? ownRatio;
 
   if (deleted) {
-    return <ImagePlaceholder label={i18n.t('screenshotView.imageDeleted')} ratio={ratio} className={className} />;
+    return (
+      <ImagePlaceholder
+        label={i18n.t('screenshotView.imageDeleted')}
+        ratio={ratio}
+        className={className}
+        onUpload={readOnly ? undefined : handleReplaceFile}
+      />
+    );
   }
 
   if (!fullUrl) {

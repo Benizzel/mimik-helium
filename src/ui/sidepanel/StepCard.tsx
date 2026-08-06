@@ -1,8 +1,9 @@
 import { Check, Copy, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
+import { replaceScreenshot } from '@/core/guides/service';
 import type { Screenshot, Step } from '@/core/guides/types';
-import { renderScreenshot } from '@/core/screenshot/render';
+import { imageDimensions, renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
 import ImagePlaceholder from '@/ui/shared/ImagePlaceholder';
@@ -71,6 +72,11 @@ export default function StepCard({
     }
   };
 
+  const handleUpload = async (file: File) => {
+    await replaceScreenshot(step.id, file, await imageDimensions(file));
+    onChanged?.();
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(true);
@@ -116,6 +122,7 @@ export default function StepCard({
           label={i18n.t('editor.noScreenshot')}
           ratio={placeholderRatio}
           className="w-full !rounded-none border-x-0 border-t-0"
+          onUpload={readOnly ? undefined : handleUpload}
         />
       )}
 

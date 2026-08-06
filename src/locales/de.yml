@@ -357,6 +357,7 @@ screenshotView:
   downloadEdited: "Bearbeitetes Bild"
   downloadOriginal: "Originalbild"
   edit: "Bearbeiten"
+  addImage: "Bild hinzufügen"
   replaceImage: "Bild ersetzen"
   replaceHint: "Wähle ein neues Bild für diesen Schritt"
   replaceDrop: "Klicken zum Auswählen oder Bild hierher ziehen"

@@ -219,6 +219,7 @@ screenshotView:
   downloadEdited: "Edited image"
   downloadOriginal: "Original image"
   edit: "Edit"
+  addImage: Add image
   replaceImage: Replace image
   replaceHint: "Choose a new image for this step"
   replaceDrop: "Click to browse or drop an image here"

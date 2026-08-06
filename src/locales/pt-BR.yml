@@ -219,6 +219,7 @@ screenshotView:
   downloadEdited: "Imagem editada"
   downloadOriginal: "Imagem original"
   edit: "Editar"
+  addImage: Adicionar imagem
   replaceImage: Substituir imagem
   replaceHint: "Escolha uma nova imagem para esta etapa"
   replaceDrop: "Clique para procurar ou solte uma imagem aqui"
