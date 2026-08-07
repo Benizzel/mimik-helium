@@ -375,32 +375,30 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
                 </div>
               ) : editing ? (
                 <div className="flex items-start gap-2 max-w-[720px]">
-                  <div className="flex-1 min-w-0">
-                    <textarea
-                      ref={(el) => {
-                        if (el) {
-                          el.style.height = '0';
-                          el.style.height = `${el.scrollHeight}px`;
-                        }
-                      }}
-                      value={description}
-                      rows={2}
-                      onChange={(e) => {
-                        setDescription(e.target.value);
-                        const el = e.target;
+                  <textarea
+                    ref={(el) => {
+                      if (el) {
                         el.style.height = '0';
                         el.style.height = `${el.scrollHeight}px`;
-                      }}
-                      onFocus={() => {
-                        editingDescriptionRef.current = true;
-                      }}
-                      onSelect={askAi.onSelect}
-                      onBlur={handleGuideDescriptionBlur}
-                      placeholder={i18n.t('editor.descriptionPlaceholder')}
-                      className="w-full resize-none overflow-hidden bg-transparent p-0 text-[15px] leading-relaxed text-muted-foreground placeholder:text-muted-foreground/60 border-b-2 border-transparent hover:border-border focus:outline-none focus:border-accent"
-                    />
-                    {askAi.panel}
-                  </div>
+                      }
+                    }}
+                    value={description}
+                    rows={2}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      const el = e.target;
+                      el.style.height = '0';
+                      el.style.height = `${el.scrollHeight}px`;
+                    }}
+                    onFocus={() => {
+                      editingDescriptionRef.current = true;
+                    }}
+                    onSelect={askAi.onSelect}
+                    onBlur={handleGuideDescriptionBlur}
+                    placeholder={i18n.t('editor.descriptionPlaceholder')}
+                    className="flex-1 resize-none overflow-hidden bg-transparent p-0 text-[15px] leading-relaxed text-muted-foreground placeholder:text-muted-foreground/60 border-b-2 border-transparent hover:border-border focus:outline-none focus:border-accent"
+                  />
+                  {hasApiKey && <span className="shrink-0 mt-0.5">{askAi.trigger}</span>}
                   {hasApiKey && (
                     <button
                       type="button"

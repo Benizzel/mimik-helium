@@ -163,9 +163,9 @@ export default function StepCard({
             />
           )}
         </div>
-        {askAi.panel}
         <div className="flex items-center justify-end mt-1">
           <div className="flex items-center gap-0.5">
+            {askAi.trigger}
             {screenshot && (
               <button
                 onClick={handleCopy}
