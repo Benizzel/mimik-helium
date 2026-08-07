@@ -198,6 +198,14 @@ history:
   changeImageBlurred: "$1 imagen desenfocada"
   changeImagesBlurred: "$1 imágenes desenfocadas"
   changeAltText: Texto alternativo editado
+  generateDescription: Generar descripción
+  regenerateDescription: Regenerar descripción
+  generatingDescription: "Generando\u2026"
+  descriptionPlaceholder: Añadir una descripción
+  descriptionErrorNoApiKey: Añade una clave de API de IA en los ajustes para generar descripciones.
+  descriptionErrorNoSteps: Esta guía no tiene pasos descritos que resumir.
+  descriptionErrorFailed: No se pudo generar una descripción. Inténtalo de nuevo.
+  descriptionErrorSaveFailed: Se generó la descripción pero no se pudo guardar. Inténtalo de nuevo.
 
 emptyGuide:
   title: Esta guía está vacía

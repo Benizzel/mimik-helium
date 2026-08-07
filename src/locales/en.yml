@@ -198,6 +198,14 @@ history:
   changeImageBlurred: "$1 image blurred"
   changeImagesBlurred: "$1 images blurred"
   changeAltText: Alt text edited
+  generateDescription: Generate description
+  regenerateDescription: Regenerate description
+  generatingDescription: "Generating\u2026"
+  descriptionPlaceholder: Add a description
+  descriptionErrorNoApiKey: Add an AI API key in settings to generate descriptions.
+  descriptionErrorNoSteps: This guide has no described steps to summarise.
+  descriptionErrorFailed: Could not generate a description. Try again.
+  descriptionErrorSaveFailed: Generated the description but could not save it. Try again.
 
 emptyGuide:
   title: This guide is empty
