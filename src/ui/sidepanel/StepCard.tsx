@@ -5,6 +5,7 @@ import { replaceScreenshot } from '@/core/guides/service';
 import type { Screenshot, Step } from '@/core/guides/types';
 import { imageDimensions, renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
+import { useAskAi } from '@/ui/shared/AskAi';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
 import ImagePlaceholder from '@/ui/shared/ImagePlaceholder';
 import ScreenshotView from '@/ui/shared/ScreenshotView';
@@ -27,6 +28,7 @@ interface StepCardProps {
   frameRatio?: number;
   readOnly?: boolean;
   onChanged?: () => void;
+  hasApiKey?: boolean;
 }
 
 export default function StepCard({
@@ -40,6 +42,7 @@ export default function StepCard({
   frameRatio,
   readOnly,
   onChanged,
+  hasApiKey,
 }: StepCardProps) {
   const [description, setDescription] = useState(step.description);
   const [dragOver, setDragOver] = useState(false);
@@ -54,6 +57,15 @@ export default function StepCard({
   const handleDescriptionBlur = () => {
     if (description !== step.description) onDescriptionChange(step.id, description);
   };
+
+  const askAi = useAskAi(
+    description,
+    (next) => {
+      setDescription(next);
+      onDescriptionChange(step.id, next);
+    },
+    !readOnly && !step.aiPending && Boolean(hasApiKey),
+  );
 
   const handleDelete = () => {
     setConfirmDelete(false);
@@ -146,10 +158,12 @@ export default function StepCard({
               value={description}
               rows={1}
               onChange={(e) => setDescription(e.target.value)}
+              onSelect={askAi.onSelect}
               onBlur={handleDescriptionBlur}
             />
           )}
         </div>
+        {askAi.panel}
         <div className="flex items-center justify-end mt-1">
           <div className="flex items-center gap-0.5">
             {screenshot && (
