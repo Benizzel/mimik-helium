@@ -22,6 +22,7 @@ export interface Step {
   screenshotId?: string;
   elementMeta?: ElementMeta;
   inputValue?: string;
+  aiPending?: boolean;
 }
 
 export interface ScreenshotBounds {

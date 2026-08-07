@@ -143,6 +143,10 @@ export async function updateStepDescription(stepId: string, description: string)
   await db.steps.update(stepId, { description });
 }
 
+export async function clearStepAiPending(stepId: string, description?: string): Promise<void> {
+  await db.steps.update(stepId, description ? { description, aiPending: false } : { aiPending: false });
+}
+
 export async function getStepsForGuide(guideId: string): Promise<Step[]> {
   return db.steps.where('guideId').equals(guideId).sortBy('index');
 }
