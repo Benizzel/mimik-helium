@@ -30,6 +30,33 @@ Examples of good descriptions:
 - "Reset a locked-out user's password from the Okta admin panel. For IT support staff."
 - "Configure which Slack channels send desktop notifications, and set a do-not-disturb schedule."`;
 
+export const REWRITE_PROMPT = `You are editing one span of text inside a browser workflow guide. The text describes a step a reader must perform, or summarises what the workflow accomplishes.
+
+Selected text:
+"""
+{{text}}
+"""
+
+Instruction: {{instruction}}
+
+Rules:
+- Keep it imperative and describing a single action when the original does.
+- Never introduce a UI element, button, page, or value that is absent from the original.
+- Preserve specific names, labels, and quoted strings exactly as written.
+- Match the length the instruction implies; otherwise stay close to the original length.
+
+Return only the rewritten text. No preamble, no quotes, no explanation.`;
+
+export const REWRITE_PRESETS = {
+  shorter: 'Make it shorter and tighter without losing any required detail.',
+  detail: 'Add detail that clarifies the action, using only information already present.',
+  grammar: 'Fix grammar, spelling, and punctuation. Change nothing else.',
+  formal: 'Make the tone more formal and professional.',
+  casual: 'Make the tone more casual and conversational.',
+} as const;
+
+export type RewritePreset = keyof typeof REWRITE_PRESETS;
+
 export const AI_LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'es', label: 'Español' },
