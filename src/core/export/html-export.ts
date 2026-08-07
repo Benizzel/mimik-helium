@@ -85,6 +85,7 @@ export async function exportGuideAsHTML(
       <div style="flex:1;">
         <div style="font-size:11px;font-weight:700;color:#6B7280;letter-spacing:0.08em;">${i18n.t('export.guideLabel')}</div>
         <h1 style="font-size:38px;font-weight:700;line-height:1.15;margin-top:18px;">${escapeHtml(guide.title)}</h1>
+        ${guide.description ? `<p style="font-size:16px;color:#6B7280;line-height:1.6;margin-top:14px;max-width:60ch;">${escapeHtml(guide.description)}</p>` : ''}
       </div>
       ${logoHtml}
     </div>
@@ -115,6 +116,7 @@ export async function exportGuideAsHTML(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(guide.title)}</title>
+  ${guide.description ? `<meta name="description" content="${escapeHtml(guide.description)}">` : ''}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">

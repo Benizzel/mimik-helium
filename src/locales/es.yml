@@ -101,6 +101,9 @@ settings:
   attributionHint: "En el pie de cada exportación"
   saveSettings: Guardar ajustes
   saved: Guardado
+  validatingKey: "Comprobando clave\u2026"
+  keyValid: Clave de API verificada.
+  keyInvalid: Esa clave de API fue rechazada. Compru\xE9bala e int\xE9ntalo de nuevo.
   smartBlur: Desenfoque inteligente
   privacyNotice: Tu clave API se guarda en tu navegador y solo se envía al proveedor de IA que elijas. Nada más sale de aquí.
   bugReport: "¿Encontraste un bug? Repórtalo en GitHub"
@@ -124,6 +127,7 @@ fullview:
   guideMe: "¡Guíame!"
   untitledGuide: Guía sin título
   writingTitle: Escribiendo un título con tus pasos capturados...
+  writingDescription: "Escribiendo una descripci\xF3n\u2026"
   guideNotFound: "No se encontró la guía."
   stepCount: "$1 paso"
   stepCountPlural: "$1 pasos"
@@ -198,6 +202,15 @@ history:
   changeImageBlurred: "$1 imagen desenfocada"
   changeImagesBlurred: "$1 imágenes desenfocadas"
   changeAltText: Texto alternativo editado
+  generateDescription: Generar descripción
+  regenerateDescription: Regenerar descripción
+  generatingDescription: "Generando\u2026"
+  descriptionPlaceholder: Añadir una descripción
+  descriptionErrorNoApiKey: Añade una clave de API de IA en los ajustes para generar descripciones.
+  descriptionErrorNoSteps: Esta guía no tiene pasos descritos que resumir.
+  descriptionErrorFailed: No se pudo generar una descripción. Inténtalo de nuevo.
+  descriptionErrorSaveFailed: Se generó la descripción pero no se pudo guardar. Inténtalo de nuevo.
+  writingStepDescription: "Escribiendo descripci\xF3n\u2026"
 
 emptyGuide:
   title: Esta guía está vacía

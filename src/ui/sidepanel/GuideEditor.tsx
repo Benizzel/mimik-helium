@@ -1,5 +1,5 @@
-import { ArrowLeft, Check, Layers, Maximize2, Pencil, Play } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { ArrowLeft, Check, Layers, Loader2, Maximize2, Pencil, Play, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import {
   createSnapshot,
@@ -7,18 +7,21 @@ import {
   getGuide,
   onGuidesChanged,
   reorderSteps,
+  updateGuideDescription,
   updateGuideTitle,
   updateStepDescription,
 } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
-import { createTab, focusWindow, getExtensionURL, queryTabs, updateTab } from '@/lib/browser-api';
+import { createTab, focusWindow, getExtensionURL, localStorage, queryTabs, updateTab } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { getMostCommonDomain } from '@/lib/utils';
 import { Input } from '@/ui/components/ui/input';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
+import { guideDescriptionErrorMessage } from '@/ui/shared/guide-description-error';
 import { dominantRatio } from '@/ui/shared/ImagePlaceholder';
+import Toast from '@/ui/shared/Toast';
 import ExportMenu from './ExportMenu';
 import StepCard from './StepCard';
 
@@ -50,8 +53,19 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
   const [notFound, setNotFound] = useState(false);
   const [title, setTitle] = useState('');
   const [editing, setEditing] = useState(false);
+  const [description, setDescription] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const editingDescriptionRef = useRef(false);
+
+  const applyGuide = useCallback((result: GuideData) => {
+    setData(result);
+    setTitle(result.guide.title);
+    if (!editingDescriptionRef.current) setDescription(result.guide.description ?? '');
+  }, []);
 
   const loadGuide = useCallback(async () => {
     const result = await getGuide(guideId);
@@ -60,10 +74,9 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
       setLoading(false);
       return;
     }
-    setData(result);
-    setTitle(result.guide.title);
+    applyGuide(result);
     setLoading(false);
-  }, [guideId]);
+  }, [guideId, applyGuide]);
 
   useEffect(() => {
     loadGuide();
@@ -75,11 +88,43 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
     });
   }, [editing, loadGuide]);
 
+  useEffect(() => {
+    localStorage.get(['aiApiKey']).then((s) => setHasApiKey(Boolean(s.aiApiKey)));
+  }, []);
+
   const handleTitleBlur = useCallback(async () => {
     if (!data || title === data.guide.title) return;
     await updateGuideTitle(guideId, title);
     setData((prev) => (prev ? { ...prev, guide: { ...prev.guide, title } } : prev));
   }, [data, guideId, title]);
+
+  const handleGuideDescriptionBlur = useCallback(async () => {
+    if (data && description !== (data.guide.description ?? '')) {
+      await updateGuideDescription(guideId, description);
+      setData((prev) => (prev ? { ...prev, guide: { ...prev.guide, description } } : prev));
+    }
+    editingDescriptionRef.current = false;
+  }, [data, guideId, description]);
+
+  const handleGenerateDescription = useCallback(async () => {
+    setGenerating(true);
+    setDescriptionError(null);
+    try {
+      const result = await sendMessage('generateGuideDescription', { guideId });
+      if (result.error) {
+        setDescriptionError(guideDescriptionErrorMessage(result.error));
+        return;
+      }
+      const generated = result.description;
+      if (!generated) return;
+      setDescription(generated);
+      setData((prev) => (prev ? { ...prev, guide: { ...prev.guide, description: generated } } : prev));
+    } catch {
+      setDescriptionError(guideDescriptionErrorMessage('generation-failed'));
+    } finally {
+      setGenerating(false);
+    }
+  }, [guideId]);
 
   const handleDescriptionChange = useCallback(async (stepId: string, description: string) => {
     await updateStepDescription(stepId, description);
@@ -94,15 +139,14 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
       await deleteStep(guideId, stepId);
       const result = await getGuide(guideId);
       if (result) {
-        setData(result);
-        setTitle(result.guide.title);
+        applyGuide(result);
       } else {
         setData(null);
         setLoading(true);
         await loadGuide();
       }
     },
-    [guideId, loadGuide],
+    [guideId, loadGuide, applyGuide],
   );
 
   const openInFullView = useCallback((targetGuideId: string, options?: OpenInFullViewOptions) => {
@@ -143,6 +187,8 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
       </div>
     );
   }
+
+  const metaGenerating = title === i18n.t('fullview.untitledGuide') && data.steps.length > 0 && !description;
 
   return (
     <div className="min-h-screen bg-card flex flex-col">
@@ -198,6 +244,47 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
             </button>
             <ExportMenu guideId={guideId} guide={data.guide} steps={data.steps} screenshots={data.screenshots} />
           </div>
+        </div>
+        <div className="mt-1 mb-1.5" style={{ marginLeft: '34px' }}>
+          <textarea
+            ref={(el) => {
+              if (el) {
+                el.style.height = '0';
+                el.style.height = `${el.scrollHeight}px`;
+              }
+            }}
+            value={description}
+            rows={2}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              const el = e.target;
+              el.style.height = '0';
+              el.style.height = `${el.scrollHeight}px`;
+            }}
+            onFocus={() => {
+              editingDescriptionRef.current = true;
+            }}
+            onBlur={handleGuideDescriptionBlur}
+            placeholder={i18n.t('editor.descriptionPlaceholder')}
+            className="w-full resize-none overflow-hidden bg-transparent p-0 text-xs leading-snug text-muted-foreground placeholder:text-muted-foreground/60 border-b border-transparent hover:border-border focus:outline-none focus:border-accent"
+          />
+          {hasApiKey && (
+            <button
+              type="button"
+              onClick={handleGenerateDescription}
+              disabled={generating || metaGenerating}
+              title={description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')}
+              className="mt-1 flex items-center gap-1 text-[11px] font-medium text-accent hover:text-deep disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {generating || metaGenerating ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+              {generating || metaGenerating
+                ? i18n.t('editor.generatingDescription')
+                : description
+                  ? i18n.t('editor.regenerateDescription')
+                  : i18n.t('editor.generateDescription')}
+            </button>
+          )}
+          <Toast message={descriptionError} onDismiss={() => setDescriptionError(null)} />
         </div>
         <div className="text-[11px] flex items-center gap-2 text-muted-foreground" style={{ marginLeft: '34px' }}>
           <span className="flex items-center gap-1">

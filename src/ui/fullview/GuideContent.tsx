@@ -1,4 +1,4 @@
-import { History, Play } from 'lucide-react';
+import { History, Loader2, Play, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TypeAnimation } from 'react-type-animation';
 import { i18n } from '#imports';
@@ -7,19 +7,22 @@ import {
   getGuide,
   getScreenshotsForSteps,
   onGuidesChanged,
+  updateGuideDescription,
   updateGuideTitle,
   updateStepDescription,
 } from '@/core/guides/service';
 import type { SnapshotLike } from '@/core/guides/snapshot-diff';
 import type { Guide, Screenshot, Snapshot, Step } from '@/core/guides/types';
 import type { ScreenshotEdits } from '@/core/screenshot/types';
-import { openSidebar } from '@/lib/browser-api';
+import { localStorage, openSidebar } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { formatDate, getMostCommonDomain } from '@/lib/utils';
 import { useFullview } from '@/stores/fullview';
 import AnnotationEditor from '@/ui/shared/AnnotationEditor';
 import FaviconImg from '@/ui/shared/FaviconImg';
+import { guideDescriptionErrorMessage } from '@/ui/shared/guide-description-error';
+import Toast from '@/ui/shared/Toast';
 import GuideStepList from './components/GuideStepList';
 import VersionHistoryPanel from './components/VersionHistoryPanel';
 
@@ -87,13 +90,19 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
   const [editingTool, setEditingTool] = useState<'annotate' | 'redact' | 'crop' | 'target'>('annotate');
   const [preview, setPreview] = useState<Snapshot | null>(null);
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
+  const [description, setDescription] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
   const titleRef = useRef('');
   const appliedInitialRef = useRef(false);
+  const editingDescriptionRef = useRef(false);
 
   const loadGuide = useCallback(async () => {
     const result = await getGuide(guideId);
     if (result) {
       setData(result);
+      if (!editingDescriptionRef.current) setDescription(result.guide.description ?? '');
       const newTitle = result.guide.title;
       const prev = titleRef.current;
       if (
@@ -119,12 +128,44 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
     return onGuidesChanged(() => loadGuide());
   }, [loadGuide]);
 
+  useEffect(() => {
+    localStorage.get(['aiApiKey']).then((s) => setHasApiKey(Boolean(s.aiApiKey)));
+  }, []);
+
   const handleTitleBlur = useCallback(async () => {
     if (!data || title === data.guide.title) return;
     await updateGuideTitle(guideId, title);
     setData((prev) => (prev ? { ...prev, guide: { ...prev.guide, title } } : prev));
     document.title = `${title} — ${i18n.t('app_name')}`;
   }, [data, guideId, title]);
+
+  const handleGuideDescriptionBlur = useCallback(async () => {
+    if (data && description !== (data.guide.description ?? '')) {
+      await updateGuideDescription(guideId, description);
+      setData((prev) => (prev ? { ...prev, guide: { ...prev.guide, description } } : prev));
+    }
+    editingDescriptionRef.current = false;
+  }, [data, guideId, description]);
+
+  const handleGenerateDescription = useCallback(async () => {
+    setGenerating(true);
+    setDescriptionError(null);
+    try {
+      const result = await sendMessage('generateGuideDescription', { guideId });
+      if (result.error) {
+        setDescriptionError(guideDescriptionErrorMessage(result.error));
+        return;
+      }
+      const generated = result.description;
+      if (!generated) return;
+      setDescription(generated);
+      setData((prev) => (prev ? { ...prev, guide: { ...prev.guide, description: generated } } : prev));
+    } catch {
+      setDescriptionError(guideDescriptionErrorMessage('generation-failed'));
+    } finally {
+      setGenerating(false);
+    }
+  }, [guideId]);
 
   const handleDescriptionChange = useCallback(async (stepId: string, description: string) => {
     await updateStepDescription(stepId, description);
@@ -239,6 +280,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
   const animatingTitle = preview ? null : typingTitle;
   const untitledPending =
     !preview && !typingTitle && title === i18n.t('fullview_untitledGuide') && viewSteps.length > 0;
+  const metaGenerating = (untitledPending || animatingTitle !== null) && !description;
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)]">
@@ -312,6 +354,63 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
               </h1>
             )}
           </div>
+
+          {!preview && (
+            <div className="mt-3">
+              {metaGenerating ? (
+                <div className="max-w-[720px] text-[15px] leading-relaxed animate-gradient-text bg-[length:300%_100%] bg-clip-text text-transparent bg-gradient-to-r from-muted-foreground via-violet to-muted-foreground">
+                  {i18n.t('fullview_writingDescription')}
+                </div>
+              ) : editing ? (
+                <div className="flex items-start gap-2 max-w-[720px]">
+                  <textarea
+                    ref={(el) => {
+                      if (el) {
+                        el.style.height = '0';
+                        el.style.height = `${el.scrollHeight}px`;
+                      }
+                    }}
+                    value={description}
+                    rows={2}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      const el = e.target;
+                      el.style.height = '0';
+                      el.style.height = `${el.scrollHeight}px`;
+                    }}
+                    onFocus={() => {
+                      editingDescriptionRef.current = true;
+                    }}
+                    onBlur={handleGuideDescriptionBlur}
+                    placeholder={i18n.t('editor.descriptionPlaceholder')}
+                    className="flex-1 resize-none overflow-hidden bg-transparent p-0 text-[15px] leading-relaxed text-muted-foreground placeholder:text-muted-foreground/60 border-b-2 border-transparent hover:border-border focus:outline-none focus:border-accent"
+                  />
+                  {hasApiKey && (
+                    <button
+                      type="button"
+                      onClick={handleGenerateDescription}
+                      disabled={generating || metaGenerating}
+                      title={
+                        description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')
+                      }
+                      className="shrink-0 mt-0.5 p-1 rounded-md text-muted-foreground hover:text-accent hover:bg-secondary transition-colors disabled:cursor-not-allowed"
+                    >
+                      {generating || metaGenerating ? (
+                        <Loader2 size={15} className="animate-spin text-accent" />
+                      ) : (
+                        <Sparkles size={15} />
+                      )}
+                    </button>
+                  )}
+                  <Toast message={descriptionError} onDismiss={() => setDescriptionError(null)} />
+                </div>
+              ) : (
+                description && (
+                  <p className="max-w-[720px] text-[15px] leading-relaxed text-muted-foreground">{description}</p>
+                )
+              )}
+            </div>
+          )}
 
           <div className="flex items-center gap-1.5 mt-2 mb-4 flex-wrap">
             <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-card border border-border px-2.5 py-0.5 rounded-full">

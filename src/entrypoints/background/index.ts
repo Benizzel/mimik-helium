@@ -1,63 +1,18 @@
-import { browser, defineBackground, i18n } from '#imports';
-import { generateGuideTitle } from '@/core/capture/ai/title';
+import { browser, defineBackground } from '#imports';
+import { validateApiKey } from '@/core/capture/ai/validate';
 import { stepRequiresManual } from '@/core/guideme/manual';
 import { advanceSession, cancelSession, completeSession, getSession, startSession } from '@/core/guideme/session';
-import {
-  createGuide,
-  getGuideDomain,
-  getScreenshotsForSteps,
-  getStepsForGuide,
-  updateGuideTitle,
-} from '@/core/guides/service';
+import { createGuide, getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
 import type { Step } from '@/core/guides/types';
 import { getActiveTab, localStorage, sendMessageToTab, setSidePanelBehavior, updateTab } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import { onMessage } from '@/lib/messaging';
 import { broadcastStateToPanel, setupPortListener } from '@/lib/port';
 import { getActor, getStateUpdate, initActor, initActorFallback, waitUntilReady } from './actor';
+import { generateDescriptionOnDemand, generateGuideMetaOnStop } from './guide-meta';
 import { registerNavigationListeners } from './navigation';
 import { handleCaptureStep, handleFinalizeInputStep, handleUpdateInputStep } from './step-pipeline';
 import { broadcastStartCapture, broadcastStopCapture, showNotificationOnTab } from './tab-manager';
-
-async function generateTitleInBackground(guideId: string) {
-  try {
-    const settings = await localStorage.get(['aiApiKey', 'aiProvider', 'aiModel']);
-    if (!settings.aiApiKey) {
-      const domain = await getGuideDomain(guideId);
-      await updateGuideTitle(
-        guideId,
-        domain ? i18n.t('background.guideOnDomain', [domain]) : i18n.t('background.newGuide'),
-      );
-      return;
-    }
-
-    const steps = await getStepsForGuide(guideId);
-    const allSteps = steps.filter((s) => s.description).map((s) => ({ description: s.description, url: s.url }));
-    if (allSteps.length === 0) return;
-    const stepsWithUrl = allSteps.length > 15 ? [...allSteps.slice(0, 10), ...allSteps.slice(-5)] : allSteps;
-
-    const provider = (settings.aiProvider as string) || 'openai';
-    const model = (settings.aiModel as string) || 'gpt-4o-mini';
-    const title = await generateGuideTitle(stepsWithUrl, provider, model, settings.aiApiKey as string);
-    if (title) {
-      await updateGuideTitle(guideId, title);
-      logger.info('Generated guide title:', title);
-    } else {
-      const domain = await getGuideDomain(guideId);
-      await updateGuideTitle(
-        guideId,
-        domain ? i18n.t('background.guideOnDomain', [domain]) : i18n.t('background.newGuide'),
-      );
-    }
-  } catch (err) {
-    logger.error('Guide title generation failed', err);
-    const domain = await getGuideDomain(guideId);
-    await updateGuideTitle(
-      guideId,
-      domain ? i18n.t('background.guideOnDomain', [domain]) : i18n.t('background.newGuide'),
-    );
-  }
-}
 
 async function resolveManual(step: Step): Promise<boolean> {
   if (!step.screenshotId) return stepRequiresManual(step, null);
@@ -148,7 +103,7 @@ export default defineBackground(() => {
     await broadcastStopCapture();
     actor.send({ type: 'STOP_RECORDING' });
 
-    if (guideId) generateTitleInBackground(guideId);
+    if (guideId) generateGuideMetaOnStop(guideId).catch(() => {});
 
     return { success: true, guideId: guideId ?? undefined };
   });
@@ -173,6 +128,10 @@ export default defineBackground(() => {
     }
     return { exited: true };
   });
+
+  onMessage('generateGuideDescription', ({ data }) => generateDescriptionOnDemand(data.guideId));
+
+  onMessage('validateApiKey', ({ data }) => validateApiKey(data.provider, data.apiKey));
 
   onMessage('captureStep', async ({ data }) => {
     await waitUntilReady();

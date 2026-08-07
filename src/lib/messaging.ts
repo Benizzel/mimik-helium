@@ -81,6 +81,27 @@ export interface GuideMe_GoToResponse {
   moved: boolean;
 }
 
+export type GuideDescriptionError = 'no-api-key' | 'no-steps' | 'generation-failed' | 'save-failed';
+
+export interface GenerateGuideDescriptionData {
+  guideId: string;
+}
+
+export interface GenerateGuideDescriptionResponse {
+  description?: string;
+  error?: GuideDescriptionError;
+}
+
+export interface ValidateApiKeyData {
+  provider: string;
+  apiKey: string;
+}
+
+export interface ValidateApiKeyResponse {
+  valid: boolean;
+  reason?: 'rejected' | 'network';
+}
+
 export interface EnterBlurModeResponse {
   entered: boolean;
 }
@@ -102,6 +123,8 @@ interface MimikProtocol {
   guideMeGoTo(data: GuideMe_GoToData): GuideMe_GoToResponse;
   enterBlurMode(): EnterBlurModeResponse;
   exitBlurMode(): ExitBlurModeResponse;
+  generateGuideDescription(data: GenerateGuideDescriptionData): GenerateGuideDescriptionResponse;
+  validateApiKey(data: ValidateApiKeyData): ValidateApiKeyResponse;
 }
 
 export const { sendMessage, onMessage } = defineExtensionMessaging<MimikProtocol>();

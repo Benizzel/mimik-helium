@@ -15,7 +15,9 @@ export async function exportGuideAsMarkdown(
     ...(domain ? [i18n.t('export.sourceLabel', [domain])] : []),
   ].join(' · ');
 
-  const lines: string[] = [`# ${guide.title}`, '', `*${meta}*`, '', '---', ''];
+  const lines: string[] = [`# ${guide.title}`, ''];
+  if (guide.description) lines.push(guide.description, '');
+  lines.push(`*${meta}*`, '', '---', '');
 
   for (const step of steps) {
     const num = String(step.index + 1).padStart(2, '0');

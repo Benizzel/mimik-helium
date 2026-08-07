@@ -21,6 +21,7 @@ import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
 import { type BrandLogo, defaultFooterLine, makeBrandLogo } from '@/core/export/branding';
 import { DEFAULT_TARGET_COLOR, TARGET_COLORS } from '@/core/screenshot/types';
 import { localStorage } from '@/lib/browser-api';
+import { sendMessage } from '@/lib/messaging';
 import { Button } from '@/ui/components/ui/button';
 import { Input } from '@/ui/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
@@ -42,6 +43,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   const [model, setModel] = useState(AI_PROVIDERS.openai.defaultModel);
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
+  const [keyStatus, setKeyStatus] = useState<'checking' | 'valid' | 'rejected' | null>(null);
   const [aiLanguage, setAiLanguage] = useState<AILanguageCode>('en');
   const [targetColor, setTargetColor] = useState<string>(DEFAULT_TARGET_COLOR);
   const [brandLogo, setBrandLogo] = useState<BrandLogo | null>(null);
@@ -95,6 +97,18 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   };
 
   const handleSave = async () => {
+    if (apiKey) {
+      setKeyStatus('checking');
+      const result = await sendMessage('validateApiKey', { provider, apiKey }).catch(() => null);
+      if (result && !result.valid && result.reason === 'rejected') {
+        setKeyStatus('rejected');
+        return;
+      }
+      setKeyStatus(result?.valid ? 'valid' : null);
+    } else {
+      setKeyStatus(null);
+    }
+
     await localStorage.set({
       aiApiKey: apiKey,
       aiProvider: provider,
@@ -187,6 +201,18 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
               placeholder="sk-..."
               className="h-8 text-[12px] rounded-lg border-border"
             />
+            {keyStatus === 'checking' && (
+              <p className="mt-1 text-[11px] text-muted-foreground">{i18n.t('settings.validatingKey')}</p>
+            )}
+            {keyStatus === 'valid' && (
+              <p className="mt-1 text-[11px] flex items-center gap-1" style={{ color: 'var(--color-success)' }}>
+                <Check size={11} />
+                {i18n.t('settings.keyValid')}
+              </p>
+            )}
+            {keyStatus === 'rejected' && (
+              <p className="mt-1 text-[11px] text-destructive">{i18n.t('settings.keyInvalid')}</p>
+            )}
           </div>
 
           <div>
@@ -372,12 +398,16 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
 
         <Button
           onClick={handleSave}
-          disabled={saved}
+          disabled={saved || keyStatus === 'checking'}
           className="w-full transition-all duration-300"
           style={saved ? { backgroundColor: 'var(--color-success)', color: '#fff', opacity: 0.9 } : undefined}
         >
           {saved && <Check size={16} />}
-          {saved ? i18n.t('settings.saved') : i18n.t('settings.saveSettings')}
+          {saved
+            ? i18n.t('settings.saved')
+            : keyStatus === 'checking'
+              ? i18n.t('settings.validatingKey')
+              : i18n.t('settings.saveSettings')}
         </Button>
 
         <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-secondary text-[10px] text-muted-foreground leading-relaxed">

@@ -101,6 +101,9 @@ settings:
   attributionHint: "Dans le pied de chaque export"
   saveSettings: "Enregistrer"
   saved: "Enregistré"
+  validatingKey: "V\xE9rification de la cl\xE9\u2026"
+  keyValid: Cl\xE9 API v\xE9rifi\xE9e.
+  keyInvalid: Cette cl\xE9 API a \xE9t\xE9 refus\xE9e. V\xE9rifiez-la et r\xE9essayez.
   smartBlur: Flou intelligent
   privacyNotice: "Votre clé API reste dans votre navigateur et n'est envoyée qu'au fournisseur IA choisi. Rien d'autre ne sort d'ici."
   bugReport: "Un bug ? Signalez-le sur GitHub"
@@ -124,6 +127,7 @@ fullview:
   guideMe: "Guidez-moi !"
   untitledGuide: Guide sans titre
   writingTitle: "Rédaction du titre à partir de vos étapes..."
+  writingDescription: "R\xE9daction d\u2019une description\u2026"
   guideNotFound: Guide introuvable.
   stepCount: "$1 étape"
   stepCountPlural: "$1 étapes"
@@ -198,6 +202,15 @@ history:
   changeImageBlurred: "$1 image floutée"
   changeImagesBlurred: "$1 images floutées"
   changeAltText: Texte alternatif modifié
+  generateDescription: "Générer une description"
+  regenerateDescription: "Régénérer la description"
+  generatingDescription: "Génération\u2026"
+  descriptionPlaceholder: "Ajouter une description"
+  descriptionErrorNoApiKey: "Ajoutez une clé API d'IA dans les paramètres pour générer des descriptions."
+  descriptionErrorNoSteps: "Ce guide n'a aucune étape décrite à résumer."
+  descriptionErrorFailed: "Impossible de générer une description. Réessayez."
+  descriptionErrorSaveFailed: "Description générée mais impossible de l'enregistrer. Réessayez."
+  writingStepDescription: "R\xE9daction de la description\u2026"
 
 emptyGuide:
   title: Ce guide est vide

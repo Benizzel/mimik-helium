@@ -1,4 +1,4 @@
-import { Check, Copy, Trash2 } from 'lucide-react';
+import { Check, Copy, Loader2, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { replaceScreenshot } from '@/core/guides/service';
@@ -131,7 +131,12 @@ export default function StepCard({
           <span className="flex items-center justify-center w-[22px] h-[22px] rounded-full text-[11px] font-bold shrink-0 bg-primary text-primary-foreground">
             {step.index + 1}
           </span>
-          {readOnly ? (
+          {step.aiPending ? (
+            <span className="flex items-center gap-1.5 text-[13px] font-medium leading-snug flex-1 text-muted-foreground">
+              <Loader2 size={13} className="animate-spin" />
+              {i18n.t('editor.writingStepDescription')}
+            </span>
+          ) : readOnly ? (
             <p className="text-[13px] font-medium leading-snug flex-1 text-foreground whitespace-pre-wrap">
               {step.description}
             </p>

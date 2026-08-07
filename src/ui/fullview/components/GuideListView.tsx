@@ -26,6 +26,9 @@ export default function GuideListView({ category, onStar, onTrash, onRestore, on
         >
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate text-foreground">{guide.title}</p>
+            {guide.description && (
+              <p className="text-xs mt-0.5 text-muted-foreground line-clamp-1">{guide.description}</p>
+            )}
             <p className="text-xs mt-0.5 text-muted-foreground">
               {guide.stepIds.length !== 1
                 ? i18n.t('fullview_stepCountPlural', [String(guide.stepIds.length)])

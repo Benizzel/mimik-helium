@@ -3,6 +3,7 @@ import type { ScreenshotEdits } from '@/core/screenshot/types';
 export interface Guide {
   id: string;
   title: string;
+  description?: string;
   createdAt: number;
   updatedAt: number;
   stepIds: string[];
@@ -21,6 +22,7 @@ export interface Step {
   screenshotId?: string;
   elementMeta?: ElementMeta;
   inputValue?: string;
+  aiPending?: boolean;
 }
 
 export interface ScreenshotBounds {
