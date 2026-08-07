@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Layers, Maximize2, Pencil, Play, Sparkles } from 'lucide-react';
+import { ArrowLeft, Check, Layers, Loader2, Maximize2, Pencil, Play, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import {
@@ -276,7 +276,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
               title={description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')}
               className="mt-1 flex items-center gap-1 text-[11px] font-medium text-accent hover:text-deep disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Sparkles size={11} className={generating || metaGenerating ? 'animate-pulse' : ''} />
+              {generating || metaGenerating ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
               {generating || metaGenerating
                 ? i18n.t('editor.generatingDescription')
                 : description
