@@ -188,6 +188,8 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
     );
   }
 
+  const metaGenerating = title === i18n.t('fullview.untitledGuide') && data.steps.length > 0 && !description;
+
   return (
     <div className="min-h-screen bg-card flex flex-col">
       <div className="px-4 pt-3 pb-2">
@@ -270,12 +272,12 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
             <button
               type="button"
               onClick={handleGenerateDescription}
-              disabled={generating}
+              disabled={generating || metaGenerating}
               title={description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')}
               className="mt-1 flex items-center gap-1 text-[11px] font-medium text-accent hover:text-deep disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Sparkles size={11} className={generating ? 'animate-pulse' : ''} />
-              {generating
+              <Sparkles size={11} className={generating || metaGenerating ? 'animate-pulse' : ''} />
+              {generating || metaGenerating
                 ? i18n.t('editor.generatingDescription')
                 : description
                   ? i18n.t('editor.regenerateDescription')

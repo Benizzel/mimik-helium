@@ -1,4 +1,4 @@
-import { History, Play, Sparkles } from 'lucide-react';
+import { History, Loader2, Play, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TypeAnimation } from 'react-type-animation';
 import { i18n } from '#imports';
@@ -280,6 +280,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
   const animatingTitle = preview ? null : typingTitle;
   const untitledPending =
     !preview && !typingTitle && title === i18n.t('fullview_untitledGuide') && viewSteps.length > 0;
+  const metaGenerating = (untitledPending || animatingTitle !== null) && !description;
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)]">
@@ -356,8 +357,12 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
 
           {!preview && (
             <div className="mt-3">
-              {editing ? (
-                <>
+              {metaGenerating ? (
+                <div className="max-w-[720px] text-[15px] leading-relaxed animate-gradient-text bg-[length:300%_100%] bg-clip-text text-transparent bg-gradient-to-r from-muted-foreground via-violet to-muted-foreground">
+                  {i18n.t('fullview_writingDescription')}
+                </div>
+              ) : editing ? (
+                <div className="flex items-start gap-2 max-w-[720px]">
                   <textarea
                     ref={(el) => {
                       if (el) {
@@ -378,26 +383,25 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
                     }}
                     onBlur={handleGuideDescriptionBlur}
                     placeholder={i18n.t('editor.descriptionPlaceholder')}
-                    className="w-full max-w-[720px] resize-none overflow-hidden bg-transparent p-0 text-[15px] leading-relaxed text-muted-foreground placeholder:text-muted-foreground/60 border-b-2 border-transparent hover:border-border focus:outline-none focus:border-accent"
+                    className="flex-1 resize-none overflow-hidden bg-transparent p-0 text-[15px] leading-relaxed text-muted-foreground placeholder:text-muted-foreground/60 border-b-2 border-transparent hover:border-border focus:outline-none focus:border-accent"
                   />
                   {hasApiKey && (
                     <button
                       type="button"
                       onClick={handleGenerateDescription}
-                      disabled={generating}
+                      disabled={generating || metaGenerating}
                       title={description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')}
-                      className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-deep disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="shrink-0 mt-0.5 p-1 rounded-md text-muted-foreground hover:text-accent hover:bg-secondary transition-colors disabled:cursor-not-allowed"
                     >
-                      <Sparkles size={13} className={generating ? 'animate-pulse' : ''} />
-                      {generating
-                        ? i18n.t('editor.generatingDescription')
-                        : description
-                          ? i18n.t('editor.regenerateDescription')
-                          : i18n.t('editor.generateDescription')}
+                      {generating || metaGenerating ? (
+                        <Loader2 size={15} className="animate-spin text-accent" />
+                      ) : (
+                        <Sparkles size={15} />
+                      )}
                     </button>
                   )}
                   <Toast message={descriptionError} onDismiss={() => setDescriptionError(null)} />
-                </>
+                </div>
               ) : (
                 description && (
                   <p className="max-w-[720px] text-[15px] leading-relaxed text-muted-foreground">{description}</p>

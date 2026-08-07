@@ -127,6 +127,7 @@ fullview:
   guideMe: Guide Me
   untitledGuide: Untitled Guide
   writingTitle: Writing a title from your captured steps...
+  writingDescription: "Writing a description\u2026"
   guideNotFound: "Guide not found."
   stepCount: "$1 step"
   stepCountPlural: "$1 steps"

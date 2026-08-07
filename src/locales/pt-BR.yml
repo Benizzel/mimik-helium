@@ -127,6 +127,7 @@ fullview:
   guideMe: "Me guia!"
   untitledGuide: Guia sem título
   writingTitle: Escrevendo um título com os passos capturados...
+  writingDescription: "Escrevendo uma descri\xE7\xE3o\u2026"
   guideNotFound: "Guia não encontrado."
   stepCount: "$1 passo"
   stepCountPlural: "$1 passos"
