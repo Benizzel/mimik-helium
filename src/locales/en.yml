@@ -101,6 +101,9 @@ settings:
   attributionHint: "In the footer of every export"
   saveSettings: Save Settings
   saved: Saved
+  validatingKey: "Checking key\u2026"
+  keyValid: API key verified.
+  keyInvalid: That API key was rejected. Check it and try again.
   smartBlur: Smart Blur
   privacyNotice: Your API key is stored locally and only sent to the selected AI provider. No data leaves your browser otherwise.
   bugReport: "Found a bug? Report it on GitHub"
@@ -206,6 +209,7 @@ history:
   descriptionErrorNoSteps: This guide has no described steps to summarise.
   descriptionErrorFailed: Could not generate a description. Try again.
   descriptionErrorSaveFailed: Generated the description but could not save it. Try again.
+  writingStepDescription: "Writing description\u2026"
 
 emptyGuide:
   title: This guide is empty

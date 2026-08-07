@@ -101,6 +101,9 @@ settings:
   attributionHint: "No rodapé de cada exportação"
   saveSettings: Salvar ajustes
   saved: Salvo
+  validatingKey: "Verificando chave\u2026"
+  keyValid: Chave de API verificada.
+  keyInvalid: Essa chave de API foi recusada. Verifique-a e tente novamente.
   smartBlur: Desfoque inteligente
   privacyNotice: Sua chave API fica salva no navegador e só é enviada pro provedor de IA que você escolher. Nada mais sai daqui.
   bugReport: "Achou um bug? Reporta no GitHub"
@@ -206,6 +209,7 @@ history:
   descriptionErrorNoSteps: Este guia não tem etapas descritas para resumir.
   descriptionErrorFailed: Não foi possível gerar uma descrição. Tente novamente.
   descriptionErrorSaveFailed: A descrição foi gerada mas não foi possível salvá-la. Tente novamente.
+  writingStepDescription: "Escrevendo descri\xE7\xE3o\u2026"
 
 emptyGuide:
   title: Esse guia tá vazio

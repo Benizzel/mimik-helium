@@ -1,4 +1,5 @@
 import { browser, defineBackground } from '#imports';
+import { validateApiKey } from '@/core/capture/ai/validate';
 import { stepRequiresManual } from '@/core/guideme/manual';
 import { advanceSession, cancelSession, completeSession, getSession, startSession } from '@/core/guideme/session';
 import { createGuide, getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
@@ -130,6 +131,8 @@ export default defineBackground(() => {
   });
 
   onMessage('generateGuideDescription', ({ data }) => generateDescriptionOnDemand(data.guideId));
+
+  onMessage('validateApiKey', ({ data }) => validateApiKey(data.provider, data.apiKey));
 
   onMessage('captureStep', async ({ data }) => {
     await waitUntilReady();

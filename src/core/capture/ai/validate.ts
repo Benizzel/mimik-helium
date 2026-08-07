@@ -1,0 +1,31 @@
+import { logger } from '@/lib/logger';
+
+export type KeyValidation = { valid: true } | { valid: false; reason: 'rejected' | 'network' };
+
+const ENDPOINTS: Record<string, { url: string; headers: (key: string) => Record<string, string> }> = {
+  openai: {
+    url: 'https://api.openai.com/v1/models',
+    headers: (key) => ({ Authorization: `Bearer ${key}` }),
+  },
+  anthropic: {
+    url: 'https://api.anthropic.com/v1/models',
+    headers: (key) => ({
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    }),
+  },
+};
+
+export async function validateApiKey(provider: string, apiKey: string): Promise<KeyValidation> {
+  const endpoint = ENDPOINTS[provider] ?? ENDPOINTS.openai;
+  try {
+    const res = await fetch(endpoint.url, { headers: endpoint.headers(apiKey) });
+    if (res.ok) return { valid: true };
+    if (res.status === 401 || res.status === 403) return { valid: false, reason: 'rejected' };
+    return { valid: false, reason: 'network' };
+  } catch (err) {
+    logger.error('API key validation request failed', err);
+    return { valid: false, reason: 'network' };
+  }
+}

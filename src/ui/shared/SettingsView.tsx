@@ -21,6 +21,7 @@ import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
 import { type BrandLogo, defaultFooterLine, makeBrandLogo } from '@/core/export/branding';
 import { DEFAULT_TARGET_COLOR, TARGET_COLORS } from '@/core/screenshot/types';
 import { localStorage } from '@/lib/browser-api';
+import { sendMessage } from '@/lib/messaging';
 import { Button } from '@/ui/components/ui/button';
 import { Input } from '@/ui/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
@@ -42,6 +43,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   const [model, setModel] = useState(AI_PROVIDERS.openai.defaultModel);
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
+  const [keyStatus, setKeyStatus] = useState<'checking' | 'valid' | 'rejected' | null>(null);
   const [aiLanguage, setAiLanguage] = useState<AILanguageCode>('en');
   const [targetColor, setTargetColor] = useState<string>(DEFAULT_TARGET_COLOR);
   const [brandLogo, setBrandLogo] = useState<BrandLogo | null>(null);
@@ -108,6 +110,18 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+
+    if (!apiKey) {
+      setKeyStatus(null);
+      return;
+    }
+    setKeyStatus('checking');
+    try {
+      const result = await sendMessage('validateApiKey', { provider, apiKey });
+      setKeyStatus(result.valid ? 'valid' : result.reason === 'rejected' ? 'rejected' : null);
+    } catch {
+      setKeyStatus(null);
+    }
   };
 
   const providerConfig = AI_PROVIDERS[provider];
@@ -187,6 +201,18 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
               placeholder="sk-..."
               className="h-8 text-[12px] rounded-lg border-border"
             />
+            {keyStatus === 'checking' && (
+              <p className="mt-1 text-[11px] text-muted-foreground">{i18n.t('settings.validatingKey')}</p>
+            )}
+            {keyStatus === 'valid' && (
+              <p className="mt-1 text-[11px] flex items-center gap-1" style={{ color: 'var(--color-success)' }}>
+                <Check size={11} />
+                {i18n.t('settings.keyValid')}
+              </p>
+            )}
+            {keyStatus === 'rejected' && (
+              <p className="mt-1 text-[11px] text-destructive">{i18n.t('settings.keyInvalid')}</p>
+            )}
           </div>
 
           <div>

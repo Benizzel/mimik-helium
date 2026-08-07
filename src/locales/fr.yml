@@ -101,6 +101,9 @@ settings:
   attributionHint: "Dans le pied de chaque export"
   saveSettings: "Enregistrer"
   saved: "Enregistré"
+  validatingKey: "V\xE9rification de la cl\xE9\u2026"
+  keyValid: Cl\xE9 API v\xE9rifi\xE9e.
+  keyInvalid: Cette cl\xE9 API a \xE9t\xE9 refus\xE9e. V\xE9rifiez-la et r\xE9essayez.
   smartBlur: Flou intelligent
   privacyNotice: "Votre clé API reste dans votre navigateur et n'est envoyée qu'au fournisseur IA choisi. Rien d'autre ne sort d'ici."
   bugReport: "Un bug ? Signalez-le sur GitHub"
@@ -206,6 +209,7 @@ history:
   descriptionErrorNoSteps: "Ce guide n'a aucune étape décrite à résumer."
   descriptionErrorFailed: "Impossible de générer une description. Réessayez."
   descriptionErrorSaveFailed: "Description générée mais impossible de l'enregistrer. Réessayez."
+  writingStepDescription: "R\xE9daction de la description\u2026"
 
 emptyGuide:
   title: Ce guide est vide

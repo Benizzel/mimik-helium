@@ -92,6 +92,16 @@ export interface GenerateGuideDescriptionResponse {
   error?: GuideDescriptionError;
 }
 
+export interface ValidateApiKeyData {
+  provider: string;
+  apiKey: string;
+}
+
+export interface ValidateApiKeyResponse {
+  valid: boolean;
+  reason?: 'rejected' | 'network';
+}
+
 export interface EnterBlurModeResponse {
   entered: boolean;
 }
@@ -114,6 +124,7 @@ interface MimikProtocol {
   enterBlurMode(): EnterBlurModeResponse;
   exitBlurMode(): ExitBlurModeResponse;
   generateGuideDescription(data: GenerateGuideDescriptionData): GenerateGuideDescriptionResponse;
+  validateApiKey(data: ValidateApiKeyData): ValidateApiKeyResponse;
 }
 
 export const { sendMessage, onMessage } = defineExtensionMessaging<MimikProtocol>();
