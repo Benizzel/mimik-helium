@@ -3,6 +3,7 @@ import type { ScreenshotEdits } from '@/core/screenshot/types';
 export interface Guide {
   id: string;
   title: string;
+  description?: string;
   createdAt: number;
   updatedAt: number;
   stepIds: string[];

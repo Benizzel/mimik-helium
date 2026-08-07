@@ -73,6 +73,11 @@ export async function updateGuideTitle(id: string, title: string): Promise<void>
   notifyGuidesChanged({ type: 'mutated' });
 }
 
+export async function updateGuideDescription(id: string, description: string): Promise<void> {
+  await db.guides.update(id, { description, updatedAt: Date.now() });
+  notifyGuidesChanged({ type: 'mutated' });
+}
+
 export async function addStepToGuide(guideId: string, stepId: string): Promise<void> {
   await db.transaction('rw', db.guides, async () => {
     const guide = await db.guides.get(guideId);
