@@ -175,6 +175,19 @@ editor:
   descriptionErrorFailed: "Impossible de générer une description. Réessayez."
   descriptionErrorSaveFailed: "Description générée mais impossible de l'enregistrer. Réessayez."
   writingStepDescription: "R\xE9daction de la description\u2026"
+  rewriteAskAi: "Demander \xE0 l'IA"
+  rewritePlaceholder: "Dites \xE0 l'IA comment modifier ce texte\u2026"
+  rewriteEnter: "Entr\xE9e"
+  rewriteShorter: Plus court
+  rewriteDetail: "Plus de d\xE9tails"
+  rewriteGrammar: Corriger la grammaire
+  rewriteFormal: Plus formel
+  rewriteCasual: "Plus d\xE9contract\xE9"
+  rewriteReplace: Remplacer
+  rewriteDiscard: Abandonner
+  rewriteErrorNoApiKey: "Ajoutez une cl\xE9 d'API d'IA dans les r\xE9glages pour r\xE9\xE9crire du texte."
+  rewriteErrorFailed: "Impossible de r\xE9\xE9crire la s\xE9lection. R\xE9essayez."
+  rewriteErrorStale: "Le texte a chang\xE9. S\xE9lectionnez-le \xE0 nouveau."
 
 history:
   title: Historique des versions

@@ -175,6 +175,19 @@ editor:
   descriptionErrorFailed: Não foi possível gerar uma descrição. Tente novamente.
   descriptionErrorSaveFailed: A descrição foi gerada mas não foi possível salvá-la. Tente novamente.
   writingStepDescription: "Escrevendo descri\xE7\xE3o\u2026"
+  rewriteAskAi: "Perguntar \xE0 IA"
+  rewritePlaceholder: "Diga \xE0 IA como editar este texto\u2026"
+  rewriteEnter: Enter
+  rewriteShorter: Mais curto
+  rewriteDetail: Mais detalhes
+  rewriteGrammar: "Corrigir gram\xE1tica"
+  rewriteFormal: Mais formal
+  rewriteCasual: Mais informal
+  rewriteReplace: Substituir
+  rewriteDiscard: Descartar
+  rewriteErrorNoApiKey: Adicione uma chave de API de IA nos ajustes para reescrever textos.
+  rewriteErrorFailed: "N\xE3o foi poss\xEDvel reescrever a sele\xE7\xE3o. Tente novamente."
+  rewriteErrorStale: O texto mudou. Selecione-o novamente.
 
 history:
   title: Histórico de versões

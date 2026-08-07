@@ -162,6 +162,19 @@ editor:
   done: Fertig
   versionHistory: Versionsverlauf
   moreActions: Weitere Aktionen
+  rewriteAskAi: KI fragen
+  rewritePlaceholder: "Sag der KI, wie dieser Text bearbeitet werden soll…"
+  rewriteEnter: Enter
+  rewriteShorter: Kürzer
+  rewriteDetail: Mehr Details
+  rewriteGrammar: Grammatik korrigieren
+  rewriteFormal: Förmlicher
+  rewriteCasual: Lockerer
+  rewriteReplace: Ersetzen
+  rewriteDiscard: Verwerfen
+  rewriteErrorNoApiKey: Füge in den Einstellungen einen KI-API-Schlüssel hinzu, um Text umzuschreiben.
+  rewriteErrorFailed: Die Auswahl konnte nicht umgeschrieben werden. Versuche es erneut.
+  rewriteErrorStale: Der Text hat sich geändert. Wähle ihn erneut aus.
 
 history:
   title: Versionsverlauf

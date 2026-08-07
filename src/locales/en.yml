@@ -175,6 +175,19 @@ editor:
   descriptionErrorFailed: Could not generate a description. Try again.
   descriptionErrorSaveFailed: Generated the description but could not save it. Try again.
   writingStepDescription: "Writing description\u2026"
+  rewriteAskAi: Ask AI
+  rewritePlaceholder: "Tell AI how to edit this text\u2026"
+  rewriteEnter: Enter
+  rewriteShorter: Shorter
+  rewriteDetail: More detail
+  rewriteGrammar: Fix grammar
+  rewriteFormal: More formal
+  rewriteCasual: More casual
+  rewriteReplace: Replace
+  rewriteDiscard: Discard
+  rewriteErrorNoApiKey: Add an AI API key in settings to rewrite text.
+  rewriteErrorFailed: Could not rewrite the selection. Try again.
+  rewriteErrorStale: The text changed. Select it again.
 
 history:
   title: Version History
