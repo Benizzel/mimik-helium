@@ -21,6 +21,7 @@ import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
 import { guideDescriptionErrorMessage } from '@/ui/shared/guide-description-error';
 import { dominantRatio } from '@/ui/shared/ImagePlaceholder';
+import Toast from '@/ui/shared/Toast';
 import ExportMenu from './ExportMenu';
 import StepCard from './StepCard';
 
@@ -281,7 +282,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
                   : i18n.t('editor.generateDescription')}
             </button>
           )}
-          {descriptionError && <p className="mt-1 text-[11px] text-destructive">{descriptionError}</p>}
+          <Toast message={descriptionError} onDismiss={() => setDescriptionError(null)} />
         </div>
         <div className="text-[11px] flex items-center gap-2 text-muted-foreground" style={{ marginLeft: '34px' }}>
           <span className="flex items-center gap-1">

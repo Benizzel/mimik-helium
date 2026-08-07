@@ -22,6 +22,7 @@ import { useFullview } from '@/stores/fullview';
 import AnnotationEditor from '@/ui/shared/AnnotationEditor';
 import FaviconImg from '@/ui/shared/FaviconImg';
 import { guideDescriptionErrorMessage } from '@/ui/shared/guide-description-error';
+import Toast from '@/ui/shared/Toast';
 import GuideStepList from './components/GuideStepList';
 import VersionHistoryPanel from './components/VersionHistoryPanel';
 
@@ -395,7 +396,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
                           : i18n.t('editor.generateDescription')}
                     </button>
                   )}
-                  {descriptionError && <p className="mt-1.5 text-xs text-destructive">{descriptionError}</p>}
+                  <Toast message={descriptionError} onDismiss={() => setDescriptionError(null)} />
                 </>
               ) : (
                 description && (
