@@ -69,7 +69,15 @@ export async function exportGuideAsPDF(
     const titleLines = doc.splitTextToSize(guide.title, CONTENT_W * 0.82);
     doc.text(titleLines, MARGIN, MARGIN + 26);
 
-    const y = MARGIN + 26 + (titleLines.length - 1) * 11 + 8;
+    let y = MARGIN + 26 + (titleLines.length - 1) * 11 + 8;
+    if (guide.description) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...MUTED);
+      const descLines = doc.splitTextToSize(guide.description, CONTENT_W * 0.7);
+      doc.text(descLines, MARGIN, y + 4);
+      y += 4 + (descLines.length - 1) * 5 + 8;
+    }
     doc.setDrawColor(...INK);
     doc.setLineWidth(0.4);
     doc.line(MARGIN, y, RIGHT, y);

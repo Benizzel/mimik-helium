@@ -105,6 +105,27 @@ describe('exportGuideAsMarkdown', () => {
     expect(md).not.toContain('![');
   });
 
+  it('includes the description under the title when present', async () => {
+    const guide = makeGuide({ description: 'Reset a locked-out user password.' });
+    const steps = [makeStep()];
+    const screenshots = new Map<string, Screenshot>();
+
+    const md = await exportGuideAsMarkdown(guide, steps, screenshots);
+    expect(md).toContain('# Test Guide\n\nReset a locked-out user password.\n\n');
+  });
+
+  it('omits the description block when absent', async () => {
+    const guide = makeGuide();
+    const steps = [makeStep()];
+    const screenshots = new Map<string, Screenshot>();
+
+    const md = await exportGuideAsMarkdown(guide, steps, screenshots);
+    const lines = md.split('\n');
+    expect(lines[1]).toBe('');
+    expect(lines[2].startsWith('*')).toBe(true);
+    expect(md).not.toContain('undefined');
+  });
+
   it('embeds screenshot as base64 data URL in markdown image', async () => {
     const guide = makeGuide();
     const step = makeStep();
