@@ -296,11 +296,16 @@ exportPreview:
   download: "Export $1"
   rendering: "Updating preview"
   truncated: "Preview shows the first $1 of $2 steps"
+  modeDocument: "Document"
+  modeVideo: "Video"
+  encodingVideo: "Encoding video preview"
+  videoFailed: "The video preview could not be created"
 exportMenu:
   docx: DOCX
   html: HTML
   markdown: Markdown
   pdf: PDF
+  video: Video
 
 onboarding:
   welcomeBadge: Welcome

@@ -1,4 +1,4 @@
-import { FileCode, FileDown, FileText, Loader2 } from 'lucide-react';
+import { FileCode, FileDown, FileText, Loader2, Video } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { i18n } from '#imports';
 import { downloadBlob, downloadText, safeFilename } from '@/core/export/download';
@@ -12,6 +12,7 @@ import {
 } from '@/core/export/options';
 import { exportGuideAsPDF } from '@/core/export/pdf-export';
 import { paginatePreview, withPreviewStyles } from '@/core/export/preview';
+import { canExportVideo } from '@/core/export/video-support';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { Button } from '@/ui/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/ui/dialog';
@@ -27,22 +28,39 @@ interface ExportPreviewModalProps {
   screenshots: Map<string, Screenshot>;
 }
 
-type ExportFormat = 'docx' | 'html' | 'markdown' | 'pdf';
+type ExportFormat = 'docx' | 'html' | 'markdown' | 'pdf' | 'video';
+type PreviewMode = 'document' | 'video';
 
 export default function ExportPreviewModal({ open, onOpenChange, guide, steps, screenshots }: ExportPreviewModalProps) {
   const [options, setOptions] = useState<ExportOptions>(DEFAULT_EXPORT_OPTIONS);
   const [preview, setPreview] = useState('');
   const [rendering, setRendering] = useState(false);
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
+  const [videoSupported, setVideoSupported] = useState(false);
+  const [mode, setMode] = useState<PreviewMode>('document');
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [videoProgress, setVideoProgress] = useState(0);
 
   useEffect(() => {
     if (open) loadExportOptions().then(setOptions);
   }, [open]);
 
+  useEffect(() => {
+    let active = true;
+    canExportVideo().then((supported) => {
+      if (active) setVideoSupported(supported);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const previewSteps = useMemo(() => steps.slice(0, PREVIEW_STEP_LIMIT), [steps]);
+  const cover = options.cover;
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || mode !== 'document') return;
     let cancelled = false;
     setRendering(true);
     const timer = setTimeout(async () => {
@@ -55,7 +73,44 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, guide, previewSteps, screenshots, options]);
+  }, [open, mode, guide, previewSteps, screenshots, options]);
+
+  useEffect(() => {
+    if (!open || mode !== 'video') return;
+    const controller = new AbortController();
+    let url: string | null = null;
+    setVideoError(null);
+    setVideoProgress(0);
+    const timer = setTimeout(async () => {
+      try {
+        const { exportGuideAsVideo } = await import('@/core/export/video-export');
+        const { blob } = await exportGuideAsVideo(
+          guide,
+          previewSteps,
+          screenshots,
+          { cover },
+          {
+            signal: controller.signal,
+            onProgress: (encoded, frames) => {
+              if (!controller.signal.aborted) setVideoProgress(frames > 0 ? encoded / frames : 0);
+            },
+          },
+        );
+        if (controller.signal.aborted) return;
+        url = URL.createObjectURL(blob);
+        setVideoUrl(url);
+      } catch (error) {
+        if (controller.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) return;
+        setVideoError(error instanceof Error ? error.message : String(error));
+      }
+    }, 200);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+      if (url) URL.revokeObjectURL(url);
+      setVideoUrl(null);
+    };
+  }, [open, mode, guide, previewSteps, screenshots, cover]);
 
   const update = (patch: Partial<ExportOptions>) => {
     const next = { ...options, ...patch };
@@ -74,6 +129,10 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
       } else if (format === 'docx') {
         const { exportGuideAsDOCX } = await import('@/core/export/docx-export');
         downloadBlob(await exportGuideAsDOCX(guide, steps, screenshots, options), safeFilename(guide.title, 'docx'));
+      } else if (format === 'video') {
+        const { exportGuideAsVideo } = await import('@/core/export/video-export');
+        const { blob, extension } = await exportGuideAsVideo(guide, steps, screenshots, options);
+        downloadBlob(blob, safeFilename(guide.title, extension));
       } else {
         const { exportGuideAsMarkdown } = await import('@/core/export/markdown-export');
         const md = await exportGuideAsMarkdown(guide, steps, screenshots);
@@ -90,11 +149,17 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
     { key: 'stepUrls', label: i18n.t('exportPreview.stepUrls'), hint: i18n.t('exportPreview.stepUrlsHint') },
   ];
 
+  const modes: Array<{ key: PreviewMode; icon: typeof FileText; label: string }> = [
+    { key: 'document', icon: FileText, label: i18n.t('exportPreview.modeDocument') },
+    { key: 'video', icon: Video, label: i18n.t('exportPreview.modeVideo') },
+  ];
+
   const formats: Array<{ key: ExportFormat; icon: typeof FileText; label: string }> = [
     { key: 'pdf', icon: FileDown, label: i18n.t('exportMenu.pdf') },
     { key: 'docx', icon: FileText, label: i18n.t('exportMenu.docx') },
     { key: 'html', icon: FileCode, label: i18n.t('exportMenu.html') },
     { key: 'markdown', icon: FileText, label: i18n.t('exportMenu.markdown') },
+    ...(videoSupported ? [{ key: 'video' as const, icon: Video, label: i18n.t('exportMenu.video') }] : []),
   ];
 
   return (
@@ -170,27 +235,92 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
             </div>
           </div>
 
-          <div className="flex-1 bg-[#3F3F46] relative overflow-hidden">
-            {rendering && (
-              <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-card border border-border rounded-full px-2.5 py-1">
-                <Loader2 size={11} className="animate-spin" />
-                {i18n.t('exportPreview.rendering')}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {videoSupported && (
+              <div className="shrink-0 flex items-center gap-1.5 px-3 py-2 border-b border-border">
+                {modes.map(({ key, icon: Icon, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={mode === key}
+                    onClick={() => setMode(key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] transition-colors ${
+                      mode === key
+                        ? 'border-accent text-accent bg-secondary'
+                        : 'border-border text-muted-foreground hover:border-accent hover:text-foreground'
+                    }`}
+                  >
+                    <Icon size={13} />
+                    {label}
+                  </button>
+                ))}
               </div>
             )}
-            <iframe
-              title={i18n.t('exportPreview.title')}
-              srcDoc={preview}
-              onLoad={(event) => {
-                const doc = event.currentTarget.contentDocument;
-                if (doc) paginatePreview(doc);
-              }}
-              className="w-full h-full border-0"
-            />
-            {steps.length > PREVIEW_STEP_LIMIT && (
-              <div className="absolute bottom-0 left-0 right-0 text-center text-[10px] text-muted-foreground bg-card/95 border-t border-border py-1.5">
-                {i18n.t('exportPreview.truncated', [String(PREVIEW_STEP_LIMIT), String(steps.length)])}
-              </div>
-            )}
+
+            <div className="flex-1 bg-[#3F3F46] relative overflow-hidden">
+              {mode === 'document' ? (
+                <>
+                  {rendering && (
+                    <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-card border border-border rounded-full px-2.5 py-1">
+                      <Loader2 size={11} className="animate-spin" />
+                      {i18n.t('exportPreview.rendering')}
+                    </div>
+                  )}
+                  <iframe
+                    title={i18n.t('exportPreview.title')}
+                    srcDoc={preview}
+                    onLoad={(event) => {
+                      const doc = event.currentTarget.contentDocument;
+                      if (doc) paginatePreview(doc);
+                    }}
+                    className="w-full h-full border-0"
+                  />
+                </>
+              ) : (
+                <div
+                  className={`absolute inset-x-0 top-0 flex items-center justify-center ${
+                    steps.length > PREVIEW_STEP_LIMIT ? 'bottom-7' : 'bottom-0'
+                  }`}
+                >
+                  {videoError ? (
+                    <div className="max-w-[320px] rounded-xl border border-border bg-card px-4 py-3 text-center">
+                      <div className="text-[12px] font-semibold text-foreground">
+                        {i18n.t('exportPreview.videoFailed')}
+                      </div>
+                      <div className="mt-1 text-[11px] text-muted-foreground leading-snug">{videoError}</div>
+                    </div>
+                  ) : videoUrl ? (
+                    <video
+                      key={videoUrl}
+                      src={videoUrl}
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 bg-card border border-border rounded-xl px-4 py-3">
+                      <div className="text-[11px] text-muted-foreground">{i18n.t('exportPreview.encodingVideo')}</div>
+                      <div className="h-1.5 w-40 overflow-hidden rounded-full bg-border">
+                        <div
+                          className="h-full rounded-full bg-accent transition-[width] duration-150"
+                          style={{ width: `${Math.round(videoProgress * 100)}%` }}
+                        />
+                      </div>
+                      <div className="text-[10px] font-semibold tabular-nums text-foreground">
+                        {Math.round(videoProgress * 100)}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {steps.length > PREVIEW_STEP_LIMIT && (
+                <div className="absolute bottom-0 left-0 right-0 text-center text-[10px] text-muted-foreground bg-card/95 border-t border-border py-1.5">
+                  {i18n.t('exportPreview.truncated', [String(PREVIEW_STEP_LIMIT), String(steps.length)])}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>

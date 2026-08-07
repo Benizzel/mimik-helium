@@ -296,11 +296,16 @@ exportPreview:
   download: "Exportar $1"
   rendering: "Actualizando vista previa"
   truncated: "La vista previa muestra los primeros $1 de $2 pasos"
+  modeDocument: "Documento"
+  modeVideo: "Vídeo"
+  encodingVideo: "Codificando la vista previa del vídeo"
+  videoFailed: "No se pudo crear la vista previa del vídeo"
 exportMenu:
   docx: DOCX
   html: HTML
   markdown: Markdown
   pdf: PDF
+  video: Vídeo
 
 onboarding:
   welcomeBadge: Bienvenido
