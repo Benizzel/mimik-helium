@@ -103,7 +103,7 @@ settings:
   saved: Guardado
   validatingKey: "Comprobando clave\u2026"
   keyValid: Clave de API verificada.
-  keyInvalid: Esa clave de API fue rechazada. Compru\xE9bala e int\xE9ntalo de nuevo.
+  keyInvalid: "Esa clave de API fue rechazada. Compru\xE9bala e int\xE9ntalo de nuevo."
   smartBlur: Desenfoque inteligente
   privacyNotice: Tu clave API se guarda en tu navegador y solo se envía al proveedor de IA que elijas. Nada más sale de aquí.
   bugReport: "¿Encontraste un bug? Repórtalo en GitHub"
