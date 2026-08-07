@@ -166,6 +166,15 @@ editor:
   done: Listo
   versionHistory: Historial de versiones
   moreActions: Más acciones
+  generateDescription: Generar descripción
+  regenerateDescription: Regenerar descripción
+  generatingDescription: "Generando\u2026"
+  descriptionPlaceholder: Añadir una descripción
+  descriptionErrorNoApiKey: Añade una clave de API de IA en los ajustes para generar descripciones.
+  descriptionErrorNoSteps: Esta guía no tiene pasos descritos que resumir.
+  descriptionErrorFailed: No se pudo generar una descripción. Inténtalo de nuevo.
+  descriptionErrorSaveFailed: Se generó la descripción pero no se pudo guardar. Inténtalo de nuevo.
+  writingStepDescription: "Escribiendo descripci\xF3n\u2026"
 
 history:
   title: Historial de versiones
@@ -202,15 +211,6 @@ history:
   changeImageBlurred: "$1 imagen desenfocada"
   changeImagesBlurred: "$1 imágenes desenfocadas"
   changeAltText: Texto alternativo editado
-  generateDescription: Generar descripción
-  regenerateDescription: Regenerar descripción
-  generatingDescription: "Generando\u2026"
-  descriptionPlaceholder: Añadir una descripción
-  descriptionErrorNoApiKey: Añade una clave de API de IA en los ajustes para generar descripciones.
-  descriptionErrorNoSteps: Esta guía no tiene pasos descritos que resumir.
-  descriptionErrorFailed: No se pudo generar una descripción. Inténtalo de nuevo.
-  descriptionErrorSaveFailed: Se generó la descripción pero no se pudo guardar. Inténtalo de nuevo.
-  writingStepDescription: "Escribiendo descripci\xF3n\u2026"
 
 emptyGuide:
   title: Esta guía está vacía

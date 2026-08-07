@@ -166,6 +166,15 @@ editor:
   done: Terminé
   versionHistory: Historique des versions
   moreActions: "Plus d'actions"
+  generateDescription: "Générer une description"
+  regenerateDescription: "Régénérer la description"
+  generatingDescription: "Génération\u2026"
+  descriptionPlaceholder: "Ajouter une description"
+  descriptionErrorNoApiKey: "Ajoutez une clé API d'IA dans les paramètres pour générer des descriptions."
+  descriptionErrorNoSteps: "Ce guide n'a aucune étape décrite à résumer."
+  descriptionErrorFailed: "Impossible de générer une description. Réessayez."
+  descriptionErrorSaveFailed: "Description générée mais impossible de l'enregistrer. Réessayez."
+  writingStepDescription: "R\xE9daction de la description\u2026"
 
 history:
   title: Historique des versions
@@ -202,15 +211,6 @@ history:
   changeImageBlurred: "$1 image floutée"
   changeImagesBlurred: "$1 images floutées"
   changeAltText: Texte alternatif modifié
-  generateDescription: "Générer une description"
-  regenerateDescription: "Régénérer la description"
-  generatingDescription: "Génération\u2026"
-  descriptionPlaceholder: "Ajouter une description"
-  descriptionErrorNoApiKey: "Ajoutez une clé API d'IA dans les paramètres pour générer des descriptions."
-  descriptionErrorNoSteps: "Ce guide n'a aucune étape décrite à résumer."
-  descriptionErrorFailed: "Impossible de générer une description. Réessayez."
-  descriptionErrorSaveFailed: "Description générée mais impossible de l'enregistrer. Réessayez."
-  writingStepDescription: "R\xE9daction de la description\u2026"
 
 emptyGuide:
   title: Ce guide est vide
