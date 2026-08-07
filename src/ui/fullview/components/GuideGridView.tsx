@@ -160,6 +160,9 @@ export default function GuideGridView({ category, onStar, onTrash, onRestore, on
             <div className="p-3 flex items-start justify-between">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate text-foreground">{guide.title}</p>
+                {guide.description && (
+                  <p className="text-xs mt-0.5 text-muted-foreground line-clamp-2">{guide.description}</p>
+                )}
                 <p className="text-xs mt-0.5 text-muted-foreground">
                   {guide.stepIds.length !== 1
                     ? i18n.t('fullview_stepCountPlural', [String(guide.stepIds.length)])
