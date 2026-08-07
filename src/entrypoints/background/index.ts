@@ -20,7 +20,6 @@ async function resolveManual(step: Step): Promise<boolean> {
   return stepRequiresManual(step, screenshots.get(step.id));
 }
 
-
 export default defineBackground(() => {
   logger.info('Background service worker started');
 

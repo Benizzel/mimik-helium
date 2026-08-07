@@ -390,7 +390,9 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
                       type="button"
                       onClick={handleGenerateDescription}
                       disabled={generating || metaGenerating}
-                      title={description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')}
+                      title={
+                        description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')
+                      }
                       className="shrink-0 mt-0.5 p-1 rounded-md text-muted-foreground hover:text-accent hover:bg-secondary transition-colors disabled:cursor-not-allowed"
                     >
                       {generating || metaGenerating ? (
