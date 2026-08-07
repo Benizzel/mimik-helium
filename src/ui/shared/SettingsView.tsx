@@ -97,6 +97,18 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   };
 
   const handleSave = async () => {
+    if (apiKey) {
+      setKeyStatus('checking');
+      const result = await sendMessage('validateApiKey', { provider, apiKey }).catch(() => null);
+      if (result && !result.valid && result.reason === 'rejected') {
+        setKeyStatus('rejected');
+        return;
+      }
+      setKeyStatus(result?.valid ? 'valid' : null);
+    } else {
+      setKeyStatus(null);
+    }
+
     await localStorage.set({
       aiApiKey: apiKey,
       aiProvider: provider,
@@ -110,18 +122,6 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-
-    if (!apiKey) {
-      setKeyStatus(null);
-      return;
-    }
-    setKeyStatus('checking');
-    try {
-      const result = await sendMessage('validateApiKey', { provider, apiKey });
-      setKeyStatus(result.valid ? 'valid' : result.reason === 'rejected' ? 'rejected' : null);
-    } catch {
-      setKeyStatus(null);
-    }
   };
 
   const providerConfig = AI_PROVIDERS[provider];
@@ -398,12 +398,16 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
 
         <Button
           onClick={handleSave}
-          disabled={saved}
+          disabled={saved || keyStatus === 'checking'}
           className="w-full transition-all duration-300"
           style={saved ? { backgroundColor: 'var(--color-success)', color: '#fff', opacity: 0.9 } : undefined}
         >
           {saved && <Check size={16} />}
-          {saved ? i18n.t('settings.saved') : i18n.t('settings.saveSettings')}
+          {saved
+            ? i18n.t('settings.saved')
+            : keyStatus === 'checking'
+              ? i18n.t('settings.validatingKey')
+              : i18n.t('settings.saveSettings')}
         </Button>
 
         <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-secondary text-[10px] text-muted-foreground leading-relaxed">
