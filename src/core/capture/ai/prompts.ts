@@ -10,21 +10,25 @@ Examples of good descriptions:
 
 Write only the description, no preamble.`;
 
-export const GUIDE_TITLE_PROMPT = `These are the steps of a browser workflow, with the page URL and description for each step:
+export const GUIDE_META_PROMPT = `These are the steps of a browser workflow, with the page URL and description for each step:
 
 {{steps}}
 
-Write a specific, descriptive title for this workflow. The title should mention the application or website name and the specific task being performed. Be precise — reference specific pages, features, or items that were interacted with.
+Write a title and a description for this workflow.
 
-IMPORTANT: The title MUST be under 60 characters. Keep it concise.
+TITLE: specific and descriptive. Mention the application or website name and the specific task performed. Reference specific pages, features, or items that were interacted with. MUST be under 60 characters.
 
-Examples:
+Examples of good titles:
 - "Review claude-code Pull Requests"
 - "Configure Slack Notification Preferences"
 - "Submit Expense Report in Workday"
 - "Create Repository in GitHub Organization"
 
-Just the title, no quotes, no preamble. Under 60 characters.`;
+DESCRIPTION: one or two sentences stating what the workflow accomplishes and who would follow it. Do not repeat the title. Do not list the individual steps. Do not mention any UI element that does not appear in the steps above.
+
+Examples of good descriptions:
+- "Reset a locked-out user's password from the Okta admin panel. For IT support staff."
+- "Configure which Slack channels send desktop notifications, and set a do-not-disturb schedule."`;
 
 export const AI_LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -49,5 +53,5 @@ const LANGUAGE_NAMES: Record<string, string> = {
 export function getLanguageSuffix(locale: string): string {
   if (locale.startsWith('en')) return '';
   const lang = LANGUAGE_NAMES[locale.split('-')[0]] || locale;
-  return `\nIMPORTANT: Write the description in ${lang}.`;
+  return `\nIMPORTANT: Write the output in ${lang}.`;
 }
