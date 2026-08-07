@@ -17,6 +17,7 @@ import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { getMostCommonDomain } from '@/lib/utils';
 import { Input } from '@/ui/components/ui/input';
+import { useAskAi } from '@/ui/shared/AskAi';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
 import { guideDescriptionErrorMessage } from '@/ui/shared/guide-description-error';
@@ -105,6 +106,17 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
     }
     editingDescriptionRef.current = false;
   }, [data, guideId, description]);
+
+  const commitGuideDescription = useCallback(
+    (next: string) => {
+      setDescription(next);
+      void updateGuideDescription(guideId, next);
+      setData((prev) => (prev ? { ...prev, guide: { ...prev.guide, description: next } } : prev));
+    },
+    [guideId],
+  );
+
+  const askAi = useAskAi(description, commitGuideDescription, hasApiKey);
 
   const handleGenerateDescription = useCallback(async () => {
     setGenerating(true);
@@ -264,25 +276,29 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
             onFocus={() => {
               editingDescriptionRef.current = true;
             }}
+            onSelect={askAi.onSelect}
             onBlur={handleGuideDescriptionBlur}
             placeholder={i18n.t('editor.descriptionPlaceholder')}
             className="w-full resize-none overflow-hidden bg-transparent p-0 text-xs leading-snug text-muted-foreground placeholder:text-muted-foreground/60 border-b border-transparent hover:border-border focus:outline-none focus:border-accent"
           />
           {hasApiKey && (
-            <button
-              type="button"
-              onClick={handleGenerateDescription}
-              disabled={generating || metaGenerating}
-              title={description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')}
-              className="mt-1 flex items-center gap-1 text-[11px] font-medium text-accent hover:text-deep disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {generating || metaGenerating ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
-              {generating || metaGenerating
-                ? i18n.t('editor.generatingDescription')
-                : description
-                  ? i18n.t('editor.regenerateDescription')
-                  : i18n.t('editor.generateDescription')}
-            </button>
+            <div className="mt-1 flex items-center gap-1.5">
+              {askAi.trigger}
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={generating || metaGenerating}
+                title={description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')}
+                className="flex items-center gap-1 text-[11px] font-medium text-accent hover:text-deep disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {generating || metaGenerating ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                {generating || metaGenerating
+                  ? i18n.t('editor.generatingDescription')
+                  : description
+                    ? i18n.t('editor.regenerateDescription')
+                    : i18n.t('editor.generateDescription')}
+              </button>
+            </div>
           )}
           <Toast message={descriptionError} onDismiss={() => setDescriptionError(null)} />
         </div>
@@ -324,6 +340,7 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
                 onDelete={handleDeleteStep}
                 onOpenEditor={(stepId, tool) => openInFullView(guideId, { stepId, tool })}
                 readOnly={!editing}
+                hasApiKey={hasApiKey}
                 onChanged={loadGuide}
                 dragHandleProps={
                   editing

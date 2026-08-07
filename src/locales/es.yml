@@ -103,7 +103,7 @@ settings:
   saved: Guardado
   validatingKey: "Comprobando clave\u2026"
   keyValid: Clave de API verificada.
-  keyInvalid: Esa clave de API fue rechazada. Compru\xE9bala e int\xE9ntalo de nuevo.
+  keyInvalid: "Esa clave de API fue rechazada. Compru\xE9bala e int\xE9ntalo de nuevo."
   smartBlur: Desenfoque inteligente
   privacyNotice: Tu clave API se guarda en tu navegador y solo se envía al proveedor de IA que elijas. Nada más sale de aquí.
   bugReport: "¿Encontraste un bug? Repórtalo en GitHub"
@@ -166,6 +166,28 @@ editor:
   done: Listo
   versionHistory: Historial de versiones
   moreActions: Más acciones
+  generateDescription: Generar descripción
+  regenerateDescription: Regenerar descripción
+  generatingDescription: "Generando\u2026"
+  descriptionPlaceholder: Añadir una descripción
+  descriptionErrorNoApiKey: Añade una clave de API de IA en los ajustes para generar descripciones.
+  descriptionErrorNoSteps: Esta guía no tiene pasos descritos que resumir.
+  descriptionErrorFailed: No se pudo generar una descripción. Inténtalo de nuevo.
+  descriptionErrorSaveFailed: Se generó la descripción pero no se pudo guardar. Inténtalo de nuevo.
+  writingStepDescription: "Escribiendo descripci\xF3n\u2026"
+  rewriteAskAi: Preguntar a la IA
+  rewritePlaceholder: "Dile a la IA c\xF3mo editar este texto\u2026"
+  rewriteEnter: Intro
+  rewriteShorter: "M\xE1s corto"
+  rewriteDetail: "M\xE1s detalle"
+  rewriteGrammar: "Corregir gram\xE1tica"
+  rewriteFormal: "M\xE1s formal"
+  rewriteCasual: "M\xE1s informal"
+  rewriteReplace: Reemplazar
+  rewriteDiscard: Descartar
+  rewriteErrorNoApiKey: "A\xF1ade una clave de API de IA en los ajustes para reescribir texto."
+  rewriteErrorFailed: "No se pudo reescribir la selecci\xF3n. Int\xE9ntalo de nuevo."
+  rewriteErrorStale: "El texto cambi\xF3. Vuelve a seleccionarlo."
 
 history:
   title: Historial de versiones
@@ -202,15 +224,6 @@ history:
   changeImageBlurred: "$1 imagen desenfocada"
   changeImagesBlurred: "$1 imágenes desenfocadas"
   changeAltText: Texto alternativo editado
-  generateDescription: Generar descripción
-  regenerateDescription: Regenerar descripción
-  generatingDescription: "Generando\u2026"
-  descriptionPlaceholder: Añadir una descripción
-  descriptionErrorNoApiKey: Añade una clave de API de IA en los ajustes para generar descripciones.
-  descriptionErrorNoSteps: Esta guía no tiene pasos descritos que resumir.
-  descriptionErrorFailed: No se pudo generar una descripción. Inténtalo de nuevo.
-  descriptionErrorSaveFailed: Se generó la descripción pero no se pudo guardar. Inténtalo de nuevo.
-  writingStepDescription: "Escribiendo descripci\xF3n\u2026"
 
 emptyGuide:
   title: Esta guía está vacía

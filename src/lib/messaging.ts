@@ -92,6 +92,18 @@ export interface GenerateGuideDescriptionResponse {
   error?: GuideDescriptionError;
 }
 
+export type RewriteError = 'no-api-key' | 'generation-failed';
+
+export interface RewriteSelectionData {
+  text: string;
+  instruction: string;
+}
+
+export interface RewriteSelectionResponse {
+  text?: string;
+  error?: RewriteError;
+}
+
 export interface ValidateApiKeyData {
   provider: string;
   apiKey: string;
@@ -125,6 +137,7 @@ interface MimikProtocol {
   exitBlurMode(): ExitBlurModeResponse;
   generateGuideDescription(data: GenerateGuideDescriptionData): GenerateGuideDescriptionResponse;
   validateApiKey(data: ValidateApiKeyData): ValidateApiKeyResponse;
+  rewriteSelection(data: RewriteSelectionData): RewriteSelectionResponse;
 }
 
 export const { sendMessage, onMessage } = defineExtensionMessaging<MimikProtocol>();

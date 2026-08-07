@@ -102,8 +102,8 @@ settings:
   saveSettings: "Enregistrer"
   saved: "Enregistré"
   validatingKey: "V\xE9rification de la cl\xE9\u2026"
-  keyValid: Cl\xE9 API v\xE9rifi\xE9e.
-  keyInvalid: Cette cl\xE9 API a \xE9t\xE9 refus\xE9e. V\xE9rifiez-la et r\xE9essayez.
+  keyValid: "Cl\xE9 API v\xE9rifi\xE9e."
+  keyInvalid: "Cette cl\xE9 API a \xE9t\xE9 refus\xE9e. V\xE9rifiez-la et r\xE9essayez."
   smartBlur: Flou intelligent
   privacyNotice: "Votre clé API reste dans votre navigateur et n'est envoyée qu'au fournisseur IA choisi. Rien d'autre ne sort d'ici."
   bugReport: "Un bug ? Signalez-le sur GitHub"
@@ -166,6 +166,28 @@ editor:
   done: Terminé
   versionHistory: Historique des versions
   moreActions: "Plus d'actions"
+  generateDescription: "Générer une description"
+  regenerateDescription: "Régénérer la description"
+  generatingDescription: "Génération\u2026"
+  descriptionPlaceholder: "Ajouter une description"
+  descriptionErrorNoApiKey: "Ajoutez une clé API d'IA dans les paramètres pour générer des descriptions."
+  descriptionErrorNoSteps: "Ce guide n'a aucune étape décrite à résumer."
+  descriptionErrorFailed: "Impossible de générer une description. Réessayez."
+  descriptionErrorSaveFailed: "Description générée mais impossible de l'enregistrer. Réessayez."
+  writingStepDescription: "R\xE9daction de la description\u2026"
+  rewriteAskAi: "Demander \xE0 l'IA"
+  rewritePlaceholder: "Dites \xE0 l'IA comment modifier ce texte\u2026"
+  rewriteEnter: "Entr\xE9e"
+  rewriteShorter: Plus court
+  rewriteDetail: "Plus de d\xE9tails"
+  rewriteGrammar: Corriger la grammaire
+  rewriteFormal: Plus formel
+  rewriteCasual: "Plus d\xE9contract\xE9"
+  rewriteReplace: Remplacer
+  rewriteDiscard: Abandonner
+  rewriteErrorNoApiKey: "Ajoutez une cl\xE9 d'API d'IA dans les r\xE9glages pour r\xE9\xE9crire du texte."
+  rewriteErrorFailed: "Impossible de r\xE9\xE9crire la s\xE9lection. R\xE9essayez."
+  rewriteErrorStale: "Le texte a chang\xE9. S\xE9lectionnez-le \xE0 nouveau."
 
 history:
   title: Historique des versions
@@ -202,15 +224,6 @@ history:
   changeImageBlurred: "$1 image floutée"
   changeImagesBlurred: "$1 images floutées"
   changeAltText: Texte alternatif modifié
-  generateDescription: "Générer une description"
-  regenerateDescription: "Régénérer la description"
-  generatingDescription: "Génération\u2026"
-  descriptionPlaceholder: "Ajouter une description"
-  descriptionErrorNoApiKey: "Ajoutez une clé API d'IA dans les paramètres pour générer des descriptions."
-  descriptionErrorNoSteps: "Ce guide n'a aucune étape décrite à résumer."
-  descriptionErrorFailed: "Impossible de générer une description. Réessayez."
-  descriptionErrorSaveFailed: "Description générée mais impossible de l'enregistrer. Réessayez."
-  writingStepDescription: "R\xE9daction de la description\u2026"
 
 emptyGuide:
   title: Ce guide est vide

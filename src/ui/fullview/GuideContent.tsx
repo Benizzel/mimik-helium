@@ -20,6 +20,7 @@ import { sendMessage } from '@/lib/messaging';
 import { formatDate, getMostCommonDomain } from '@/lib/utils';
 import { useFullview } from '@/stores/fullview';
 import AnnotationEditor from '@/ui/shared/AnnotationEditor';
+import { useAskAi } from '@/ui/shared/AskAi';
 import FaviconImg from '@/ui/shared/FaviconImg';
 import { guideDescriptionErrorMessage } from '@/ui/shared/guide-description-error';
 import Toast from '@/ui/shared/Toast';
@@ -146,6 +147,17 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
     }
     editingDescriptionRef.current = false;
   }, [data, guideId, description]);
+
+  const commitGuideDescription = useCallback(
+    (next: string) => {
+      setDescription(next);
+      void updateGuideDescription(guideId, next);
+      setData((prev) => (prev ? { ...prev, guide: { ...prev.guide, description: next } } : prev));
+    },
+    [guideId],
+  );
+
+  const askAi = useAskAi(description, commitGuideDescription, hasApiKey);
 
   const handleGenerateDescription = useCallback(async () => {
     setGenerating(true);
@@ -381,10 +393,12 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
                     onFocus={() => {
                       editingDescriptionRef.current = true;
                     }}
+                    onSelect={askAi.onSelect}
                     onBlur={handleGuideDescriptionBlur}
                     placeholder={i18n.t('editor.descriptionPlaceholder')}
                     className="flex-1 resize-none overflow-hidden bg-transparent p-0 text-[15px] leading-relaxed text-muted-foreground placeholder:text-muted-foreground/60 border-b-2 border-transparent hover:border-border focus:outline-none focus:border-accent"
                   />
+                  {hasApiKey && <span className="shrink-0 mt-0.5">{askAi.trigger}</span>}
                   {hasApiKey && (
                     <button
                       type="button"
@@ -451,6 +465,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
             onOpenEditor={handleOpenEditor}
             onReorder={(newSteps) => setData((prev) => (prev ? { ...prev, steps: newSteps } : prev))}
             readOnly={!editing || preview !== null}
+            hasApiKey={hasApiKey}
             onChanged={loadGuide}
           />
         </div>

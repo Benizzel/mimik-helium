@@ -16,6 +16,7 @@ interface GuideStepListProps {
   onReorder: (newSteps: Step[]) => void;
   readOnly?: boolean;
   onChanged?: () => void;
+  hasApiKey?: boolean;
 }
 
 export default function GuideStepList({
@@ -28,6 +29,7 @@ export default function GuideStepList({
   onReorder,
   readOnly,
   onChanged,
+  hasApiKey,
 }: GuideStepListProps) {
   const { scrollToStepId, setActiveStepId } = useFullview((s) => ({
     scrollToStepId: s.scrollToStepId,
@@ -103,6 +105,7 @@ export default function GuideStepList({
             onDelete={onDelete}
             onOpenEditor={onOpenEditor}
             readOnly={readOnly}
+            hasApiKey={hasApiKey}
             onChanged={onChanged}
             dragHandleProps={
               readOnly

@@ -107,6 +107,9 @@ settings:
   starCtaTitle: "Gefällt dir, was du siehst?"
   starCtaMessage: Ein Stern auf GitHub hilft anderen, Mimik zu finden, und hält uns motiviert!
   starOnGithub: Auf GitHub favorisieren
+  validatingKey: "Schlüssel wird geprüft…"
+  keyValid: API-Schlüssel bestätigt.
+  keyInvalid: Dieser API-Schlüssel wurde abgelehnt. Prüfe ihn und versuche es erneut.
 
 blurPresets:
   email: E-Mail
@@ -128,6 +131,7 @@ fullview:
   stepCount: "$1 Schritt"
   stepCountPlural: "$1 Schritte"
   pageOf: "$1 / $2"
+  writingDescription: "Beschreibung wird geschrieben…"
 
 sort:
   recentFirst: Neueste zuerst
@@ -162,6 +166,28 @@ editor:
   done: Fertig
   versionHistory: Versionsverlauf
   moreActions: Weitere Aktionen
+  rewriteAskAi: KI fragen
+  rewritePlaceholder: "Sag der KI, wie dieser Text bearbeitet werden soll…"
+  rewriteEnter: Enter
+  rewriteShorter: Kürzer
+  rewriteDetail: Mehr Details
+  rewriteGrammar: Grammatik korrigieren
+  rewriteFormal: Förmlicher
+  rewriteCasual: Lockerer
+  rewriteReplace: Ersetzen
+  rewriteDiscard: Verwerfen
+  rewriteErrorNoApiKey: Füge in den Einstellungen einen KI-API-Schlüssel hinzu, um Text umzuschreiben.
+  rewriteErrorFailed: Die Auswahl konnte nicht umgeschrieben werden. Versuche es erneut.
+  rewriteErrorStale: Der Text hat sich geändert. Wähle ihn erneut aus.
+  generateDescription: Beschreibung erstellen
+  regenerateDescription: Beschreibung neu erstellen
+  generatingDescription: "Wird erstellt…"
+  descriptionPlaceholder: Beschreibung hinzufügen
+  descriptionErrorNoApiKey: Füge in den Einstellungen einen KI-API-Schlüssel hinzu, um Beschreibungen zu erstellen.
+  descriptionErrorNoSteps: Diese Anleitung hat keine beschriebenen Schritte zum Zusammenfassen.
+  descriptionErrorFailed: Beschreibung konnte nicht erstellt werden. Versuche es erneut.
+  descriptionErrorSaveFailed: Die Beschreibung wurde erstellt, konnte aber nicht gespeichert werden. Versuche es erneut.
+  writingStepDescription: "Beschreibung wird geschrieben…"
 
 history:
   title: Versionsverlauf
@@ -227,11 +253,16 @@ exportPreview:
   download: "$1 exportieren"
   rendering: "Vorschau wird aktualisiert"
   truncated: "Vorschau zeigt die ersten $1 von $2 Schritten"
+  modeDocument: "Dokument"
+  modeVideo: "Video"
+  encodingVideo: "Videovorschau wird erstellt"
+  videoFailed: "Die Videovorschau konnte nicht erstellt werden"
 exportMenu:
   docx: "DOCX"
   html: HTML
   markdown: Markdown
   pdf: PDF
+  video: Video
 
 onboarding:
   welcomeBadge: Willkommen
