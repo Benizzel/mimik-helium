@@ -1,4 +1,4 @@
-import { Check, EyeOff, X } from 'lucide-react';
+import { Check, EyeOff, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { deleteStep, getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
@@ -158,9 +158,16 @@ export default function RecordingView({ guideId, onStop }: RecordingViewProps) {
                   )}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-[13px] font-medium leading-snug text-foreground">
-                        {liveStep.step.description}
-                      </p>
+                      {liveStep.step.aiPending ? (
+                        <p className="flex items-center gap-1.5 text-[13px] font-medium leading-snug text-muted-foreground">
+                          <Loader2 size={13} className="animate-spin" />
+                          {i18n.t('editor.writingStepDescription')}
+                        </p>
+                      ) : (
+                        <p className="text-[13px] font-medium leading-snug text-foreground">
+                          {liveStep.step.description}
+                        </p>
+                      )}
                       <span className="text-[10px] text-purple">
                         {timeAgo(liveStep.step.timestamp)} · {extractDomain(liveStep.step.url || siteUrl)}
                       </span>
