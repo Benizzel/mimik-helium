@@ -1,9 +1,18 @@
+import { Mic, MousePointerClick, Shield, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
 import { AI_PROVIDERS, type AIProviderKey } from '@/core/capture/ai/models';
 import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
+import type { VoiceProvider } from '@/core/capture/voice/transcribe';
 import { localStorage, requestHostPermissions } from '@/lib/browser-api';
+
+interface StepProps {
+  onNext: () => void;
+  onSkip: () => void;
+  index: number;
+  total: number;
+}
 
 const BLUR_PRESET_I18N: Record<PresetKey, string> = {
   email: 'email',
@@ -40,10 +49,10 @@ function MascotLarge({ size = 280 }: { size?: number }) {
   );
 }
 
-function ProgressDots({ current }: { current: number }) {
+function ProgressDots({ current, total }: { current: number; total: number }) {
   return (
     <div className="flex items-center gap-2">
-      {[1, 2, 3].map((i) => (
+      {Array.from({ length: total }, (_, position) => position + 1).map((i) => (
         <div
           key={i}
           className={`h-2 rounded-full transition-all duration-300 ${
@@ -99,7 +108,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-function AISetupStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
+function AISetupStep({ onNext, onSkip, index, total }: StepProps) {
   const [provider, setProvider] = useState<AIProviderKey>('openai');
   const [model, setModel] = useState(AI_PROVIDERS.openai.defaultModel);
   const [apiKey, setApiKey] = useState('');
@@ -125,7 +134,7 @@ function AISetupStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
       <div className="flex-1 flex flex-col justify-center" style={{ padding: '80px 64px' }}>
         <div className="max-w-md">
           <p className="text-xs font-semibold text-accent mb-2 tracking-wide uppercase">
-            {i18n.t('onboarding.aiStepLabel')}
+            {i18n.t('onboarding.stepOf', [String(index), String(total)])}
           </p>
           <h1 className="text-3xl font-extrabold text-foreground leading-tight mb-2">{i18n.t('onboarding.aiTitle')}</h1>
           <p className="text-sm text-muted-foreground leading-relaxed mb-8">{i18n.t('onboarding.aiMessage')}</p>
@@ -208,7 +217,7 @@ function AISetupStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
           </div>
 
           <div className="mt-6">
-            <ProgressDots current={1} />
+            <ProgressDots current={index} total={total} />
           </div>
         </div>
       </div>
@@ -278,7 +287,185 @@ function AISetupStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
   );
 }
 
-function SmartBlurStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
+function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
+  const [enabled, setEnabled] = useState(false);
+  const [provider, setProvider] = useState<VoiceProvider>('openai');
+  const [apiKey, setApiKey] = useState('');
+
+  const handleContinue = async () => {
+    await localStorage.set({
+      voiceEnabled: enabled,
+      voiceProvider: provider,
+      ...(apiKey ? { voiceApiKey: apiKey } : {}),
+    });
+    onNext();
+  };
+
+  return (
+    <div className="flex h-screen">
+      <div className="flex-1 flex flex-col justify-center overflow-y-auto" style={{ padding: '64px' }}>
+        <div className="max-w-md">
+          <p className="text-xs font-semibold text-accent mb-2 tracking-wide uppercase">
+            {i18n.t('onboarding.stepOf', [String(index), String(total)])}
+          </p>
+          <h1 className="text-3xl font-extrabold text-foreground leading-tight mb-2">
+            {i18n.t('onboarding.voiceTitle')}
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed mb-6">{i18n.t('onboarding.voiceMessage')}</p>
+
+          <div className="border border-border rounded-2xl divide-y divide-secondary mb-5">
+            <div className="flex items-start gap-3 p-4">
+              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                <Mic size={15} className="text-accent" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{i18n.t('onboarding.voiceDoTitle')}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                  {i18n.t('onboarding.voiceDoSub')}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4">
+              <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                <TriangleAlert size={15} className="text-destructive" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{i18n.t('onboarding.voiceDontTitle')}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                  {i18n.t('onboarding.voiceDontSub')}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-border rounded-2xl p-4 space-y-3 mb-6">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-foreground">{i18n.t('onboarding.voiceEnableLabel')}</span>
+              <button
+                onClick={() => setEnabled((prev) => !prev)}
+                aria-pressed={enabled}
+                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${
+                  enabled ? 'bg-accent' : 'bg-border'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+                    enabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-[11px] font-semibold text-foreground mb-1">
+                  {i18n.t('settings.provider')}
+                </label>
+                <select
+                  value={provider}
+                  onChange={(e) => setProvider(e.target.value as VoiceProvider)}
+                  className="w-full border border-border rounded-xl px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
+                >
+                  <option value="openai">OpenAI</option>
+                  <option value="groq">Groq</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-[11px] font-semibold text-foreground mb-1">
+                  {i18n.t('settings.apiKey')}
+                </label>
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder={provider === 'groq' ? 'gsk_...' : 'sk-...'}
+                  className="w-full border border-border rounded-xl px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 placeholder:text-muted-foreground/50"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-secondary text-[11px] text-muted-foreground leading-relaxed">
+              <Shield size={12} className="shrink-0 mt-0.5 text-accent" />
+              <span>{i18n.t('onboarding.voiceDataNotice')}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleContinue}
+              className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+            >
+              {i18n.t('common.continue')}
+            </button>
+            <button
+              onClick={onSkip}
+              className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+            >
+              {i18n.t('common.skip')}
+            </button>
+          </div>
+
+          <div className="mt-6">
+            <ProgressDots current={index} total={total} />
+          </div>
+        </div>
+      </div>
+      <div className="w-1/2 bg-deep flex items-center justify-center relative overflow-hidden">
+        <div className="absolute w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(79,70,229,0.22),transparent_70%)] top-[15%] right-[-5%]" />
+        <div className="animate-[float_4s_ease-in-out_infinite] relative z-10">
+          <div className="bg-white rounded-2xl p-7 shadow-lg" style={{ minWidth: 340 }}>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-4">
+              {i18n.t('onboarding.voiceDemoLabel')}
+            </p>
+
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                <Mic size={13} className="text-accent" />
+              </div>
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-accent">
+                  {i18n.t('onboarding.voiceDemoSay')}
+                </p>
+                <p className="text-sm text-foreground leading-relaxed mt-0.5">{i18n.t('onboarding.voiceDemoQuote')}</p>
+              </div>
+            </div>
+
+            <div className="ml-3.5 my-1.5 h-5 w-px bg-border" />
+
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                <MousePointerClick size={13} className="text-accent" />
+              </div>
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {i18n.t('onboarding.voiceDemoAct')}
+                </p>
+                <p className="text-sm text-foreground leading-relaxed mt-0.5">{i18n.t('onboarding.voiceDemoAction')}</p>
+              </div>
+            </div>
+
+            <div className="border-t border-border my-4" />
+
+            <div className="flex gap-3">
+              <div className="w-7 h-7 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center shrink-0">
+                3
+              </div>
+              <div>
+                <p className="text-sm text-foreground leading-relaxed">{i18n.t('onboarding.voiceDemoQuote')}</p>
+                <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-accent bg-secondary px-2 py-0.5 rounded mt-2">
+                  <Mic size={9} />
+                  {i18n.t('onboarding.voiceDemoBadge')}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SmartBlurStep({ onNext, onSkip, index, total }: StepProps) {
   const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>({
     email: true,
     phone: true,
@@ -301,7 +488,7 @@ function SmartBlurStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => v
       <div className="flex-1 flex flex-col justify-center" style={{ padding: '80px 64px' }}>
         <div className="max-w-md">
           <p className="text-xs font-semibold text-accent mb-2 tracking-wide uppercase">
-            {i18n.t('onboarding.blurStepLabel')}
+            {i18n.t('onboarding.stepOf', [String(index), String(total)])}
           </p>
           <h1 className="text-3xl font-extrabold text-foreground leading-tight mb-2">
             {i18n.t('onboarding.blurTitle')}
@@ -349,7 +536,7 @@ function SmartBlurStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => v
           </div>
 
           <div className="mt-6">
-            <ProgressDots current={2} />
+            <ProgressDots current={index} total={total} />
           </div>
         </div>
       </div>
@@ -411,13 +598,13 @@ function SmartBlurStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => v
   );
 }
 
-function PinExtensionStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
+function PinExtensionStep({ onNext, onSkip, index, total }: StepProps) {
   return (
     <div className="flex h-screen">
       <div className="flex-1 flex flex-col justify-center" style={{ padding: '80px 64px' }}>
         <div className="max-w-md">
           <p className="text-xs font-semibold text-accent mb-2 tracking-wide uppercase">
-            {i18n.t('onboarding.pinStepLabel')}
+            {i18n.t('onboarding.stepOf', [String(index), String(total)])}
           </p>
           <h1 className="text-3xl font-extrabold text-foreground leading-tight mb-2">
             {i18n.t('onboarding.pinTitle')}
@@ -470,7 +657,7 @@ function PinExtensionStep({ onNext, onSkip }: { onNext: () => void; onSkip: () =
           </div>
 
           <div className="mt-6">
-            <ProgressDots current={3} />
+            <ProgressDots current={index} total={total} />
           </div>
         </div>
       </div>
@@ -590,6 +777,11 @@ function DoneStep() {
   );
 }
 
+const CONFIG_STEPS =
+  import.meta.env.BROWSER === 'firefox'
+    ? [AISetupStep, SmartBlurStep, PinExtensionStep]
+    : [AISetupStep, VoiceStep, SmartBlurStep, PinExtensionStep];
+
 export default function OnboardingApp() {
   const [step, setStep] = useState(0);
 
@@ -597,17 +789,16 @@ export default function OnboardingApp() {
     localStorage.set({ onboardingCompleted: true });
   }, []);
 
-  const next = () => setStep((s) => Math.min(s + 1, 4));
-  const skip = () => setStep((s) => Math.min(s + 1, 4));
+  const lastStep = CONFIG_STEPS.length + 1;
+  const next = () => setStep((s) => Math.min(s + 1, lastStep));
+  const CurrentStep = CONFIG_STEPS[step - 1];
 
   return (
     <div className="min-h-screen bg-card text-foreground">
       <style>{`@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes sparkle{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}`}</style>
       {step === 0 && <WelcomeStep onNext={next} />}
-      {step === 1 && <AISetupStep onNext={next} onSkip={skip} />}
-      {step === 2 && <SmartBlurStep onNext={next} onSkip={skip} />}
-      {step === 3 && <PinExtensionStep onNext={next} onSkip={skip} />}
-      {step === 4 && <DoneStep />}
+      {CurrentStep && <CurrentStep onNext={next} onSkip={next} index={step} total={CONFIG_STEPS.length} />}
+      {step === lastStep && <DoneStep />}
     </div>
   );
 }
