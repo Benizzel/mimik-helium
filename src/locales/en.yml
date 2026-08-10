@@ -83,6 +83,9 @@ settings:
   model: Model
   apiKey: API Key
   aiLanguage: Description Language
+  voiceNarration: Voice Narration
+  voiceDescription: Narrate out loud while you record and your words become the step descriptions.
+  voiceDataNotice: Your recorded audio is sent to the provider you choose above, using your own API key. This is the one part of Mimik that sends anything out of your browser.
   saveSettings: Save Settings
   saved: Saved
   smartBlur: Smart Blur

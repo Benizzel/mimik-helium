@@ -83,6 +83,9 @@ settings:
   model: "Modèle"
   apiKey: "Clé API"
   aiLanguage: Langue des descriptions
+  voiceNarration: "Narration vocale"
+  voiceDescription: "Commentez à voix haute pendant l'enregistrement : vos mots deviennent les descriptions des étapes."
+  voiceDataNotice: "L'audio enregistré est envoyé au fournisseur choisi ci-dessus, avec votre propre clé API. C'est la seule partie de Mimik qui fait sortir quelque chose de votre navigateur."
   saveSettings: "Enregistrer"
   saved: "Enregistré"
   smartBlur: Flou intelligent

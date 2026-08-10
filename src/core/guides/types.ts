@@ -1,3 +1,5 @@
+import type { VoiceProvider } from '@/core/capture/voice/transcribe';
+
 export interface Guide {
   id: string;
   title: string;
@@ -43,6 +45,10 @@ export interface Settings {
   aiApiKey: string;
   aiProvider: 'openai' | 'anthropic';
   aiModel: string;
+  voiceEnabled: boolean;
+  voiceProvider: VoiceProvider;
+  voiceApiKey: string;
+  voiceMicrophoneId: string;
 }
 
 export interface ElementMeta {

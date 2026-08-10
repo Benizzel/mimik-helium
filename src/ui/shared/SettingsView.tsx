@@ -1,9 +1,10 @@
-import { ArrowLeft, Bug, Check, ChevronRight, EyeOff, Globe, Shield, Sparkles, Star } from 'lucide-react';
+import { ArrowLeft, Bug, Check, ChevronRight, EyeOff, Globe, Mic, Shield, Sparkles, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
 import { AI_PROVIDERS, type AIProviderKey } from '@/core/capture/ai/models';
 import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
+import type { VoiceProvider } from '@/core/capture/voice/transcribe';
 import { localStorage } from '@/lib/browser-api';
 import { Button } from '@/ui/components/ui/button';
 import { Input } from '@/ui/components/ui/input';
@@ -18,6 +19,10 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
   const [aiLanguage, setAiLanguage] = useState<AILanguageCode>('en');
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('openai');
+  const [voiceApiKey, setVoiceApiKey] = useState('');
+  const [voiceMicrophoneId, setVoiceMicrophoneId] = useState('');
   const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>({
     email: true,
     phone: true,
@@ -28,14 +33,30 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   });
 
   useEffect(() => {
-    localStorage.get(['aiApiKey', 'aiProvider', 'aiModel', 'aiLanguage', 'blurPresets']).then((result) => {
-      const p = (result.aiProvider as AIProviderKey) || 'openai';
-      setProvider(p);
-      setModel((result.aiModel as string) || AI_PROVIDERS[p].defaultModel);
-      if (result.aiApiKey) setApiKey(result.aiApiKey as string);
-      if (result.aiLanguage) setAiLanguage(result.aiLanguage as AILanguageCode);
-      if (result.blurPresets) setBlurPresets(result.blurPresets as Record<PresetKey, boolean>);
-    });
+    localStorage
+      .get([
+        'aiApiKey',
+        'aiProvider',
+        'aiModel',
+        'aiLanguage',
+        'blurPresets',
+        'voiceEnabled',
+        'voiceProvider',
+        'voiceApiKey',
+        'voiceMicrophoneId',
+      ])
+      .then((result) => {
+        const p = (result.aiProvider as AIProviderKey) || 'openai';
+        setProvider(p);
+        setModel((result.aiModel as string) || AI_PROVIDERS[p].defaultModel);
+        if (result.aiApiKey) setApiKey(result.aiApiKey as string);
+        if (result.aiLanguage) setAiLanguage(result.aiLanguage as AILanguageCode);
+        if (result.blurPresets) setBlurPresets(result.blurPresets as Record<PresetKey, boolean>);
+        setVoiceEnabled(result.voiceEnabled === true);
+        setVoiceProvider((result.voiceProvider as VoiceProvider) || 'openai');
+        if (result.voiceApiKey) setVoiceApiKey(result.voiceApiKey as string);
+        if (result.voiceMicrophoneId) setVoiceMicrophoneId(result.voiceMicrophoneId as string);
+      });
   }, []);
 
   const handleProviderChange = (newProvider: AIProviderKey) => {
@@ -44,7 +65,17 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   };
 
   const handleSave = async () => {
-    await localStorage.set({ aiApiKey: apiKey, aiProvider: provider, aiModel: model, aiLanguage, blurPresets });
+    await localStorage.set({
+      aiApiKey: apiKey,
+      aiProvider: provider,
+      aiModel: model,
+      aiLanguage,
+      blurPresets,
+      voiceEnabled,
+      voiceProvider,
+      voiceApiKey,
+      voiceMicrophoneId,
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -136,6 +167,60 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
                 </option>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div className="border border-border rounded-[10px] p-3.5 space-y-3">
+          <div className="flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+                <Mic size={14} className="text-accent" />
+              </div>
+              <span className="text-xs font-bold text-foreground">{i18n.t('settings.voiceNarration')}</span>
+            </div>
+            <button
+              onClick={() => setVoiceEnabled((prev) => !prev)}
+              className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${
+                voiceEnabled ? 'bg-accent' : 'bg-border'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                  voiceEnabled ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground leading-relaxed">{i18n.t('settings.voiceDescription')}</p>
+
+          <div>
+            <label className="block text-[11px] font-semibold text-foreground mb-1">
+              {i18n.t('settings.provider')}
+            </label>
+            <select
+              value={voiceProvider}
+              onChange={(e) => setVoiceProvider(e.target.value as VoiceProvider)}
+              className="w-full border border-border rounded-lg px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-ring focus:ring-2 focus:ring-ring/10"
+            >
+              <option value="openai">OpenAI</option>
+              <option value="groq">Groq</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold text-foreground mb-1">{i18n.t('settings.apiKey')}</label>
+            <Input
+              type="password"
+              value={voiceApiKey}
+              onChange={(e) => setVoiceApiKey(e.target.value)}
+              placeholder={voiceProvider === 'groq' ? 'gsk_...' : 'sk-...'}
+            />
+          </div>
+
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-secondary text-[10px] text-muted-foreground leading-relaxed">
+            <Shield size={12} className="shrink-0 mt-0.5 text-accent" />
+            <span>{i18n.t('settings.voiceDataNotice')}</span>
           </div>
         </div>
 

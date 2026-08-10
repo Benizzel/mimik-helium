@@ -83,6 +83,9 @@ settings:
   model: Modelo
   apiKey: Clave API
   aiLanguage: Idioma de descripciones
+  voiceNarration: "Narración por voz"
+  voiceDescription: "Narra en voz alta mientras grabas y tus palabras se convierten en las descripciones de los pasos."
+  voiceDataNotice: "El audio que grabes se envía al proveedor que elijas arriba, usando tu propia clave API. Es la única parte de Mimik que saca algo de tu navegador."
   saveSettings: Guardar ajustes
   saved: Guardado
   smartBlur: Desenfoque inteligente
