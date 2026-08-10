@@ -11,6 +11,10 @@ export interface Guide {
   deletedAt: number | null;
 }
 
+export type BlockType = 'heading' | 'callout';
+
+export type CalloutVariant = 'info' | 'warning' | 'error' | 'success' | 'custom';
+
 export interface Step {
   id: string;
   guideId: string;
@@ -23,6 +27,9 @@ export interface Step {
   elementMeta?: ElementMeta;
   inputValue?: string;
   aiPending?: boolean;
+  blockType?: BlockType;
+  calloutVariant?: CalloutVariant;
+  calloutColor?: string;
 }
 
 export interface ScreenshotBounds {

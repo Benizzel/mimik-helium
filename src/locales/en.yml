@@ -189,6 +189,20 @@ editor:
   rewriteErrorFailed: Could not rewrite the selection. Try again.
   rewriteErrorStale: The text changed. Select it again.
 
+blocks:
+  add: Add block
+  heading: Heading
+  callout: Note
+  headingPlaceholder: Section title
+  calloutPlaceholder: Write a note
+  deleteHeading: "Delete this heading?"
+  deleteCallout: "Delete this note?"
+  variantInfo: Info
+  variantWarning: Warning
+  variantError: Error
+  variantSuccess: Success
+  variantCustom: Custom
+
 history:
   title: Version History
   current: Current

@@ -189,6 +189,20 @@ editor:
   rewriteErrorFailed: "Impossible de r\xE9\xE9crire la s\xE9lection. R\xE9essayez."
   rewriteErrorStale: "Le texte a chang\xE9. S\xE9lectionnez-le \xE0 nouveau."
 
+blocks:
+  add: Ajouter un bloc
+  heading: Titre
+  callout: Note
+  headingPlaceholder: "Titre de section"
+  calloutPlaceholder: "Écrivez une note"
+  deleteHeading: "Supprimer ce titre ?"
+  deleteCallout: "Supprimer cette note ?"
+  variantInfo: Information
+  variantWarning: Avertissement
+  variantError: Erreur
+  variantSuccess: "Succès"
+  variantCustom: "Personnalisé"
+
 history:
   title: Historique des versions
   current: Actuelle
