@@ -9,6 +9,7 @@ import {
   Packer,
   PageNumber,
   Paragraph,
+  ShadingType,
   Table,
   TableCell,
   TableLayoutType,
@@ -22,6 +23,7 @@ import { i18n } from '#imports';
 import { type Branding, dataUrlToBytes, fitLogo, loadBranding } from '@/core/export/branding';
 import { type ExportOptions, IMAGE_SCALE_FACTORS, loadExportOptions } from '@/core/export/options';
 import { blobToArrayBuffer, extractDomain, formatDate } from '@/core/export/utils';
+import { actionSteps, calloutAccent, isBlock, stepNumbers, tint } from '@/core/guides/blocks';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { logger } from '@/lib/logger';
 
@@ -44,6 +46,13 @@ const TEXT_COL_MM = CONTENT_MM - NUM_COL_MM - COL_GAP_MM;
 const META_COL_MM = 43;
 const LOGO_MAX_W = px(34);
 const LOGO_MAX_H = px(15);
+const BLOCK_SPACING_AFTER = 200;
+const BLOCK_RULE_SIZE = 6;
+const HEADING_SIZE = 28;
+const CALLOUT_SIZE = 22;
+const CALLOUT_BAR_SIZE = 18;
+const CALLOUT_PAD_X_MM = 3;
+const CALLOUT_PAD_Y_MM = 2;
 
 const INK = '1E1B4B';
 const MUTED = '6B7280';
@@ -166,7 +175,7 @@ function buildCover(guide: Guide, steps: Step[], domain: string | null, brand: B
       new Paragraph({
         children: [
           new TextRun({
-            text: String(steps.length).padStart(2, '0'),
+            text: String(actionSteps(steps).length).padStart(2, '0'),
             bold: true,
             color: accent,
             size: 60,
@@ -255,14 +264,62 @@ async function buildImageParagraph(
   }
 }
 
+function buildHeadingParagraph(step: Step): Paragraph {
+  return new Paragraph({
+    border: { bottom: { style: BorderStyle.SINGLE, size: BLOCK_RULE_SIZE, color: INK, space: 4 } },
+    children: [
+      new TextRun({ text: step.description, bold: true, color: INK, size: HEADING_SIZE, font: DOCX_FONT_FAMILY }),
+    ],
+  });
+}
+
+function buildCalloutTable(step: Step): Table {
+  const accent = calloutAccent(step);
+
+  return new Table({
+    width: { size: dxa(CONTENT_MM), type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [dxa(CONTENT_MM)],
+    rows: [
+      new TableRow({
+        cantSplit: true,
+        children: [
+          new TableCell({
+            borders: {
+              ...NO_BORDERS,
+              left: { style: BorderStyle.SINGLE, size: CALLOUT_BAR_SIZE, color: bare(accent) },
+            },
+            shading: { type: ShadingType.CLEAR, color: 'auto', fill: bare(tint(accent)) },
+            width: { size: dxa(CONTENT_MM), type: WidthType.DXA },
+            margins: {
+              top: dxa(CALLOUT_PAD_Y_MM),
+              bottom: dxa(CALLOUT_PAD_Y_MM),
+              left: dxa(CALLOUT_PAD_X_MM),
+              right: dxa(CALLOUT_PAD_X_MM),
+            },
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: step.description, color: INK, size: CALLOUT_SIZE, font: DOCX_FONT_FAMILY }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
 async function buildStepTable(
   step: Step,
+  number: number,
   screenshot: Screenshot | undefined,
   brand: Branding,
   opts: ExportOptions,
 ): Promise<Table> {
   const accent = bare(brand.accent);
-  const stepNumber = String(step.index + 1).padStart(2, '0');
+  const stepNumber = String(number).padStart(2, '0');
 
   const textChildren: Paragraph[] = [
     new Paragraph({
@@ -424,12 +481,26 @@ export async function exportGuideAsDOCX(
   const brand = await loadBranding();
 
   const children: Array<Paragraph | Table> = opts.cover ? buildCover(guide, steps, domain, brand) : [];
+  const numbers = stepNumbers(steps);
 
   for (const [i, step] of steps.entries()) {
     if (i === 0 && opts.cover) {
       children.push(new Paragraph({ pageBreakBefore: true, spacing: { after: 120 }, children: [] }));
     }
-    children.push(await buildStepTable(step, opts.screenshots ? screenshots.get(step.id) : undefined, brand, opts));
+    if (isBlock(step)) {
+      children.push(step.blockType === 'heading' ? buildHeadingParagraph(step) : buildCalloutTable(step));
+      children.push(new Paragraph({ spacing: { after: BLOCK_SPACING_AFTER }, children: [] }));
+      continue;
+    }
+    children.push(
+      await buildStepTable(
+        step,
+        numbers.get(step.id) ?? 0,
+        opts.screenshots ? screenshots.get(step.id) : undefined,
+        brand,
+        opts,
+      ),
+    );
     children.push(new Paragraph({ spacing: { after: 300 }, children: [] }));
   }
 

@@ -3,6 +3,7 @@ import { i18n } from '#imports';
 import { fitLogo, loadBranding } from '@/core/export/branding';
 import { type ExportOptions, IMAGE_SCALE_FACTORS, loadExportOptions } from '@/core/export/options';
 import { blobToDataUrl, extractDomain, fitImage, formatDate } from '@/core/export/utils';
+import { actionSteps, calloutAccent, isBlock, stepNumbers, tint } from '@/core/guides/blocks';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { hexToRgb } from '@/core/screenshot/color';
 import { resolveViewport } from '@/core/screenshot/geometry';
@@ -30,10 +31,23 @@ const HEAD_LOGO_W = 18;
 const HEAD_LOGO_H = 7;
 const META_COL_W = 43;
 const META_DROP = 9;
+const BLOCK_GAP = 9;
+const HEADING_SIZE = 14;
+const HEADING_LINE_H = 6.5;
+const HEADING_BASELINE = 5;
+const HEADING_RULE_GAP = 3.2;
+const CALLOUT_SIZE = 11;
+const CALLOUT_LINE_H = 5;
+const CALLOUT_BASELINE = 4;
+const CALLOUT_PAD_X = 5;
+const CALLOUT_PAD_Y = 4;
+const CALLOUT_BAR_W = 2;
+const CALLOUT_RADIUS = 2;
 
 const INK: [number, number, number] = [30, 27, 75];
 const MUTED: [number, number, number] = [107, 114, 128];
 const HAIR: [number, number, number] = [229, 231, 235];
+const PAPER: [number, number, number] = [255, 255, 255];
 
 export async function exportGuideAsPDF(
   guide: Guide,
@@ -43,6 +57,8 @@ export async function exportGuideAsPDF(
 ): Promise<Blob> {
   const opts = options ?? (await loadExportOptions());
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const actions = actionSteps(steps);
+  const numbers = stepNumbers(steps);
   const domain = extractDomain(steps);
   const brand = await loadBranding();
   const accent = hexToRgb(brand.accent) ?? [79, 70, 229];
@@ -95,7 +111,7 @@ export async function exportGuideAsPDF(
     doc.setFontSize(30);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...accent);
-    doc.text(String(steps.length).padStart(2, '0'), MARGIN, yValue);
+    doc.text(String(actions.length).padStart(2, '0'), MARGIN, yValue);
 
     drawLabel(i18n.t('export.created').toUpperCase(), MARGIN + META_COL_W);
     doc.setFontSize(11);
@@ -145,7 +161,11 @@ export async function exportGuideAsPDF(
   let sy = startStepPage();
 
   for (const step of steps) {
-    const stepNum = String(step.index + 1).padStart(2, '0');
+    if (isBlock(step)) {
+      sy = drawBlock(doc, step, sy, startStepPage);
+      continue;
+    }
+    const stepNum = String(numbers.get(step.id) ?? 0).padStart(2, '0');
 
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
@@ -177,7 +197,7 @@ export async function exportGuideAsPDF(
     if (sy + blockH > FOOTER_Y - 8 && sy > STEP_TOP) {
       sy = startStepPage();
     }
-    pageSteps[pageSteps.length - 1].push(step.index + 1);
+    pageSteps[pageSteps.length - 1].push(numbers.get(step.id) ?? 0);
 
     doc.setFontSize(30);
     doc.setFont('helvetica', 'bold');
@@ -239,8 +259,8 @@ export async function exportGuideAsPDF(
     if (onPage?.length) {
       const range =
         onPage.length > 1
-          ? i18n.t('export.stepsRange', [String(onPage[0]), String(onPage[onPage.length - 1]), String(steps.length)])
-          : i18n.t('export.stepOf', [String(onPage[0]), String(steps.length)]);
+          ? i18n.t('export.stepsRange', [String(onPage[0]), String(onPage[onPage.length - 1]), String(actions.length)])
+          : i18n.t('export.stepOf', [String(onPage[0]), String(actions.length)]);
       doc.text(range, headRight, MARGIN + 3, { align: 'right' });
     }
 
@@ -254,6 +274,42 @@ export async function exportGuideAsPDF(
   }
 
   return doc.output('blob');
+}
+
+function drawBlock(doc: jsPDF, step: Step, y: number, nextPage: () => number): number {
+  if (step.blockType === 'heading') {
+    doc.setFontSize(HEADING_SIZE);
+    doc.setFont('helvetica', 'bold');
+    const lines = doc.splitTextToSize(step.description, CONTENT_W);
+    const blockH = HEADING_BASELINE + (lines.length - 1) * HEADING_LINE_H + HEADING_RULE_GAP;
+    let sy = y;
+    if (sy + blockH > FOOTER_Y - 8 && sy > STEP_TOP) sy = nextPage();
+    doc.setTextColor(...INK);
+    doc.text(lines, MARGIN, sy + HEADING_BASELINE);
+    const ruleY = sy + blockH;
+    doc.setDrawColor(...INK);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, ruleY, RIGHT, ruleY);
+    return ruleY + BLOCK_GAP;
+  }
+
+  const accent = calloutAccent(step);
+  const bar = hexToRgb(accent) ?? INK;
+  const fill = hexToRgb(tint(accent)) ?? PAPER;
+  const textX = MARGIN + CALLOUT_BAR_W + CALLOUT_PAD_X;
+  doc.setFontSize(CALLOUT_SIZE);
+  doc.setFont('helvetica', 'normal');
+  const lines = doc.splitTextToSize(step.description, RIGHT - CALLOUT_PAD_X - textX);
+  const boxH = CALLOUT_PAD_Y * 2 + lines.length * CALLOUT_LINE_H;
+  let sy = y;
+  if (sy + boxH > FOOTER_Y - 8 && sy > STEP_TOP) sy = nextPage();
+  doc.setFillColor(...fill);
+  doc.roundedRect(MARGIN, sy, CONTENT_W, boxH, CALLOUT_RADIUS, CALLOUT_RADIUS, 'F');
+  doc.setFillColor(...bar);
+  doc.rect(MARGIN, sy + CALLOUT_RADIUS, CALLOUT_BAR_W, boxH - CALLOUT_RADIUS * 2, 'F');
+  doc.setTextColor(...INK);
+  doc.text(lines, textX, sy + CALLOUT_PAD_Y + CALLOUT_BASELINE);
+  return sy + boxH + BLOCK_GAP;
 }
 
 function stepUrlLabel(url: string): string {
