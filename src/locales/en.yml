@@ -189,6 +189,13 @@ editor:
   rewriteErrorFailed: Could not rewrite the selection. Try again.
   rewriteErrorStale: The text changed. Select it again.
 
+capture:
+  recordSteps: Record steps
+  moreStepsTitle: Capture more steps
+  moreStepsBody: New steps are inserted here. Pick the tab to record in.
+  startCapture: Start capture
+  noRecordableTabs: No recordable tabs are open in this window.
+
 blocks:
   add: Add block
   heading: Heading

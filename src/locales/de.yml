@@ -189,6 +189,13 @@ editor:
   descriptionErrorSaveFailed: Die Beschreibung wurde erstellt, konnte aber nicht gespeichert werden. Versuche es erneut.
   writingStepDescription: "Beschreibung wird geschrieben…"
 
+capture:
+  recordSteps: Schritte aufzeichnen
+  moreStepsTitle: Weitere Schritte aufnehmen
+  moreStepsBody: "Neue Schritte werden hier eingefügt. Wähle den Tab zum Aufzeichnen."
+  startCapture: Aufnahme starten
+  noRecordableTabs: In diesem Fenster ist kein aufzeichenbarer Tab offen.
+
 blocks:
   add: "Block hinzufügen"
   heading: "Überschrift"

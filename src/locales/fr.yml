@@ -189,6 +189,13 @@ editor:
   rewriteErrorFailed: "Impossible de r\xE9\xE9crire la s\xE9lection. R\xE9essayez."
   rewriteErrorStale: "Le texte a chang\xE9. S\xE9lectionnez-le \xE0 nouveau."
 
+capture:
+  recordSteps: "Enregistrer des étapes"
+  moreStepsTitle: "Capturer d'autres étapes"
+  moreStepsBody: "Les nouvelles étapes sont insérées ici. Choisissez l'onglet à enregistrer."
+  startCapture: "Démarrer la capture"
+  noRecordableTabs: "Aucun onglet enregistrable n'est ouvert dans cette fenêtre."
+
 blocks:
   add: Ajouter un bloc
   heading: Titre
