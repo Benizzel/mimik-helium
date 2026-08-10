@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useFullview } from '@/stores/fullview';
+import VoiceNotice from './components/VoiceNotice';
 import GuideContent from './GuideContent';
 import LibraryContent from './LibraryContent';
 import { useRoute } from './router';
@@ -39,6 +40,8 @@ export default function FullViewApp() {
           </div>
         </main>
       )}
+
+      {import.meta.env.BROWSER !== 'firefox' && <VoiceNotice />}
     </div>
   );
 }

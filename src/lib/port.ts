@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import type { VoiceErrorReason } from '@/lib/voice-messages';
 
 const PORT_NAME = 'mimik-panel';
+const OBSERVER_PORT_NAME = 'mimik-panel-observer';
 
 export interface PanelStateUpdate {
   type: 'STATE_UPDATE';
@@ -23,37 +24,32 @@ export interface PanelVoiceUpdate {
 }
 
 type PortMessage = PanelStateUpdate | PanelVoiceUpdate;
+type Port = ReturnType<typeof browser.runtime.connect>;
 
-export function connectToBackground(callbacks: {
-  onStateUpdate: (update: PanelStateUpdate) => void;
-  onConnect: () => void;
-  onDisconnect: () => void;
-  onVoiceUpdate?: (update: PanelVoiceUpdate) => void;
-}): () => void {
-  let port: ReturnType<typeof browser.runtime.connect> | null = null;
+function openPort(
+  name: string,
+  onPortMessage: (msg: PortMessage) => void,
+  onConnect?: () => void,
+  onDisconnect?: () => void,
+): () => void {
+  let port: Port | null = null;
   let destroyed = false;
 
   function connect() {
     if (destroyed) return;
 
     try {
-      port = browser.runtime.connect({ name: PORT_NAME });
-      logger.debug('Port connected to background');
-      callbacks.onConnect();
+      port = browser.runtime.connect({ name });
+      logger.debug('Port connected to background', name);
+      onConnect?.();
 
-      port.onMessage.addListener((msg: PortMessage) => {
-        if (msg.type === 'STATE_UPDATE') {
-          callbacks.onStateUpdate(msg);
-        } else if (msg.type === 'VOICE_UPDATE') {
-          callbacks.onVoiceUpdate?.(msg);
-        }
-      });
+      port.onMessage.addListener(onPortMessage);
 
       port.onDisconnect.addListener(() => {
         port = null;
         if (!destroyed) {
           logger.debug('Port disconnected, reconnecting in 1s...');
-          callbacks.onDisconnect();
+          onDisconnect?.();
           setTimeout(connect, 1000);
         }
       });
@@ -74,35 +70,86 @@ export function connectToBackground(callbacks: {
   };
 }
 
-const connectedPorts = new Set<ReturnType<typeof browser.runtime.connect>>();
+export function connectToBackground(callbacks: {
+  onStateUpdate: (update: PanelStateUpdate) => void;
+  onConnect: () => void;
+  onDisconnect: () => void;
+  onVoiceUpdate?: (update: PanelVoiceUpdate) => void;
+}): () => void {
+  return openPort(
+    PORT_NAME,
+    (msg) => {
+      if (msg.type === 'STATE_UPDATE') {
+        callbacks.onStateUpdate(msg);
+      } else if (msg.type === 'VOICE_UPDATE') {
+        callbacks.onVoiceUpdate?.(msg);
+      }
+    },
+    callbacks.onConnect,
+    callbacks.onDisconnect,
+  );
+}
 
-export function setupPortListener(onPanelConnect?: (port: ReturnType<typeof browser.runtime.connect>) => void) {
+export function observeVoiceFromBackground(
+  onVoiceUpdate: (update: PanelVoiceUpdate) => void,
+  onConnect?: () => void,
+): () => void {
+  return openPort(
+    OBSERVER_PORT_NAME,
+    (msg) => {
+      if (msg.type === 'VOICE_UPDATE') onVoiceUpdate(msg);
+    },
+    onConnect,
+  );
+}
+
+const panelPorts = new Set<Port>();
+const observerPorts = new Set<Port>();
+let lastVoiceUpdate: PanelVoiceUpdate | null = null;
+
+export function setupPortListener(onPanelConnect?: (port: Port) => void) {
   browser.runtime.onConnect.addListener((port) => {
+    if (port.name === OBSERVER_PORT_NAME) {
+      observerPorts.add(port);
+      if (lastVoiceUpdate) postTo(port, lastVoiceUpdate);
+      port.onDisconnect.addListener(() => {
+        observerPorts.delete(port);
+      });
+      return;
+    }
+
     if (port.name !== PORT_NAME) return;
 
-    connectedPorts.add(port);
+    panelPorts.add(port);
     onPanelConnect?.(port);
 
     port.onDisconnect.addListener(() => {
-      connectedPorts.delete(port);
+      panelPorts.delete(port);
     });
   });
 }
 
-function broadcastToPanel(message: PortMessage): void {
-  for (const port of connectedPorts) {
-    try {
-      port.postMessage(message);
-    } catch {
-      connectedPorts.delete(port);
-    }
+function postTo(port: Port, message: PortMessage): boolean {
+  try {
+    port.postMessage(message);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function broadcastTo(ports: Set<Port>, message: PortMessage): void {
+  for (const port of ports) {
+    if (!postTo(port, message)) ports.delete(port);
   }
 }
 
 export function broadcastStateToPanel(update: PanelStateUpdate): void {
-  broadcastToPanel(update);
+  broadcastTo(panelPorts, update);
 }
 
 export function broadcastVoiceToPanel(update: PanelVoiceUpdate): void {
-  broadcastToPanel(update);
+  lastVoiceUpdate = update;
+  broadcastTo(panelPorts, update);
+  broadcastTo(observerPorts, update);
 }
