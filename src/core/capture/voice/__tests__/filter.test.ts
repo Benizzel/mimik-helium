@@ -48,4 +48,20 @@ describe('rejectReason', () => {
   it('keeps a filler word appearing inside a real sentence', () => {
     expect(rejectReason(scored('You should click save.'))).toBeNull();
   });
+
+  it('rejects a blocklisted phrase containing an apostrophe', () => {
+    expect(rejectReason(scored("Don't forget to subscribe"))).toContain('blocklist');
+  });
+
+  it('rejects a blocklisted phrase containing a hyphen and accents', () => {
+    expect(rejectReason(scored("Sous-titres réalisés par la communauté d'Amara.org"))).toContain('blocklist');
+  });
+
+  it('rejects a filler word terminated by an ellipsis', () => {
+    expect(rejectReason(scored('Hmm...'))).toContain('solo-filler');
+  });
+
+  it('rejects a bracketed sound marker', () => {
+    expect(rejectReason(scored('[Music]'))).toContain('blocklist');
+  });
 });

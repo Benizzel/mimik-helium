@@ -1,36 +1,38 @@
 import type { ScoredTranscriptSegment, TranscriptSegment } from './types';
 
-export const BLOCKLIST = new Set([
-  'thank you',
-  'thanks for watching',
-  'thank you for watching',
-  'thanks for listening',
-  'please subscribe',
-  "don't forget to subscribe",
-  'like and subscribe',
-  'subtitles by the amara.org community',
-  'transcription by castingwords',
-  'amara.org',
-  '[music]',
-  '[applause]',
-  'music',
-  'applause',
-  'продолжение следует',
-  'субтитры сделал dimatorzok',
-  "sous-titres réalisés par la communauté d'amara.org",
-  '由 amara.org 社群提供的字幕',
-]);
-
-export const SOLO_ONLY = new Set(['you', 'so', 'the', 'oh', 'okay', 'ok', 'yeah', 'hmm']);
-
 export function normalise(text: string): string {
   return text
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s.]/gu, '')
     .replace(/\s+/g, ' ')
     .trim()
-    .replace(/\.$/, '');
+    .replace(/\.+$/, '');
 }
+
+export const BLOCKLIST = new Set(
+  [
+    'thank you',
+    'thanks for watching',
+    'thank you for watching',
+    'thanks for listening',
+    'please subscribe',
+    "don't forget to subscribe",
+    'like and subscribe',
+    'subtitles by the amara.org community',
+    'transcription by castingwords',
+    'amara.org',
+    '[music]',
+    '[applause]',
+    'music',
+    'applause',
+    'продолжение следует',
+    'субтитры сделал dimatorzok',
+    "sous-titres réalisés par la communauté d'amara.org",
+    '由 amara.org 社群提供的字幕',
+  ].map(normalise),
+);
+
+export const SOLO_ONLY = new Set(['you', 'so', 'the', 'oh', 'okay', 'ok', 'yeah', 'hmm']);
 
 export function isScored(segment: TranscriptSegment): segment is ScoredTranscriptSegment {
   return (
