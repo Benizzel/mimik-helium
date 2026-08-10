@@ -28,6 +28,7 @@ export const EMPTY_NARRATION: NarrationResult = {
     batches: 0,
     failedBatches: 0,
     droppedBatches: 0,
+    forcedSplits: 0,
     verbatimSegments: 0,
     splitSegments: 0,
     rejectedSegments: 0,

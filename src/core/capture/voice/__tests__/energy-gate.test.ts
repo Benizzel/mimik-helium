@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { detectSpeechByEnergy, FRAME_MS, SEGMENT_PAD_MS, SPEECH_RMS_THRESHOLD } from '../energy-gate';
+import {
+  detectSpeechByEnergy,
+  FRAME_MS,
+  MAX_SEGMENT_S,
+  SEGMENT_PAD_MS,
+  SPEECH_RMS_THRESHOLD,
+  SPLIT_SEARCH_S,
+} from '../energy-gate';
 
 const SAMPLE_RATE = 16000;
 const PAD_S = SEGMENT_PAD_MS / 1000;
@@ -95,5 +102,46 @@ describe('detectSpeechByEnergy', () => {
     const [segment] = await detectSpeechByEnergy(loud(silence(4), 1, 2), SAMPLE_RATE);
     expect(Math.abs(segment.start - (1 - PAD_S))).toBeLessThanOrEqual(FRAME_MS / 1000);
     expect(Math.abs(segment.end - (2 + PAD_S))).toBeLessThanOrEqual(FRAME_MS / 1000);
+  });
+});
+
+describe('detectSpeechByEnergy segment cap', () => {
+  it('never emits a segment longer than the cap', async () => {
+    const segments = await detectSpeechByEnergy(loud(silence(60), 0.5, 59.5), SAMPLE_RATE);
+    expect(segments.length).toBeGreaterThan(1);
+    for (const segment of segments) expect(segment.end - segment.start).toBeLessThanOrEqual(MAX_SEGMENT_S);
+  });
+
+  it('leaves a run under the cap as a single segment', async () => {
+    const segments = await detectSpeechByEnergy(loud(silence(30), 1, 21), SAMPLE_RATE);
+    expect(segments).toHaveLength(1);
+    expect(segments[0].end - segments[0].start).toBeCloseTo(20 + 2 * PAD_S, 1);
+  });
+
+  it('cuts at the quietest frame inside the tail of the allowed window', async () => {
+    const dip = MAX_SEGMENT_S - SPLIT_SEARCH_S + 1;
+    const pcm = loud(loud(silence(40), 0, 40), dip, dip + 0.4, 0.02);
+    const [first] = await detectSpeechByEnergy(pcm, SAMPLE_RATE);
+    expect(first.end).toBeGreaterThanOrEqual(dip - FRAME_MS / 1000);
+    expect(first.end).toBeLessThanOrEqual(dip + 0.4);
+    expect(MAX_SEGMENT_S - first.end).toBeGreaterThan(1);
+  });
+
+  it('keeps split segments ordered, contiguous and inside the recording', async () => {
+    const segments = await detectSpeechByEnergy(loud(silence(60), 0.5, 59.5), SAMPLE_RATE);
+    for (const segment of segments) {
+      expect(segment.start).toBeGreaterThanOrEqual(0);
+      expect(segment.end).toBeLessThanOrEqual(60);
+      expect(segment.end).toBeGreaterThan(segment.start);
+    }
+    for (let i = 1; i < segments.length; i += 1) {
+      expect(segments[i].start).toBeGreaterThanOrEqual(segments[i - 1].end);
+    }
+  });
+
+  it('caps a segment grown past the cap by overlapping padding', async () => {
+    const segments = await detectSpeechByEnergy(loud(loud(silence(50), 1, 21), 21.2, 45), SAMPLE_RATE);
+    expect(segments.length).toBeGreaterThan(1);
+    for (const segment of segments) expect(segment.end - segment.start).toBeLessThanOrEqual(MAX_SEGMENT_S);
   });
 });

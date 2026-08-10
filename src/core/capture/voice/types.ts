@@ -61,6 +61,7 @@ export interface NarrationStats {
   batches: number;
   failedBatches: number;
   droppedBatches: number;
+  forcedSplits: number;
   verbatimSegments: number;
   splitSegments: number;
   rejectedSegments: number;

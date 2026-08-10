@@ -26,13 +26,14 @@ function sliceSpeech(pcm: Int16Array, segments: SpeechSegment[], sampleRate: num
 
 export async function runNarrationPipeline(input: PipelineInput): Promise<NarrationResult> {
   const { pcm, sampleRate, steps, detectSpeech, transcribe } = input;
-  const { batches, dropped } = buildBatches(mergeGaps(await detectSpeech(pcm, sampleRate)));
+  const { batches, dropped, forcedSplits } = buildBatches(mergeGaps(await detectSpeech(pcm, sampleRate)));
 
   const collected = new Map<string, string[]>();
   const stats = {
     batches: batches.length,
     failedBatches: 0,
     droppedBatches: dropped,
+    forcedSplits,
     verbatimSegments: 0,
     splitSegments: 0,
     rejectedSegments: 0,
