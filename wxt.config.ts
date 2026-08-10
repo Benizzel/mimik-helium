@@ -47,7 +47,7 @@ export default defineConfig({
         "scripting",
         "unlimitedStorage",
         "webNavigation",
-        ...(isFirefox ? [] : ["sidePanel"]),
+        ...(isFirefox ? [] : ["sidePanel", "offscreen"]),
       ],
       ...(isFirefox
         ? { optional_host_permissions: ["<all_urls>"] }
