@@ -18,7 +18,7 @@ function notifyGuidesChanged(event: GuideChangeEvent) {
   guidesChannel.postMessage(event);
 }
 
-export async function createGuide(guideId: string): Promise<Guide> {
+export async function createGuide(guideId: string, staging = false): Promise<Guide> {
   const guide: Guide = {
     id: guideId,
     title: i18n.t('fullview.untitledGuide'),
@@ -27,6 +27,7 @@ export async function createGuide(guideId: string): Promise<Guide> {
     stepIds: [],
     starred: false,
     deletedAt: null,
+    ...(staging ? { staging: true } : {}),
   };
   await db.guides.add(guide);
   return guide;
@@ -48,7 +49,7 @@ export async function getGuides(): Promise<Guide[]> {
   return db.guides
     .orderBy('updatedAt')
     .reverse()
-    .filter((g) => g.deletedAt == null)
+    .filter((g) => g.deletedAt == null && !g.staging)
     .toArray();
 }
 
@@ -56,7 +57,7 @@ export async function getStarredGuides(): Promise<Guide[]> {
   return db.guides
     .orderBy('updatedAt')
     .reverse()
-    .filter((g) => g.starred === true && g.deletedAt == null)
+    .filter((g) => g.starred === true && g.deletedAt == null && !g.staging)
     .toArray();
 }
 
@@ -137,6 +138,29 @@ export async function reorderSteps(guideId: string, orderedStepIds: string[]): P
 
 export async function createStep(step: Step): Promise<void> {
   await db.steps.add(step);
+}
+
+export async function mergeGuideInto(sourceGuideId: string, targetGuideId: string, atIndex: number): Promise<number> {
+  const moved = await db.transaction('rw', db.steps, db.guides, async () => {
+    const incoming = await db.steps.where('guideId').equals(sourceGuideId).sortBy('index');
+    const target = await db.steps.where('guideId').equals(targetGuideId).sortBy('index');
+    if (incoming.length > 0) {
+      target.splice(
+        Math.max(0, Math.min(atIndex, target.length)),
+        0,
+        ...incoming.map((step) => ({ ...step, guideId: targetGuideId })),
+      );
+      await db.steps.bulkPut(target.map((step, index) => ({ ...step, index })));
+      await db.guides.update(targetGuideId, {
+        stepIds: target.map((step) => step.id),
+        updatedAt: Date.now(),
+      });
+    }
+    await db.guides.delete(sourceGuideId);
+    return incoming.length;
+  });
+  if (moved > 0) notifyGuidesChanged({ type: 'mutated' });
+  return moved;
 }
 
 export async function insertBlock(

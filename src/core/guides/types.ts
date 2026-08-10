@@ -9,6 +9,7 @@ export interface Guide {
   stepIds: string[];
   starred: boolean;
   deletedAt: number | null;
+  staging?: boolean;
 }
 
 export type BlockType = 'heading' | 'callout';
