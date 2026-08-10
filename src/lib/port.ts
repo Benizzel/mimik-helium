@@ -1,6 +1,7 @@
 import { browser } from '#imports';
 import type { CaptureStateValue } from '@/core/capture/machine';
 import { logger } from '@/lib/logger';
+import type { VoiceErrorReason } from '@/lib/voice-messages';
 
 const PORT_NAME = 'mimik-panel';
 
@@ -11,12 +12,23 @@ export interface PanelStateUpdate {
   currentGuideId: string | null;
 }
 
-type PortMessage = PanelStateUpdate;
+export type VoicePhase = 'idle' | 'recording' | 'transcribing' | 'error';
+
+export interface PanelVoiceUpdate {
+  type: 'VOICE_UPDATE';
+  phase: VoicePhase;
+  reason?: VoiceErrorReason;
+  error?: string;
+  narrated?: number;
+}
+
+type PortMessage = PanelStateUpdate | PanelVoiceUpdate;
 
 export function connectToBackground(callbacks: {
   onStateUpdate: (update: PanelStateUpdate) => void;
   onConnect: () => void;
   onDisconnect: () => void;
+  onVoiceUpdate?: (update: PanelVoiceUpdate) => void;
 }): () => void {
   let port: ReturnType<typeof browser.runtime.connect> | null = null;
   let destroyed = false;
@@ -32,6 +44,8 @@ export function connectToBackground(callbacks: {
       port.onMessage.addListener((msg: PortMessage) => {
         if (msg.type === 'STATE_UPDATE') {
           callbacks.onStateUpdate(msg);
+        } else if (msg.type === 'VOICE_UPDATE') {
+          callbacks.onVoiceUpdate?.(msg);
         }
       });
 
@@ -75,12 +89,20 @@ export function setupPortListener(onPanelConnect?: (port: ReturnType<typeof brow
   });
 }
 
-export function broadcastStateToPanel(update: PanelStateUpdate): void {
+function broadcastToPanel(message: PortMessage): void {
   for (const port of connectedPorts) {
     try {
-      port.postMessage(update);
+      port.postMessage(message);
     } catch {
       connectedPorts.delete(port);
     }
   }
+}
+
+export function broadcastStateToPanel(update: PanelStateUpdate): void {
+  broadcastToPanel(update);
+}
+
+export function broadcastVoiceToPanel(update: PanelVoiceUpdate): void {
+  broadcastToPanel(update);
 }

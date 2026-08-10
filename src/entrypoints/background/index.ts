@@ -10,6 +10,7 @@ import { getActor, getStateUpdate, initActor, initActorFallback, waitUntilReady 
 import { registerNavigationListeners } from './navigation';
 import { handleCaptureStep, handleFinalizeInputStep, handleUpdateInputStep } from './step-pipeline';
 import { broadcastStartCapture, broadcastStopCapture, showNotificationOnTab } from './tab-manager';
+import { getVoiceUpdate, registerVoiceListeners, startVoiceNarration, stopVoiceNarration } from './voice';
 
 async function generateTitleInBackground(guideId: string) {
   try {
@@ -84,12 +85,14 @@ export default defineBackground(() => {
   initActor().catch(initActorFallback);
   cancelSession();
   registerNavigationListeners();
+  registerVoiceListeners();
 
   setupPortListener((port) => {
     logger.debug('Panel connected via port');
     waitUntilReady().then(() => {
       try {
         port.postMessage(getStateUpdate());
+        port.postMessage(getVoiceUpdate());
       } catch {}
     });
 
@@ -123,6 +126,8 @@ export default defineBackground(() => {
     const activeTab = await getActiveTab();
     if (activeTab?.id) await showNotificationOnTab(activeTab.id);
 
+    await startVoiceNarration(activeTab?.id);
+
     await broadcastStartCapture(guideId);
     return { guideId };
   });
@@ -134,7 +139,10 @@ export default defineBackground(() => {
     await broadcastStopCapture();
     actor.send({ type: 'STOP_RECORDING' });
 
-    if (guideId) generateTitleInBackground(guideId);
+    if (guideId) {
+      void stopVoiceNarration(guideId);
+      generateTitleInBackground(guideId);
+    }
 
     return { success: true, guideId: guideId ?? undefined };
   });
