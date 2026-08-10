@@ -4,7 +4,13 @@ import { validateApiKey } from '@/core/capture/ai/validate';
 import { stepRequiresManual } from '@/core/guideme/manual';
 import { advanceSession, cancelSession, completeSession, getSession, startSession } from '@/core/guideme/session';
 import { actionSteps } from '@/core/guides/blocks';
-import { createGuide, getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
+import {
+  createGuide,
+  createSnapshot,
+  getScreenshotsForSteps,
+  getStepsForGuide,
+  mergeGuideInto,
+} from '@/core/guides/service';
 import type { Step } from '@/core/guides/types';
 import { getActiveTab, localStorage, sendMessageToTab, setSidePanelBehavior, updateTab } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
@@ -86,10 +92,15 @@ export default defineBackground(() => {
   onMessage('startRecording', async ({ data }) => {
     await waitUntilReady();
     const actor = getActor();
-    actor.send({ type: 'START_RECORDING', url: data.url });
+    actor.send({
+      type: 'START_RECORDING',
+      url: data.url,
+      insertTargetGuideId: data.insertTargetGuideId,
+      insertAtIndex: data.insertAtIndex,
+    });
     const guideId = actor.getSnapshot().context.currentGuideId!;
 
-    await createGuide(guideId);
+    await createGuide(guideId, data.insertTargetGuideId !== undefined);
 
     const activeTab = await getActiveTab();
     if (activeTab?.id) await showNotificationOnTab(activeTab.id);
@@ -101,13 +112,19 @@ export default defineBackground(() => {
   onMessage('stopRecording', async () => {
     await waitUntilReady();
     const actor = getActor();
-    const guideId = actor.getSnapshot().context.currentGuideId;
+    const { currentGuideId: guideId, insertTargetGuideId, insertAtIndex } = actor.getSnapshot().context;
     await broadcastStopCapture();
     actor.send({ type: 'STOP_RECORDING' });
 
+    if (guideId && insertTargetGuideId !== null && insertAtIndex !== null) {
+      await createSnapshot(insertTargetGuideId);
+      await mergeGuideInto(guideId, insertTargetGuideId, insertAtIndex);
+      return { success: true, guideId: insertTargetGuideId, inserted: true };
+    }
+
     if (guideId) generateGuideMetaOnStop(guideId).catch(() => {});
 
-    return { success: true, guideId: guideId ?? undefined };
+    return { success: true, guideId: guideId ?? undefined, inserted: false };
   });
 
   onMessage('enterBlurMode', async () => {
