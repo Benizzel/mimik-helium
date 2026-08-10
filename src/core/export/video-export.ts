@@ -5,7 +5,8 @@ import type { ExportOptions } from '@/core/export/options';
 import { loadExportOptions } from '@/core/export/options';
 import { extractDomain, formatDate } from '@/core/export/utils';
 import { FRAME_HEIGHT, FRAME_WIDTH, pickContainer } from '@/core/export/video-support';
-import type { Guide, Screenshot, Step } from '@/core/guides/types';
+import { actionSteps, calloutAccent, isBlock } from '@/core/guides/blocks';
+import type { BlockType, Guide, Screenshot, Step } from '@/core/guides/types';
 import type { Ctx } from '@/core/screenshot/draw';
 import { drawRoundedRect } from '@/core/screenshot/draw';
 import { clamp, resolveTarget, resolveViewport } from '@/core/screenshot/geometry';
@@ -40,6 +41,22 @@ const FRAME_PADDING = 20;
 
 const COVER_MARGIN = 96;
 const COVER_CELL_WIDTH = 300;
+
+const RENDER_OPTIONS = { format: 'image/webp', quality: 0.9 } as const;
+
+const BLOCK_BLUR = 'blur(24px)';
+const BLOCK_OVERSCAN = 1.12;
+const BLOCK_WASH = 'rgba(30, 27, 75, 0.7)';
+const BLOCK_WASH_FLAT = 'rgba(30, 27, 75, 0.86)';
+const BLOCK_MAX_WIDTH_RATIO = 0.72;
+const HEADING_FONT_SIZE = 58;
+const HEADING_LINE_HEIGHT = 74;
+const HEADING_MAX_LINES = 3;
+const CALLOUT_FONT_SIZE = 36;
+const CALLOUT_LINE_HEIGHT = 50;
+const CALLOUT_MAX_LINES = 4;
+const CALLOUT_BAR_WIDTH = 6;
+const CALLOUT_BAR_GAP = 26;
 
 export const STEP_SECONDS = STEP_ZOOMED_OUT_SEC + STEP_ZOOM_TRANSITION_SEC + STEP_ZOOMED_IN_SEC;
 
@@ -134,6 +151,13 @@ export function letterbox(srcWidth: number, srcHeight: number, dstWidth: number,
   return { scale, width, height, x: (dstWidth - width) / 2, y: (dstHeight - height) / 2 };
 }
 
+function coverFit(source: Size, overscan: number): Rect {
+  const scale = Math.max(FRAME_WIDTH / source.width, FRAME_HEIGHT / source.height) * overscan;
+  const width = source.width * scale;
+  const height = source.height * scale;
+  return { x: (FRAME_WIDTH - width) / 2, y: (FRAME_HEIGHT - height) / 2, width, height };
+}
+
 export function wrapLines(
   text: string,
   maxWidth: number,
@@ -207,15 +231,75 @@ function drawTooltip(ctx: Ctx, text: string, target: Rect) {
   });
 }
 
-interface StepLayer {
+interface ScreenshotLayer {
+  kind: 'screenshot';
   bitmap: ImageBitmap;
   fit: ReturnType<typeof letterbox>;
   target: Rect | null;
   description: string;
 }
 
-async function loadStepLayer(step: Step, screenshot: Screenshot): Promise<StepLayer> {
-  const rendered = await renderScreenshot(screenshot, { format: 'image/webp', quality: 0.9 });
+interface BlockLayer {
+  kind: 'block';
+  blockType: BlockType;
+  accent: string;
+  description: string;
+  backdrop: ImageBitmap | null;
+  blurred: boolean;
+}
+
+type StepLayer = ScreenshotLayer | BlockLayer;
+
+function detectCanvasFilter(): boolean {
+  try {
+    const ctx = new OffscreenCanvas(1, 1).getContext('2d');
+    if (!ctx || !('filter' in ctx)) return false;
+    ctx.filter = BLOCK_BLUR;
+    const applied = ctx.filter !== 'none';
+    ctx.filter = 'none';
+    return applied;
+  } catch {
+    return false;
+  }
+}
+
+let filterSupport: boolean | undefined;
+
+function supportsCanvasFilter(): boolean {
+  filterSupport ??= detectCanvasFilter();
+  return filterSupport;
+}
+
+async function blurBackdrop(screenshot: Screenshot): Promise<Pick<BlockLayer, 'backdrop' | 'blurred'>> {
+  const canvas = new OffscreenCanvas(FRAME_WIDTH, FRAME_HEIGHT);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+  const rendered = await renderScreenshot(screenshot, RENDER_OPTIONS);
+  const source = await createImageBitmap(rendered);
+  const blurred = supportsCanvasFilter();
+  const at = coverFit(source, blurred ? BLOCK_OVERSCAN : 1);
+
+  if (blurred) ctx.filter = BLOCK_BLUR;
+  ctx.drawImage(source, at.x, at.y, at.width, at.height);
+  ctx.filter = 'none';
+  source.close();
+
+  return { backdrop: await createImageBitmap(canvas), blurred };
+}
+
+async function loadBlockLayer(step: Step, behind: Screenshot | undefined): Promise<BlockLayer> {
+  return {
+    kind: 'block',
+    blockType: step.blockType ?? 'callout',
+    accent: calloutAccent(step),
+    description: step.description,
+    ...(behind ? await blurBackdrop(behind) : { backdrop: null, blurred: false }),
+  };
+}
+
+async function loadScreenshotLayer(step: Step, screenshot: Screenshot): Promise<ScreenshotLayer> {
+  const rendered = await renderScreenshot(screenshot, RENDER_OPTIONS);
   const bitmap = await createImageBitmap(rendered);
   const viewport = resolveViewport(screenshot);
   const target = resolveTarget(screenshot);
@@ -223,6 +307,7 @@ async function loadStepLayer(step: Step, screenshot: Screenshot): Promise<StepLa
   const sy = bitmap.height / viewport.height;
 
   return {
+    kind: 'screenshot',
     bitmap,
     fit: letterbox(bitmap.width, bitmap.height, FRAME_WIDTH, FRAME_HEIGHT),
     target: target
@@ -237,7 +322,64 @@ async function loadStepLayer(step: Step, screenshot: Screenshot): Promise<StepLa
   };
 }
 
+function releaseLayer(layer: StepLayer) {
+  if (layer.kind === 'screenshot') layer.bitmap.close();
+  else layer.backdrop?.close();
+}
+
+function drawBlockText(ctx: Ctx, layer: BlockLayer) {
+  const heading = layer.blockType === 'heading';
+  const fontSize = heading ? HEADING_FONT_SIZE : CALLOUT_FONT_SIZE;
+  const lineHeight = heading ? HEADING_LINE_HEIGHT : CALLOUT_LINE_HEIGHT;
+
+  ctx.font = `700 ${fontSize}px Poppins, sans-serif`;
+  const lines = wrapLines(
+    layer.description,
+    FRAME_WIDTH * BLOCK_MAX_WIDTH_RATIO,
+    (line) => ctx.measureText(line).width,
+    heading ? HEADING_MAX_LINES : CALLOUT_MAX_LINES,
+  );
+  if (lines.length === 0) return;
+
+  const middle = FRAME_HEIGHT / 2;
+  const height = lines.length * lineHeight;
+  const textWidth = Math.max(...lines.map((line) => ctx.measureText(line).width));
+  const centerX = FRAME_WIDTH / 2 + (heading ? 0 : (CALLOUT_BAR_WIDTH + CALLOUT_BAR_GAP) / 2);
+
+  if (!heading) {
+    ctx.fillStyle = layer.accent;
+    const barX = centerX - textWidth / 2 - CALLOUT_BAR_GAP - CALLOUT_BAR_WIDTH;
+    drawRoundedRect(ctx, barX, middle - height / 2, CALLOUT_BAR_WIDTH, height, CALLOUT_BAR_WIDTH / 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = ON_DARK;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  lines.forEach((line, i) => {
+    ctx.fillText(line, centerX, middle + (i - (lines.length - 1) / 2) * lineHeight);
+  });
+}
+
+function drawBlockFrame(ctx: Ctx, layer: BlockLayer) {
+  ctx.save();
+  if (layer.backdrop) {
+    ctx.drawImage(layer.backdrop, 0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+    ctx.fillStyle = layer.blurred ? BLOCK_WASH : BLOCK_WASH_FLAT;
+  } else {
+    ctx.fillStyle = BACKDROP;
+  }
+  ctx.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+  drawBlockText(ctx, layer);
+  ctx.restore();
+}
+
 function drawStepFrame(ctx: Ctx, layer: StepLayer, frame: number) {
+  if (layer.kind === 'block') {
+    drawBlockFrame(ctx, layer);
+    return;
+  }
+
   const crop = zoomCrop(layer.bitmap, layer.target, easeInOut(zoomProgress(frame)));
   const { fit } = layer;
   ctx.drawImage(layer.bitmap, crop.x, crop.y, crop.width, crop.height, fit.x, fit.y, fit.width, fit.height);
@@ -336,7 +478,7 @@ export async function exportGuideAsVideo(
   exportOptions?: VideoOptions,
   controls: VideoExportControls = {},
 ): Promise<VideoExportResult> {
-  const frames = steps.filter((step) => screenshots.has(step.id));
+  const frames = steps.filter((step) => isBlock(step) || screenshots.has(step.id));
   if (frames.length === 0) throw new Error('This guide has no screenshots to turn into a video');
 
   const { BufferTarget, CanvasSource, Mp4OutputFormat, Output, QUALITY_HIGH, WebMOutputFormat } = await import(
@@ -379,10 +521,21 @@ export async function exportGuideAsVideo(
   const { onProgress, signal } = controls;
   let done = 0;
 
+  const backdropFor = (index: number) => {
+    for (let i = index - 1; i >= 0; i--) {
+      const behind = screenshots.get(frames[i].id);
+      if (behind) return behind;
+    }
+    return undefined;
+  };
+
   const layerAt = async (index: number) => {
     const cached = loaded.get(index);
     if (cached) return cached;
-    const layer = await loadStepLayer(frames[index], screenshots.get(frames[index].id) as Screenshot);
+    const step = frames[index];
+    const layer = isBlock(step)
+      ? await loadBlockLayer(step, backdropFor(index))
+      : await loadScreenshotLayer(step, screenshots.get(step.id) as Screenshot);
     loaded.set(index, layer);
     return layer;
   };
@@ -390,7 +543,7 @@ export async function exportGuideAsVideo(
   const releaseBefore = (index: number) => {
     for (const [key, layer] of loaded) {
       if (key < index) {
-        layer.bitmap.close();
+        releaseLayer(layer);
         loaded.delete(key);
       }
     }
@@ -405,7 +558,7 @@ export async function exportGuideAsVideo(
 
     if (options.cover) {
       abortIfRequested();
-      await drawCoverFrame(ctx, guide, frames, brand);
+      await drawCoverFrame(ctx, guide, actionSteps(frames), brand);
       await source.add(0, COVER_SECONDS);
       done += 1;
       onProgress?.(done, total);
@@ -445,7 +598,7 @@ export async function exportGuideAsVideo(
     await output.cancel();
     throw error;
   } finally {
-    for (const layer of loaded.values()) layer.bitmap.close();
+    for (const layer of loaded.values()) releaseLayer(layer);
     loaded.clear();
   }
 
