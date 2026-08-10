@@ -2,11 +2,28 @@ import { i18n } from '#imports';
 import { fitLogo, loadBranding } from '@/core/export/branding';
 import { type ExportOptions, IMAGE_SCALE_FACTORS, loadExportOptions } from '@/core/export/options';
 import { blobToBase64, escapeHtml, extractDomain, formatDate } from '@/core/export/utils';
+import { actionSteps, calloutAccent, isBlock, stepNumbers, tint, variantLabel } from '@/core/guides/blocks';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { renderScreenshot } from '@/core/screenshot/render';
 
 const LOGO_MAX_WIDTH = 148;
 const LOGO_MAX_HEIGHT = 56;
+
+function blockSection(step: Step): string {
+  if (step.blockType === 'heading') {
+    return `
+      <section data-block="heading" style="margin-bottom:26px;">
+        <h2 style="font-size:24px;font-weight:700;line-height:1.3;color:#1E1B4B;white-space:pre-wrap;padding-bottom:10px;border-bottom:2px solid #1E1B4B;">${escapeHtml(step.description)}</h2>
+      </section>`;
+  }
+
+  const accent = calloutAccent(step);
+  const label = variantLabel(step.calloutVariant ?? 'info');
+  return `
+      <section data-block="callout" role="note" aria-label="${escapeHtml(label)}" style="margin-bottom:52px;padding:14px 18px;border-left:3px solid ${accent};border-radius:8px;background:${tint(accent)};">
+        <p style="margin:0;font-size:15px;line-height:1.6;color:#1E1B4B;white-space:pre-wrap;">${escapeHtml(step.description)}</p>
+      </section>`;
+}
 
 function stepUrlLabel(url: string): string {
   try {
@@ -29,25 +46,32 @@ export async function exportGuideAsHTML(
   const accent = brand.accent;
   const imgWidthPct = Math.round(IMAGE_SCALE_FACTORS[opts.imageScale] * 100);
   const domain = extractDomain(steps);
+  const numbers = stepNumbers(steps);
   const stepSections: string[] = [];
 
   for (const step of steps) {
+    if (isBlock(step)) {
+      stepSections.push(blockSection(step));
+      continue;
+    }
+
+    const number = numbers.get(step.id) ?? 0;
     const screenshot = opts.screenshots ? screenshots.get(step.id) : undefined;
     let imgHtml = '';
     if (screenshot) {
       const b64 = await blobToBase64(await renderScreenshot(screenshot));
-      const altText = screenshot.edits?.alt || i18n.t('export.stepLabel', [String(step.index + 1)]);
+      const altText = screenshot.edits?.alt || i18n.t('export.stepLabel', [String(number)]);
       imgHtml = `<img src="data:${screenshot.mimeType};base64,${b64}" alt="${escapeHtml(altText)}" style="display:block;width:${imgWidthPct}%;margin-top:14px;border:1px solid #CBD5E1;" />`;
     }
 
-    const stepNumber = String(step.index + 1).padStart(2, '0');
+    const stepNumber = String(number).padStart(2, '0');
     const urlHtml =
       step.url && opts.stepUrls
         ? `<a href="${escapeHtml(step.url)}" target="_blank" rel="noopener" style="font-size:14px;font-weight:400;color:${accent};">${escapeHtml(stepUrlLabel(step.url))}</a>`
         : '';
 
     stepSections.push(`
-      <section data-step="${step.index + 1}" style="display:flex;gap:26px;margin-bottom:52px;">
+      <section data-step="${number}" style="display:flex;gap:26px;margin-bottom:52px;">
         <div style="flex:0 0 76px;font-size:34px;font-weight:700;color:${accent};line-height:.9;">${stepNumber}</div>
         <div style="flex:1;min-width:0;border-top:1px solid #1E1B4B;padding-top:12px;">
           <p style="margin:0;font-size:17px;font-weight:700;line-height:1.45;color:#1E1B4B;">${escapeHtml(step.description)}${
@@ -92,7 +116,7 @@ export async function exportGuideAsHTML(
     <div style="border-top:2px solid #1E1B4B;padding-top:18px;display:flex;align-items:baseline;">
       <div style="flex:0 0 190px;">
         <div style="font-size:11px;font-weight:700;color:#6B7280;letter-spacing:0.06em;">${i18n.t('export.steps').toUpperCase()}</div>
-        <div style="font-size:38px;font-weight:700;color:${accent};line-height:1;margin-top:2px;">${String(steps.length).padStart(2, '0')}</div>
+        <div style="font-size:38px;font-weight:700;color:${accent};line-height:1;margin-top:2px;">${String(actionSteps(steps).length).padStart(2, '0')}</div>
       </div>
       ${metaCell(i18n.t('export.created').toUpperCase(), formatDate(guide.createdAt))}
       ${
