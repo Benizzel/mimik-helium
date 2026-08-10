@@ -3,7 +3,13 @@ import type { DOMContext } from '@/core/capture/dom/context';
 import { CaptureState } from '@/core/capture/machine';
 import { buildFallbackDescription } from '@/core/capture/step-description';
 import { db } from '@/core/guides/db';
-import { addStepToGuide, clearStepAiPending, createStep, saveScreenshot } from '@/core/guides/service';
+import {
+  addStepToGuide,
+  clearStepAiPending,
+  createStep,
+  saveScreenshot,
+  updateStepDescription,
+} from '@/core/guides/service';
 import type { ElementMeta, Screenshot, Step } from '@/core/guides/types';
 import { DEFAULT_TARGET_COLOR } from '@/core/screenshot/types';
 import { captureVisibleTab, localStorage } from '@/lib/browser-api';
