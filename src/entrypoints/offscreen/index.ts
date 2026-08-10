@@ -19,6 +19,7 @@ import {
   type VoicePermissionQueryResponse,
   type VoicePermissionState,
   type VoiceRequest,
+  type VoiceResultEvent,
   type VoiceStartRequest,
   type VoiceStartResponse,
   type VoiceStatusResponse,
@@ -26,9 +27,15 @@ import {
   type VoiceStopResponse,
   voiceMessage,
 } from '@/lib/voice-messages';
-import { MicRecorder } from './mic-recorder';
+import { MicRecorder, type MicRecording } from './mic-recorder';
 
 const VOICE_PROVIDERS: VoiceProvider[] = ['openai', 'groq'];
+
+interface VoiceSettings {
+  provider: VoiceProvider;
+  apiKey: string;
+  language?: string;
+}
 
 const EMPTY_RESULT: NarrationResult = {
   descriptions: [],
@@ -87,7 +94,7 @@ const recorder = new MicRecorder(getExtensionURL('/pcm-processor.js'), {
     ),
 });
 
-async function readVoiceSettings(): Promise<{ provider: VoiceProvider; apiKey: string; language?: string }> {
+async function readVoiceSettings(): Promise<VoiceSettings> {
   const stored = await localStorage.get(['voiceProvider', 'voiceApiKey', 'voiceLanguage', 'aiLanguage']);
   const provider = stored.voiceProvider as VoiceProvider;
   const locale = (stored.voiceLanguage ?? stored.aiLanguage) as string | undefined;
@@ -113,6 +120,53 @@ async function handleStart(request: VoiceStartRequest): Promise<VoiceStartRespon
   }
 }
 
+let pending = 0;
+
+function deliver(guideId: string, result: NarrationResult): void {
+  emit(
+    voiceMessage<VoiceResultEvent>({
+      type: VoiceMessage.VOICE_RESULT,
+      target: VOICE_BACKGROUND_TARGET,
+      guideId,
+      result,
+    }),
+  );
+}
+
+async function narrate(
+  request: VoiceStopRequest,
+  recording: MicRecording,
+  audioEpochMs: number,
+  settings: VoiceSettings,
+): Promise<NarrationResult> {
+  try {
+    const result = await runNarrationPipeline({
+      pcm: recording.pcm,
+      sampleRate: recording.sampleRate,
+      steps: buildStepWindows(request.steps, audioEpochMs, recording.durationSeconds),
+      detectSpeech: detectSpeechByEnergy,
+      transcribe: createTranscriber(settings),
+    });
+    logger.info('voice: narration pipeline finished', result.stats);
+    return result;
+  } catch (error) {
+    logger.error('voice: narration pipeline failed', error);
+    return EMPTY_RESULT;
+  }
+}
+
+async function transcribeInBackground(
+  request: VoiceStopRequest,
+  recording: MicRecording,
+  audioEpochMs: number,
+  settings: VoiceSettings,
+): Promise<void> {
+  pending += 1;
+  const result = await narrate(request, recording, audioEpochMs, settings);
+  pending -= 1;
+  deliver(request.guideId, result);
+}
+
 async function handleStop(request: VoiceStopRequest): Promise<VoiceStopResponse> {
   if (!recorder.recording) {
     return { ok: false, reason: 'not-recording', error: 'Microphone capture is not running' };
@@ -124,8 +178,10 @@ async function handleStop(request: VoiceStopRequest): Promise<VoiceStopResponse>
   }
 
   const audioEpochMs = recording.audioEpochMs;
+  const durationSeconds = recording.durationSeconds;
   if (request.steps.length === 0) {
-    return { ok: true, result: EMPTY_RESULT, audioEpochMs, durationSeconds: recording.durationSeconds };
+    deliver(request.guideId, EMPTY_RESULT);
+    return { ok: true, audioEpochMs, durationSeconds };
   }
 
   const settings = await readVoiceSettings();
@@ -133,20 +189,8 @@ async function handleStop(request: VoiceStopRequest): Promise<VoiceStopResponse>
     return { ok: false, reason: 'missing-api-key', error: 'No transcription API key is configured' };
   }
 
-  try {
-    const result = await runNarrationPipeline({
-      pcm: recording.pcm,
-      sampleRate: recording.sampleRate,
-      steps: buildStepWindows(request.steps, audioEpochMs),
-      detectSpeech: detectSpeechByEnergy,
-      transcribe: createTranscriber(settings),
-    });
-    logger.info('voice: narration pipeline finished', result.stats);
-    return { ok: true, result, audioEpochMs, durationSeconds: recording.durationSeconds };
-  } catch (error) {
-    logger.error('voice: narration pipeline failed', error);
-    return { ok: false, reason: 'unknown', error: describe(error) };
-  }
+  void transcribeInBackground(request, recording, audioEpochMs, settings);
+  return { ok: true, audioEpochMs, durationSeconds };
 }
 
 async function permissionState(): Promise<VoicePermissionQueryResponse> {
@@ -161,6 +205,7 @@ async function permissionState(): Promise<VoicePermissionQueryResponse> {
 function status(): VoiceStatusResponse {
   return {
     recording: recorder.recording,
+    transcribing: pending > 0,
     audioEpochMs: recorder.audioEpochMs,
     sampleRate: recorder.sampleRate,
     samples: recorder.sampleCount,

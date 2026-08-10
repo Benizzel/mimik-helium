@@ -18,6 +18,7 @@ export const VoiceMessage = {
   VOICE_EPOCH: 'VOICE_EPOCH',
   VOICE_LEVEL: 'VOICE_LEVEL',
   VOICE_ERROR: 'VOICE_ERROR',
+  VOICE_RESULT: 'VOICE_RESULT',
   VOICE_PERMISSION_RESULT: 'VOICE_PERMISSION_RESULT',
 } as const;
 
@@ -58,11 +59,12 @@ export interface VoiceStepMark {
 export interface VoiceStopRequest extends VoiceEnvelope {
   type: typeof VoiceMessage.VOICE_STOP;
   target: typeof VOICE_OFFSCREEN_TARGET;
+  guideId: string;
   steps: VoiceStepMark[];
 }
 
 export type VoiceStopResponse =
-  | { ok: true; result: NarrationResult; audioEpochMs: number; durationSeconds: number }
+  | { ok: true; audioEpochMs: number; durationSeconds: number }
   | { ok: false; reason: VoiceErrorReason; error: string };
 
 export interface VoiceAbortRequest extends VoiceEnvelope {
@@ -81,6 +83,7 @@ export interface VoiceStatusRequest extends VoiceEnvelope {
 
 export interface VoiceStatusResponse {
   recording: boolean;
+  transcribing: boolean;
   audioEpochMs: number | null;
   sampleRate: number;
   samples: number;
@@ -118,6 +121,13 @@ export interface VoiceErrorEvent extends VoiceEnvelope {
   error: string;
 }
 
+export interface VoiceResultEvent extends VoiceEnvelope {
+  type: typeof VoiceMessage.VOICE_RESULT;
+  target: typeof VOICE_BACKGROUND_TARGET;
+  guideId: string;
+  result: NarrationResult;
+}
+
 export interface VoicePermissionResultEvent extends VoiceEnvelope {
   type: typeof VoiceMessage.VOICE_PERMISSION_RESULT;
   target: typeof VOICE_BACKGROUND_TARGET;
@@ -131,7 +141,12 @@ export type VoiceRequest =
   | VoiceStatusRequest
   | VoicePermissionQueryRequest;
 
-export type VoiceEvent = VoiceEpochEvent | VoiceLevelEvent | VoiceErrorEvent | VoicePermissionResultEvent;
+export type VoiceEvent =
+  | VoiceEpochEvent
+  | VoiceLevelEvent
+  | VoiceErrorEvent
+  | VoiceResultEvent
+  | VoicePermissionResultEvent;
 
 export function voiceMessage<T extends VoiceEnvelope>(message: Omit<T, 'timestamp'>): T {
   return { ...message, timestamp: Date.now() } as T;

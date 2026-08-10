@@ -107,9 +107,9 @@ export function startVoiceCapture(deviceId?: string): Promise<VoiceStartResponse
   );
 }
 
-export function stopVoiceCapture(steps: VoiceStepMark[]): Promise<VoiceStopResponse> {
+export function stopVoiceCapture(guideId: string, steps: VoiceStepMark[]): Promise<VoiceStopResponse> {
   return request(
-    voiceMessage<VoiceStopRequest>({ type: VoiceMessage.VOICE_STOP, target: VOICE_OFFSCREEN_TARGET, steps }),
+    voiceMessage<VoiceStopRequest>({ type: VoiceMessage.VOICE_STOP, target: VOICE_OFFSCREEN_TARGET, guideId, steps }),
   );
 }
 
