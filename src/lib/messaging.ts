@@ -11,6 +11,8 @@ export interface GetStateResponse {
 
 export interface StartRecordingData {
   url: string;
+  insertTargetGuideId?: string;
+  insertAtIndex?: number;
 }
 
 export interface StartRecordingResponse {
@@ -20,6 +22,7 @@ export interface StartRecordingResponse {
 export interface StopRecordingResponse {
   success: boolean;
   guideId?: string;
+  inserted?: boolean;
 }
 
 export interface CaptureStepData {

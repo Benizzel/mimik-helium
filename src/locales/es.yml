@@ -189,6 +189,13 @@ editor:
   rewriteErrorFailed: "No se pudo reescribir la selecci\xF3n. Int\xE9ntalo de nuevo."
   rewriteErrorStale: "El texto cambi\xF3. Vuelve a seleccionarlo."
 
+capture:
+  recordSteps: Grabar pasos
+  moreStepsTitle: Capturar más pasos
+  moreStepsBody: "Los nuevos pasos se insertan aquí. Elige la pestaña que quieres grabar."
+  startCapture: Iniciar captura
+  noRecordableTabs: No hay pestañas grabables abiertas en esta ventana.
+
 blocks:
   add: "Añadir bloque"
   heading: Encabezado

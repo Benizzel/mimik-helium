@@ -189,6 +189,13 @@ editor:
   rewriteErrorFailed: "N\xE3o foi poss\xEDvel reescrever a sele\xE7\xE3o. Tente novamente."
   rewriteErrorStale: O texto mudou. Selecione-o novamente.
 
+capture:
+  recordSteps: Gravar etapas
+  moreStepsTitle: Capturar mais etapas
+  moreStepsBody: "As novas etapas entram aqui. Escolha a aba que quer gravar."
+  startCapture: Iniciar captura
+  noRecordableTabs: Nenhuma aba gravável está aberta nesta janela.
+
 blocks:
   add: Adicionar bloco
   heading: "Título"
