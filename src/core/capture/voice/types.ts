@@ -1,18 +1,26 @@
+declare const secondsBrand: unique symbol;
+
+export type AbsoluteSeconds = number & { readonly [secondsBrand]: 'absolute' };
+
+export function absoluteSeconds(value: number): AbsoluteSeconds {
+  return value as AbsoluteSeconds;
+}
+
 export interface SpeechSegment {
-  start: number;
-  end: number;
+  start: AbsoluteSeconds;
+  end: AbsoluteSeconds;
 }
 
 export interface StepWindow {
   stepId: string;
-  from: number;
-  to: number;
+  from: AbsoluteSeconds;
+  to: AbsoluteSeconds;
 }
 
 export interface Batch {
-  start: number;
-  end: number;
-  segs: SpeechSegment[];
+  start: AbsoluteSeconds;
+  end: AbsoluteSeconds;
+  segments: SpeechSegment[];
 }
 
 export interface TranscriptSegment {
@@ -24,10 +32,23 @@ export interface TranscriptSegment {
   compression_ratio?: number;
 }
 
+export interface ScoredTranscriptSegment extends TranscriptSegment {
+  no_speech_prob: number;
+  avg_logprob: number;
+  compression_ratio: number;
+}
+
 export interface TranscriptWord {
   word: string;
   start: number;
   end: number;
+}
+
+export interface PositionedWord {
+  text: string;
+  batchStart: number;
+  start: AbsoluteSeconds;
+  end: AbsoluteSeconds;
 }
 
 export interface TranscriptionResponse {
@@ -36,12 +57,16 @@ export interface TranscriptionResponse {
   words?: TranscriptWord[];
 }
 
+export interface NarrationStats {
+  batches: number;
+  failedBatches: number;
+  droppedBatches: number;
+  verbatimSegments: number;
+  splitSegments: number;
+  rejectedSegments: number;
+}
+
 export interface NarrationResult {
-  byStep: Map<string, string>;
-  stats: {
-    batches: number;
-    verbatimSegments: number;
-    splitSegments: number;
-    rejectedSegments: number;
-  };
+  descriptions: Array<{ stepId: string; text: string }>;
+  stats: NarrationStats;
 }
