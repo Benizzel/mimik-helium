@@ -19,6 +19,7 @@ export const VoiceMessage = {
   VOICE_LEVEL: 'VOICE_LEVEL',
   VOICE_ERROR: 'VOICE_ERROR',
   VOICE_RESULT: 'VOICE_RESULT',
+  VOICE_HANDOFF: 'VOICE_HANDOFF',
   VOICE_PERMISSION_RESULT: 'VOICE_PERMISSION_RESULT',
 } as const;
 
@@ -128,6 +129,15 @@ export interface VoiceResultEvent extends VoiceEnvelope {
   result: NarrationResult;
 }
 
+export interface VoiceHandoffEvent extends VoiceEnvelope {
+  type: typeof VoiceMessage.VOICE_HANDOFF;
+  target: typeof VOICE_BACKGROUND_TARGET;
+  pcm: Int16Array;
+  sampleRate: number;
+  audioEpochMs: number;
+  durationSeconds: number;
+}
+
 export interface VoicePermissionResultEvent extends VoiceEnvelope {
   type: typeof VoiceMessage.VOICE_PERMISSION_RESULT;
   target: typeof VOICE_BACKGROUND_TARGET;
@@ -146,6 +156,7 @@ export type VoiceEvent =
   | VoiceLevelEvent
   | VoiceErrorEvent
   | VoiceResultEvent
+  | VoiceHandoffEvent
   | VoicePermissionResultEvent;
 
 export function voiceMessage<T extends VoiceEnvelope>(message: Omit<T, 'timestamp'>): T {

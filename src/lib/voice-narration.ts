@@ -1,0 +1,67 @@
+import { detectSpeechByEnergy } from '@/core/capture/voice/energy-gate';
+import { runNarrationPipeline } from '@/core/capture/voice/pipeline';
+import { buildStepWindows } from '@/core/capture/voice/step-windows';
+import { createTranscriber, type VoiceProvider } from '@/core/capture/voice/transcribe';
+import type { NarrationResult } from '@/core/capture/voice/types';
+import { localStorage } from './browser-api';
+import { logger } from './logger';
+import type { VoiceStepMark } from './voice-messages';
+
+const VOICE_PROVIDERS: VoiceProvider[] = ['openai', 'groq'];
+
+export interface TranscriptionSettings {
+  provider: VoiceProvider;
+  apiKey: string;
+  language?: string;
+}
+
+export interface VoiceRecording {
+  pcm: Int16Array;
+  sampleRate: number;
+  audioEpochMs: number;
+  durationSeconds: number;
+}
+
+export const EMPTY_NARRATION: NarrationResult = {
+  descriptions: [],
+  stats: {
+    batches: 0,
+    failedBatches: 0,
+    droppedBatches: 0,
+    verbatimSegments: 0,
+    splitSegments: 0,
+    rejectedSegments: 0,
+  },
+};
+
+export async function readTranscriptionSettings(): Promise<TranscriptionSettings> {
+  const stored = await localStorage.get(['voiceProvider', 'voiceApiKey', 'voiceLanguage', 'aiLanguage']);
+  const provider = stored.voiceProvider as VoiceProvider;
+  const locale = (stored.voiceLanguage ?? stored.aiLanguage) as string | undefined;
+  return {
+    provider: VOICE_PROVIDERS.includes(provider) ? provider : 'openai',
+    apiKey: typeof stored.voiceApiKey === 'string' ? stored.voiceApiKey.trim() : '',
+    language: locale ? locale.split('-')[0] : undefined,
+  };
+}
+
+export async function narrateRecording(
+  recording: VoiceRecording,
+  steps: VoiceStepMark[],
+  settings: TranscriptionSettings,
+): Promise<NarrationResult> {
+  try {
+    const result = await runNarrationPipeline({
+      pcm: recording.pcm,
+      sampleRate: recording.sampleRate,
+      steps: buildStepWindows(steps, recording.audioEpochMs, recording.durationSeconds),
+      detectSpeech: detectSpeechByEnergy,
+      transcribe: createTranscriber(settings),
+    });
+    logger.info('voice: narration pipeline finished', result.stats);
+    return result;
+  } catch (error) {
+    logger.error('voice: narration pipeline failed', error);
+    return EMPTY_NARRATION;
+  }
+}

@@ -1,12 +1,17 @@
-import { createTab, getExtensionURL, sendMessage } from './browser-api';
+import { createTab, getExtensionURL, onMessage, sendMessage } from './browser-api';
 import { logger } from './logger';
+import { localVoiceHost } from './voice-local';
 import {
+  isVoiceMessageFor,
+  VOICE_BACKGROUND_TARGET,
   VOICE_OFFSCREEN_TARGET,
+  VOICE_SIDEPANEL_TARGET,
   type VoiceAbortRequest,
   type VoiceAbortResponse,
   VoiceMessage,
   type VoicePermissionQueryRequest,
   type VoicePermissionQueryResponse,
+  type VoicePermissionResultEvent,
   type VoiceRequest,
   type VoiceStartRequest,
   type VoiceStartResponse,
@@ -17,6 +22,9 @@ import {
   type VoiceStopResponse,
   voiceMessage,
 } from './voice-messages';
+import { isVoiceStatus } from './voice-recovery';
+
+const IS_FIREFOX = import.meta.env.BROWSER === 'firefox';
 
 const OFFSCREEN_PATH = '/offscreen.html';
 const MIC_PERMISSION_PATH = '/mic-permission.html';
@@ -92,24 +100,95 @@ export async function closeOffscreenDocument(): Promise<void> {
   }
 }
 
+async function requestMicrophoneInPage(): Promise<boolean> {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    for (const track of stream.getTracks()) track.stop();
+    return true;
+  } catch (error) {
+    logger.warn('voice: microphone access was not granted', error);
+    return false;
+  }
+}
+
+async function promptForMicrophone(): Promise<void> {
+  const granted = await requestMicrophoneInPage();
+  void sendMessage(
+    voiceMessage<VoicePermissionResultEvent>({
+      type: VoiceMessage.VOICE_PERMISSION_RESULT,
+      target: VOICE_BACKGROUND_TARGET,
+      state: granted ? 'granted' : 'denied',
+    }) as unknown as Record<string, unknown>,
+  ).catch(() => undefined);
+}
+
 export function openMicPermissionPage(tabId?: number): Promise<unknown> {
+  if (IS_FIREFOX) {
+    if (localVoiceHost() === null) return Promise.resolve(undefined);
+    return promptForMicrophone();
+  }
   const url = getExtensionURL(tabId === undefined ? MIC_PERMISSION_PATH : `${MIC_PERMISSION_PATH}?tabId=${tabId}`);
   return createTab({ url, active: true });
 }
 
 function request<T>(message: VoiceRequest): Promise<T> {
+  const local = IS_FIREFOX ? localVoiceHost() : null;
+  if (local) return local.handle(message) as Promise<T>;
   return sendMessage(message as unknown as Record<string, unknown>) as Promise<T>;
 }
 
+export function supportsVoice(): boolean {
+  return IS_FIREFOX || supportsOffscreen();
+}
+
+export function ensureVoiceHost(): Promise<boolean> {
+  if (IS_FIREFOX) return Promise.resolve(true);
+  return ensureOffscreenDocument();
+}
+
+export async function hasVoiceHost(): Promise<boolean> {
+  if (!IS_FIREFOX) return hasOffscreenDocument();
+  return isVoiceStatus(await getVoiceStatus().catch(() => null));
+}
+
+export async function closeVoiceHost(): Promise<void> {
+  if (IS_FIREFOX) return;
+  await closeOffscreenDocument();
+}
+
+export async function closeVoiceHostIfIdle(): Promise<void> {
+  if (IS_FIREFOX) return;
+  const status = await getVoiceStatus().catch(() => null);
+  if (status?.recording || status?.transcribing) return;
+  await closeOffscreenDocument();
+}
+
+export function registerVoicePanelRelay(): void {
+  if (!IS_FIREFOX) return;
+  onMessage((message) => {
+    if (!isVoiceMessageFor(VOICE_SIDEPANEL_TARGET, message)) return undefined;
+    void sendMessage(message as unknown as Record<string, unknown>).catch(() => undefined);
+    return undefined;
+  });
+}
+
+async function answered<T>(message: VoiceRequest, missing: T): Promise<T> {
+  if (!IS_FIREFOX) return request<T>(message);
+  const response = await request<T | undefined>(message).catch(() => undefined);
+  return response ?? missing;
+}
+
 export function startVoiceCapture(deviceId?: string): Promise<VoiceStartResponse> {
-  return request(
+  return answered<VoiceStartResponse>(
     voiceMessage<VoiceStartRequest>({ type: VoiceMessage.VOICE_START, target: VOICE_OFFSCREEN_TARGET, deviceId }),
+    { started: false, reason: 'unsupported', error: 'No microphone host is available' },
   );
 }
 
 export function stopVoiceCapture(guideId: string, steps: VoiceStepMark[]): Promise<VoiceStopResponse> {
-  return request(
+  return answered<VoiceStopResponse>(
     voiceMessage<VoiceStopRequest>({ type: VoiceMessage.VOICE_STOP, target: VOICE_OFFSCREEN_TARGET, guideId, steps }),
+    { ok: false, reason: 'stream-ended', error: 'The microphone host is no longer available' },
   );
 }
 

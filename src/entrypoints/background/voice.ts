@@ -3,15 +3,16 @@ import { applyNarrationToSteps, getStepsForGuide } from '@/core/guides/service';
 import { localStorage, onMessage as onRuntimeMessage } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import {
-  closeOffscreenDocument,
-  ensureOffscreenDocument,
-  getVoiceStatus,
-  hasOffscreenDocument,
+  closeVoiceHost,
+  closeVoiceHostIfIdle,
+  ensureVoiceHost,
+  hasVoiceHost,
   openMicPermissionPage,
   queryMicPermission,
+  registerVoicePanelRelay,
   startVoiceCapture,
   stopVoiceCapture,
-  supportsOffscreen,
+  supportsVoice,
 } from '@/lib/offscreen';
 import { broadcastVoiceToPanel, type PanelVoiceUpdate } from '@/lib/port';
 import {
@@ -19,10 +20,14 @@ import {
   VOICE_BACKGROUND_TARGET,
   type VoiceErrorEvent,
   type VoiceEvent,
+  type VoiceHandoffEvent,
   VoiceMessage,
   type VoicePermissionResultEvent,
   type VoiceResultEvent,
+  type VoiceStepMark,
 } from '@/lib/voice-messages';
+import { narrateRecording, readTranscriptionSettings, type VoiceRecording } from '@/lib/voice-narration';
+import { handedOffPcm, voiceStopAction } from '@/lib/voice-recovery';
 
 const START_TIMEOUT_MS = 8000;
 
@@ -61,18 +66,15 @@ async function readVoiceSettings(): Promise<{ enabled: boolean; hasApiKey: boole
   };
 }
 
-async function closeVoiceHostIfIdle(): Promise<void> {
-  const status = await getVoiceStatus().catch(() => null);
-  if (status?.recording || status?.transcribing) return;
-  await closeOffscreenDocument();
-}
+let orphanAudio: VoiceRecording | null = null;
+let transcribingGuideId: string | null = null;
 
 function requestMicPermission(tabId?: number): void {
   void openMicPermissionPage(tabId).catch((error) => logger.error('voice: mic permission page failed to open', error));
 }
 
 async function beginVoiceCapture(microphoneId: string | undefined, tabId: number | undefined): Promise<void> {
-  if (!(await ensureOffscreenDocument())) {
+  if (!(await ensureVoiceHost())) {
     report({ phase: 'error', reason: 'unsupported', error: 'The offscreen document could not be created' });
     return;
   }
@@ -96,11 +98,11 @@ async function beginVoiceCapture(microphoneId: string | undefined, tabId: number
   logger.warn('voice: narration unavailable, recording without it', started);
   report({ phase: 'error', reason: started.reason, error: started.error });
   if (started.reason === 'permission-denied') requestMicPermission(tabId);
-  await closeOffscreenDocument();
+  await closeVoiceHost();
 }
 
 export async function startVoiceNarration(tabId?: number): Promise<void> {
-  if (!supportsOffscreen()) return;
+  if (!supportsVoice()) return;
   try {
     const { enabled, hasApiKey, microphoneId } = await readVoiceSettings();
     if (!enabled) return;
@@ -116,19 +118,54 @@ export async function startVoiceNarration(tabId?: number): Promise<void> {
   }
 }
 
+function stepMarks(steps: Array<{ id: string; timestamp: number }>): VoiceStepMark[] {
+  return steps.map((step) => ({ stepId: step.id, timestamp: step.timestamp }));
+}
+
+async function recoverNarration(guideId: string): Promise<void> {
+  const audio = orphanAudio;
+  orphanAudio = null;
+  if (!audio || import.meta.env.BROWSER !== 'firefox') return;
+
+  const settings = await readTranscriptionSettings();
+  if (!settings.apiKey) {
+    report({ phase: 'error', reason: 'missing-api-key', error: 'No transcription API key is configured' });
+    return;
+  }
+
+  logger.warn('voice: transcribing narration captured before the microphone host went away');
+  transcribingGuideId = guideId;
+  report({ phase: 'transcribing' });
+  const steps = await getStepsForGuide(guideId);
+  const result = await narrateRecording(audio, stepMarks(steps), settings);
+  await applyNarration(guideId, result);
+}
+
 export async function stopVoiceNarration(guideId: string): Promise<void> {
-  if (!supportsOffscreen()) return;
+  if (!supportsVoice()) return;
   try {
-    if (!(await hasOffscreenDocument())) return;
+    const action = voiceStopAction({
+      hostAlive: await hasVoiceHost(),
+      hasOrphanAudio: orphanAudio !== null,
+      wasRecording: phase.phase === 'recording',
+    });
+
+    if (action === 'skip') return;
+    if (action === 'recover') {
+      await recoverNarration(guideId);
+      return;
+    }
+    if (action === 'report-lost') {
+      report({ phase: 'error', reason: 'stream-ended', error: 'The microphone stopped before recording ended' });
+      return;
+    }
 
     const steps = await getStepsForGuide(guideId);
-    const response = await stopVoiceCapture(
-      guideId,
-      steps.map((step) => ({ stepId: step.id, timestamp: step.timestamp })),
-    );
+    const response = await stopVoiceCapture(guideId, stepMarks(steps));
 
     if (response.ok) {
       logger.info('voice: transcribing narration', response);
+      transcribingGuideId = guideId;
       if (phase.phase === 'recording') report({ phase: 'transcribing' });
       return;
     }
@@ -143,15 +180,16 @@ export async function stopVoiceNarration(guideId: string): Promise<void> {
   }
 }
 
-async function persistNarration(event: VoiceResultEvent): Promise<void> {
+async function applyNarration(guideId: string, result: VoiceResultEvent['result']): Promise<void> {
   try {
-    const steps = await getStepsForGuide(event.guideId);
+    transcribingGuideId = null;
+    const steps = await getStepsForGuide(guideId);
     const updates = narrationUpdates(
-      event.result,
+      result,
       steps.map((step) => step.id),
     );
     await applyNarrationToSteps(updates);
-    logger.info('voice: narration applied', { narrated: updates.length, of: steps.length, stats: event.result.stats });
+    logger.info('voice: narration applied', { narrated: updates.length, of: steps.length, stats: result.stats });
     report({ phase: 'idle', narrated: updates.length });
   } catch (error) {
     logger.error('voice: narration could not be applied', error);
@@ -166,13 +204,35 @@ function handleVoiceError(event: VoiceErrorEvent): void {
   report({ phase: 'error', reason: event.reason, error: event.error });
 }
 
+function handleVoiceHandoff(event: VoiceHandoffEvent): void {
+  const pcm = handedOffPcm(event.pcm);
+  if (!pcm) {
+    logger.error('voice: handed-off audio did not survive the message boundary', typeof event.pcm);
+    return;
+  }
+
+  orphanAudio = {
+    pcm,
+    sampleRate: event.sampleRate,
+    audioEpochMs: event.audioEpochMs,
+    durationSeconds: event.durationSeconds,
+  };
+  logger.warn('voice: microphone host handed off captured audio', {
+    samples: pcm.length,
+    durationSeconds: event.durationSeconds,
+  });
+  if (transcribingGuideId) void recoverNarration(transcribingGuideId);
+}
+
 function handlePermissionResult(event: VoicePermissionResultEvent): void {
   logger.info('voice: microphone permission', event.state);
   if (event.state === 'granted' && phase.phase === 'error') report({ phase: 'idle' });
 }
 
 export function registerVoiceListeners(): void {
-  if (!supportsOffscreen()) return;
+  if (!supportsVoice()) return;
+
+  registerVoicePanelRelay();
 
   onRuntimeMessage((message) => {
     if (!isVoiceMessageFor(VOICE_BACKGROUND_TARGET, message)) return undefined;
@@ -180,7 +240,10 @@ export function registerVoiceListeners(): void {
 
     switch (event.type) {
       case VoiceMessage.VOICE_RESULT:
-        void persistNarration(event);
+        void applyNarration(event.guideId, event.result);
+        return undefined;
+      case VoiceMessage.VOICE_HANDOFF:
+        handleVoiceHandoff(event);
         return undefined;
       case VoiceMessage.VOICE_ERROR:
         handleVoiceError(event);
