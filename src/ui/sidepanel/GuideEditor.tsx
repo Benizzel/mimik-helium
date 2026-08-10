@@ -299,7 +299,9 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
             >
               {editing ? <Check size={15} /> : <Pencil size={15} />}
             </button>
-            <ExportMenu guideId={guideId} guide={data.guide} steps={data.steps} screenshots={data.screenshots} />
+            {!editing && (
+              <ExportMenu guideId={guideId} guide={data.guide} steps={data.steps} screenshots={data.screenshots} />
+            )}
           </div>
         </div>
         <div className="mt-1 mb-1.5" style={{ marginLeft: '34px' }}>

@@ -138,10 +138,12 @@ export default function TopNav({ route }: TopNavProps) {
               <History size={14} />
               {i18n.t('editor.versionHistory')}
             </Button>
-            <Button size="sm" onClick={() => setExportOpen(true)}>
-              <Download size={14} />
-              {i18n.t('common.export')}
-            </Button>
+            {!editing && (
+              <Button size="sm" onClick={() => setExportOpen(true)}>
+                <Download size={14} />
+                {i18n.t('common.export')}
+              </Button>
+            )}
             <ExportPreviewModal
               open={exportOpen}
               onOpenChange={setExportOpen}
