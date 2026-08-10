@@ -174,18 +174,30 @@ onboarding:
   welcomeTitle: "Mimik est installé !"
   welcomeMessage: "En quelques étapes, vous pourrez capturer vos parcours navigateur et générer des guides automatiquement. Pas de compte nécessaire — tout reste dans votre navigateur."
   getStarted: "C'est parti"
-  aiStepLabel: "Étape 1 sur 3"
+  stepOf: "Étape $1 sur $2"
   aiTitle: Descriptions IA
   aiMessage: "Connectez votre clé API pour obtenir des descriptions générées par IA. C'est facultatif et modifiable dans les paramètres."
   aiGenerated: "Généré par IA"
   aiGeneratedDescription: "Description générée par IA"
-  blurStepLabel: "Étape 2 sur 3"
+  voiceTitle: "Parlez, puis agissez"
+  voiceMessage: "Dites ce que vous allez faire, puis faites-le. Mimik rattache votre narration à l'action qui suit : l'ordre compte plus que tout le reste."
+  voiceDoTitle: "Commentez d'abord, cliquez ensuite"
+  voiceDoSub: "Vos mots sont rattachés à l'action suivante : la description tombe donc sur l'étape voulue."
+  voiceDontTitle: "Ne commentez pas après avoir cliqué"
+  voiceDontSub: "Ce qui est dit après une action est rattaché à l'étape suivante, ce qui décale toutes les descriptions."
+  voiceEnableLabel: "Commenter pendant l'enregistrement"
+  voiceDataNotice: "Votre audio est envoyé au fournisseur choisi ici, avec votre propre clé API. Rien d'autre ne sort de votre navigateur."
+  voiceDemoLabel: "Comment la narration est rattachée"
+  voiceDemoSay: Vous dites
+  voiceDemoQuote: "Je vais ouvrir les paramètres de facturation"
+  voiceDemoAct: Puis vous cliquez
+  voiceDemoAction: "Clic sur l'onglet Facturation"
+  voiceDemoBadge: Depuis votre voix
   blurTitle: Flou intelligent
   blurMessage: "Floutez automatiquement les données sensibles dans vos captures. Choisissez quels types de données détecter."
   screenshotPreview: "Aperçu"
   notEnabled: "Non activé"
   categoriesProtected: "$1 catégories protégées"
-  pinStepLabel: "Étape 3 sur 3"
   pinTitle: "Épinglez Mimik"
   pinMessage: "Épinglez l'extension dans votre barre d'outils. Cliquez sur l'icône puzzle dans Chrome, puis épinglez Mimik."
   pinStep1Title: "Cliquez sur l'icône puzzle"
@@ -231,6 +243,30 @@ export:
 background:
   guideOnDomain: "Guide sur $1"
   newGuide: Nouveau guide
+
+voice:
+  turnOn: "Activer la narration vocale"
+  turnOff: "Désactiver la narration vocale"
+  micStarting: "Démarrage du micro..."
+  micHearing: Nous vous entendons
+  micQuiet: Aucun son
+  nextRecording: "La narration vocale est activée : elle démarrera au prochain enregistrement."
+  transcribing: "Transcription de votre narration..."
+  transcribingHint: "Les descriptions des étapes se mettront à jour toutes seules à la fin."
+  narrated: "Narration ajoutée à $1 étape."
+  narratedPlural: "Narration ajoutée à $1 étapes."
+  narratedNone: "Aucune narration ne correspond à vos étapes : les descriptions restent inchangées."
+  guideSafe: "Votre guide et vos captures sont intacts. Seule la narration a été perdue."
+  openSettings: "Ouvrir les paramètres"
+  errorPermissionDenied: "Le micro a été bloqué, rien n'a été narré."
+  errorNoDevice: "Aucun micro n'a été trouvé, rien n'a été narré."
+  errorNoAudio: "Le micro n'a capté aucun son, il n'y avait rien à transcrire."
+  errorMissingApiKey: "La narration vocale nécessite un fournisseur de transcription et une clé API."
+  errorStreamEnded: "Le micro s'est arrêté en cours d'enregistrement, la narration a été écourtée."
+  errorNotRecording: "La narration vocale n'était pas active, il n'y avait rien à transcrire."
+  errorAlreadyRecording: "La narration vocale était déjà en cours, cet enregistrement n'a pas été narré."
+  errorUnsupported: "Ce navigateur ne peut pas enregistrer de narration vocale."
+  errorUnknown: "La narration vocale s'est arrêtée de façon inattendue."
 
 micPermission:
   title: Autoriser l'accès au microphone

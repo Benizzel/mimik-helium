@@ -174,18 +174,30 @@ onboarding:
   welcomeTitle: "Mimik instalado!"
   welcomeMessage: "Em poucos passos você vai poder capturar fluxos de trabalho e gerar guias automáticos. Sem conta, sem cadastro \u2014 tudo fica no seu navegador."
   getStarted: Bora começar
-  aiStepLabel: Passo 1 de 3
+  stepOf: "Passo $1 de $2"
   aiTitle: Descrições com IA
   aiMessage: Conecta sua chave API pra ter descrições dos passos geradas por IA. É opcional e dá pra mudar depois nos ajustes.
   aiGenerated: Gerado por IA
   aiGeneratedDescription: Descrição gerada por IA
-  blurStepLabel: Passo 2 de 3
+  voiceTitle: Fala e depois faz
+  voiceMessage: "Diz o que você vai fazer e só depois faz. O Mimik liga sua narração à ação que vem depois dela, então a ordem é o que mais importa."
+  voiceDoTitle: Narra primeiro, clica depois
+  voiceDoSub: "Suas palavras vão pra próxima ação que você fizer, então a descrição cai no passo certo."
+  voiceDontTitle: "Não narra depois de clicar"
+  voiceDontSub: "O que você fala depois de uma ação vai pro passo seguinte, e isso joga todas as descrições pro passo errado."
+  voiceEnableLabel: Narrar enquanto eu gravo
+  voiceDataNotice: "Seu áudio vai pro provedor que você escolher aqui, com sua própria chave API. Nada mais do Mimik sai do seu navegador."
+  voiceDemoLabel: "Como a narração é atribuída"
+  voiceDemoSay: "Você fala"
+  voiceDemoQuote: "Agora vou abrir os ajustes de cobrança"
+  voiceDemoAct: E depois clica
+  voiceDemoAction: "Clique na aba Cobrança"
+  voiceDemoBadge: Da sua voz
   blurTitle: Desfoque inteligente
   blurMessage: Desfoca automaticamente dados sensíveis nas capturas. Escolha quais padrões ativar.
   screenshotPreview: Pré-visualização
   notEnabled: Não ativado
   categoriesProtected: "$1 categorias protegidas"
-  pinStepLabel: Passo 3 de 3
   pinTitle: Fixa o Mimik
   pinMessage: Fixa a extensão na barra pra ter acesso rápido. Clica no ícone de quebra-cabeça no Chrome e fixa o Mimik.
   pinStep1Title: Clica no ícone de quebra-cabeça
@@ -231,6 +243,30 @@ export:
 background:
   guideOnDomain: "Guia em $1"
   newGuide: Novo guia
+
+voice:
+  turnOn: "Ligar narração por voz"
+  turnOff: "Desligar narração por voz"
+  micStarting: "Ligando o microfone..."
+  micHearing: "Tô te ouvindo"
+  micQuiet: Sem som
+  nextRecording: "A narração por voz tá ligada e começa na sua próxima gravação."
+  transcribing: "Transcrevendo sua narração..."
+  transcribingHint: "As descrições dos passos vão se atualizar sozinhas quando terminar."
+  narrated: "Narração adicionada a $1 passo."
+  narratedPlural: "Narração adicionada a $1 passos."
+  narratedNone: "Nenhuma narração casou com seus passos, então as descrições ficaram como estavam."
+  guideSafe: "Seu guia e suas capturas estão de boa. Só a narração foi perdida."
+  openSettings: Abrir ajustes
+  errorPermissionDenied: "O navegador bloqueou o microfone, então nada foi narrado."
+  errorNoDevice: "Nenhum microfone foi encontrado, então nada foi narrado."
+  errorNoAudio: "O microfone não captou som nenhum, então não tinha nada pra transcrever."
+  errorMissingApiKey: "A narração por voz precisa de um provedor de transcrição e uma chave API."
+  errorStreamEnded: "O microfone parou no meio da gravação, então a narração terminou mais cedo."
+  errorNotRecording: "A narração por voz não estava rodando, então não tinha nada pra transcrever."
+  errorAlreadyRecording: "A narração por voz já estava rodando, então essa gravação não foi narrada."
+  errorUnsupported: "Este navegador não consegue gravar narração por voz."
+  errorUnknown: "A narração por voz parou do nada."
 
 micPermission:
   title: Permitir acesso ao microfone

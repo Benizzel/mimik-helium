@@ -174,18 +174,30 @@ onboarding:
   welcomeTitle: "¡Ya tienes Mimik instalado!"
   welcomeMessage: "En unos pasos vas a poder capturar flujos de trabajo y generar guías automáticas. Sin cuenta, sin registros \u2014 todo se queda en tu navegador."
   getStarted: Empezar
-  aiStepLabel: Paso 1 de 3
+  stepOf: "Paso $1 de $2"
   aiTitle: Descripciones con IA
   aiMessage: Conecta tu clave API para que la IA escriba las descripciones de cada paso. Es opcional y lo puedes cambiar después en Ajustes.
   aiGenerated: Generado por IA
   aiGeneratedDescription: "Descripción generada por IA"
-  blurStepLabel: Paso 2 de 3
+  voiceTitle: Habla y luego actúa
+  voiceMessage: "Di lo que vas a hacer y después hazlo. Mimik une tu narración con la acción que viene justo después, así que el orden es lo que más importa."
+  voiceDoTitle: Narra primero, después haz clic
+  voiceDoSub: "Tus palabras se asignan a la siguiente acción que hagas, así la descripción cae en el paso que querías."
+  voiceDontTitle: No narres después de hacer clic
+  voiceDontSub: "Lo que digas después de una acción se asigna al paso siguiente, y eso corre todas las descripciones al paso equivocado."
+  voiceEnableLabel: Narrar mientras grabo
+  voiceDataNotice: "Tu audio se envía al proveedor que elijas aquí, con tu propia clave API. Nada más de Mimik sale de tu navegador."
+  voiceDemoLabel: "Cómo se asigna la narración"
+  voiceDemoSay: Dices
+  voiceDemoQuote: "Ahora voy a abrir los ajustes de facturación"
+  voiceDemoAct: Y luego haces clic
+  voiceDemoAction: Clic en la pestaña Facturación
+  voiceDemoBadge: De tu voz
   blurTitle: Desenfoque inteligente
   blurMessage: Detecta y desenfoca datos sensibles en tus capturas automáticamente. Elige qué patrones activar.
   screenshotPreview: Vista previa
   notEnabled: No activado
   categoriesProtected: "$1 categorías protegidas"
-  pinStepLabel: Paso 3 de 3
   pinTitle: Fija Mimik
   pinMessage: Fija la extensión en tu barra para tenerla siempre a un clic. Busca el ícono de rompecabezas en Chrome y fija Mimik.
   pinStep1Title: Haz clic en el ícono de rompecabezas
@@ -231,6 +243,30 @@ export:
 background:
   guideOnDomain: "Guía en $1"
   newGuide: Nueva guía
+
+voice:
+  turnOn: "Activar narración por voz"
+  turnOff: "Desactivar narración por voz"
+  micStarting: "Iniciando el micrófono..."
+  micHearing: Te estamos oyendo
+  micQuiet: Sin sonido
+  nextRecording: "La narración por voz está activada y empieza en tu próxima grabación."
+  transcribing: "Transcribiendo tu narración..."
+  transcribingHint: "Las descripciones de los pasos se actualizarán solas al terminar."
+  narrated: "Narración añadida a $1 paso."
+  narratedPlural: "Narración añadida a $1 pasos."
+  narratedNone: "Ninguna narración coincidió con tus pasos, así que las descripciones no cambiaron."
+  guideSafe: "Tu guía y tus capturas están intactas. Solo se perdió la narración."
+  openSettings: Abrir ajustes
+  errorPermissionDenied: "El navegador bloqueó el micrófono, así que no se narró nada."
+  errorNoDevice: "No se encontró ningún micrófono, así que no se narró nada."
+  errorNoAudio: "El micrófono no captó ningún sonido, así que no había nada que transcribir."
+  errorMissingApiKey: "La narración por voz necesita un proveedor de transcripción y una clave API."
+  errorStreamEnded: "El micrófono se detuvo a mitad de la grabación, así que la narración terminó antes."
+  errorNotRecording: "La narración por voz no estaba activa, así que no había nada que transcribir."
+  errorAlreadyRecording: "La narración por voz ya estaba en marcha, así que esta grabación no se narró."
+  errorUnsupported: "Este navegador no puede grabar narración por voz."
+  errorUnknown: "La narración por voz se detuvo de forma inesperada."
 
 micPermission:
   title: Permitir acceso al micrófono

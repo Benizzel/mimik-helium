@@ -174,18 +174,30 @@ onboarding:
   welcomeTitle: "You've successfully installed Mimik!"
   welcomeMessage: "With just a few steps, you'll be ready to auto-capture browser workflows and generate step-by-step guides. No account needed \u2014 everything stays in your browser."
   getStarted: Get started
-  aiStepLabel: Step 1 of 3
+  stepOf: "Step $1 of $2"
   aiTitle: AI Descriptions
   aiMessage: Connect your own API key to get AI-generated step descriptions. This is optional and can be changed later in settings.
   aiGenerated: AI generated
   aiGeneratedDescription: AI-generated description
-  blurStepLabel: Step 2 of 3
+  voiceTitle: Talk, then act
+  voiceMessage: Say what you are about to do, then do it. Mimik matches your narration to the action that follows it, so the order matters more than anything else.
+  voiceDoTitle: Narrate first, then click
+  voiceDoSub: Your words are attached to the next action you take, so the description lands on the step you meant.
+  voiceDontTitle: Do not narrate after clicking
+  voiceDontSub: Anything said after an action is matched to the following step, which shifts every description onto the wrong one.
+  voiceEnableLabel: Narrate while I record
+  voiceDataNotice: Your audio is sent to the provider you pick here, using your own API key. Nothing else in Mimik leaves your browser.
+  voiceDemoLabel: How narration lands
+  voiceDemoSay: You say
+  voiceDemoQuote: "Now I'll open the billing settings"
+  voiceDemoAct: Then you click
+  voiceDemoAction: Click the Billing tab
+  voiceDemoBadge: From your voice
   blurTitle: Smart Blur
   blurMessage: Automatically blur sensitive information in screenshots. Choose which patterns to detect.
   screenshotPreview: Screenshot preview
   notEnabled: Not enabled
   categoriesProtected: "$1 categories protected"
-  pinStepLabel: Step 3 of 3
   pinTitle: Pin Mimik
   pinMessage: Pin the extension to your toolbar for quick access. Click the puzzle icon in Chrome, then pin Mimik.
   pinStep1Title: Click the puzzle icon
@@ -231,6 +243,30 @@ export:
 background:
   guideOnDomain: "Guide on $1"
   newGuide: New Guide
+
+voice:
+  turnOn: Turn on voice narration
+  turnOff: Turn off voice narration
+  micStarting: Starting microphone...
+  micHearing: Hearing you
+  micQuiet: No sound
+  nextRecording: Voice narration is on and starts with your next recording.
+  transcribing: Transcribing your narration...
+  transcribingHint: Step descriptions will update on their own once this finishes.
+  narrated: "Narration added to $1 step."
+  narratedPlural: "Narration added to $1 steps."
+  narratedNone: No narration matched your steps, so the descriptions are unchanged.
+  guideSafe: Your guide and screenshots are fine. Only the narration was lost.
+  openSettings: Open settings
+  errorPermissionDenied: Microphone access was blocked, so nothing was narrated.
+  errorNoDevice: No microphone was found, so nothing was narrated.
+  errorNoAudio: The microphone picked up no sound, so there was nothing to transcribe.
+  errorMissingApiKey: Voice narration needs a transcription provider and API key.
+  errorStreamEnded: The microphone stopped part way through, so narration ended early.
+  errorNotRecording: Voice narration was not running, so there was nothing to transcribe.
+  errorAlreadyRecording: Voice narration was already running, so this recording was not narrated.
+  errorUnsupported: This browser cannot record voice narration.
+  errorUnknown: Voice narration stopped unexpectedly.
 
 micPermission:
   title: Allow microphone access
