@@ -2,6 +2,7 @@ import { History, Loader2, Play, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TypeAnimation } from 'react-type-animation';
 import { i18n } from '#imports';
+import { startInsertRecording } from '@/core/capture/start-insert-recording';
 import { actionSteps } from '@/core/guides/blocks';
 import {
   deleteStep,
@@ -469,6 +470,10 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
             readOnly={!editing || preview !== null}
             hasApiKey={hasApiKey}
             onChanged={loadGuide}
+            onInsertRecording={(targetGuideId, insertAtIndex, tabId) => {
+              openSidebar();
+              void startInsertRecording(targetGuideId, insertAtIndex, tabId);
+            }}
           />
         </div>
 

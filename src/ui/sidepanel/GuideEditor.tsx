@@ -21,6 +21,7 @@ import { getMostCommonDomain } from '@/lib/utils';
 import { Input } from '@/ui/components/ui/input';
 import { useAskAi } from '@/ui/shared/AskAi';
 import BlockCard from '@/ui/shared/BlockCard';
+import CaptureTabDialog from '@/ui/shared/CaptureTabDialog';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
 import { guideDescriptionErrorMessage } from '@/ui/shared/guide-description-error';
@@ -34,6 +35,7 @@ interface GuideEditorProps {
   guideId: string;
   onBack: () => void;
   onGuideMe?: (guideId: string) => void;
+  onInsertRecording?: (guideId: string, insertAtIndex: number, tabId: number) => void;
 }
 
 interface OpenInFullViewOptions {
@@ -52,7 +54,8 @@ function flushFocusedField() {
   if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) el.blur();
 }
 
-export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorProps) {
+export default function GuideEditor({ guideId, onBack, onGuideMe, onInsertRecording }: GuideEditorProps) {
+  const [recordAtIndex, setRecordAtIndex] = useState<number | null>(null);
   const [data, setData] = useState<GuideData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -373,11 +376,21 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
         {data.steps.length === 0 ? (
           <>
             <EmptyGuideState />
-            {editing && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(0, blockType)} />}
+            {editing && (
+              <InsertBlockMenu
+                onInsert={(blockType) => handleInsertBlock(0, blockType)}
+                onRecord={onInsertRecording && (() => setRecordAtIndex(0))}
+              />
+            )}
           </>
         ) : (
           <>
-            {editing && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(0, blockType)} />}
+            {editing && (
+              <InsertBlockMenu
+                onInsert={(blockType) => handleInsertBlock(0, blockType)}
+                onRecord={onInsertRecording && (() => setRecordAtIndex(0))}
+              />
+            )}
             {data.steps.map((step, idx) => (
               <div key={step.id}>
                 {dragOverIndex === idx && dragIndex !== null && dragIndex !== idx && (
@@ -408,12 +421,26 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
                     dragHandleProps={dragHandlers(idx)}
                   />
                 )}
-                {editing && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(idx + 1, blockType)} />}
+                {editing && (
+                  <InsertBlockMenu
+                    onInsert={(blockType) => handleInsertBlock(idx + 1, blockType)}
+                    onRecord={onInsertRecording && (() => setRecordAtIndex(idx + 1))}
+                  />
+                )}
               </div>
             ))}
           </>
         )}
       </div>
+      <CaptureTabDialog
+        open={recordAtIndex !== null}
+        onCancel={() => setRecordAtIndex(null)}
+        onStart={(tabId) => {
+          const atIndex = recordAtIndex;
+          setRecordAtIndex(null);
+          if (atIndex !== null) onInsertRecording?.(guideId, atIndex, tabId);
+        }}
+      />
     </div>
   );
 }

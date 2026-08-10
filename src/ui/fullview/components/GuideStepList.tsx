@@ -4,6 +4,7 @@ import { insertBlock, reorderSteps } from '@/core/guides/service';
 import type { BlockType, Screenshot, Step } from '@/core/guides/types';
 import { useFullview } from '@/stores/fullview';
 import BlockCard from '@/ui/shared/BlockCard';
+import CaptureTabDialog from '@/ui/shared/CaptureTabDialog';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import { dominantRatio } from '@/ui/shared/ImagePlaceholder';
 import InsertBlockMenu from '@/ui/shared/InsertBlockMenu';
@@ -20,6 +21,7 @@ interface GuideStepListProps {
   readOnly?: boolean;
   onChanged?: () => void;
   hasApiKey?: boolean;
+  onInsertRecording?: (guideId: string, insertAtIndex: number, tabId: number) => void;
 }
 
 export default function GuideStepList({
@@ -33,12 +35,14 @@ export default function GuideStepList({
   readOnly,
   onChanged,
   hasApiKey,
+  onInsertRecording,
 }: GuideStepListProps) {
   const { scrollToStepId, setActiveStepId } = useFullview((s) => ({
     scrollToStepId: s.scrollToStepId,
     setActiveStepId: s.setActiveStepId,
   }));
 
+  const [recordAtIndex, setRecordAtIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const stepRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -102,18 +106,41 @@ export default function GuideStepList({
           onDragEnd: handleDragEnd,
         };
 
+  const captureDialog = (
+    <CaptureTabDialog
+      open={recordAtIndex !== null}
+      onCancel={() => setRecordAtIndex(null)}
+      onStart={(tabId) => {
+        const atIndex = recordAtIndex;
+        setRecordAtIndex(null);
+        if (atIndex !== null) onInsertRecording?.(guideId, atIndex, tabId);
+      }}
+    />
+  );
+
   if (steps.length === 0) {
     return (
       <div className="flex flex-col">
         <EmptyGuideState />
-        {!readOnly && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(0, blockType)} />}
+        {!readOnly && (
+          <InsertBlockMenu
+            onInsert={(blockType) => handleInsertBlock(0, blockType)}
+            onRecord={onInsertRecording && (() => setRecordAtIndex(0))}
+          />
+        )}
+        {captureDialog}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {!readOnly && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(0, blockType)} />}
+      {!readOnly && (
+        <InsertBlockMenu
+          onInsert={(blockType) => handleInsertBlock(0, blockType)}
+          onRecord={onInsertRecording && (() => setRecordAtIndex(0))}
+        />
+      )}
       {steps.map((step, idx) => (
         <div
           key={step.id}
@@ -151,9 +178,15 @@ export default function GuideStepList({
               dragHandleProps={dragHandlers(idx)}
             />
           )}
-          {!readOnly && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(idx + 1, blockType)} />}
+          {!readOnly && (
+            <InsertBlockMenu
+              onInsert={(blockType) => handleInsertBlock(idx + 1, blockType)}
+              onRecord={onInsertRecording && (() => setRecordAtIndex(idx + 1))}
+            />
+          )}
         </div>
       ))}
+      {captureDialog}
     </div>
   );
 }
