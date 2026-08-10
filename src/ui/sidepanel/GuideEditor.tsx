@@ -1,27 +1,31 @@
 import { ArrowLeft, Check, Layers, Loader2, Maximize2, Pencil, Play, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
+import { actionSteps, isBlock, stepNumbers } from '@/core/guides/blocks';
 import {
   createSnapshot,
   deleteStep,
   getGuide,
+  insertBlock,
   onGuidesChanged,
   reorderSteps,
   updateGuideDescription,
   updateGuideTitle,
   updateStepDescription,
 } from '@/core/guides/service';
-import type { Guide, Screenshot, Step } from '@/core/guides/types';
+import type { BlockType, Guide, Screenshot, Step } from '@/core/guides/types';
 import { createTab, focusWindow, getExtensionURL, localStorage, queryTabs, updateTab } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { getMostCommonDomain } from '@/lib/utils';
 import { Input } from '@/ui/components/ui/input';
 import { useAskAi } from '@/ui/shared/AskAi';
+import BlockCard from '@/ui/shared/BlockCard';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
 import { guideDescriptionErrorMessage } from '@/ui/shared/guide-description-error';
 import { dominantRatio } from '@/ui/shared/ImagePlaceholder';
+import InsertBlockMenu from '@/ui/shared/InsertBlockMenu';
 import Toast from '@/ui/shared/Toast';
 import ExportMenu from './ExportMenu';
 import StepCard from './StepCard';
@@ -161,6 +165,14 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
     [guideId, loadGuide, applyGuide],
   );
 
+  const handleInsertBlock = useCallback(
+    async (atIndex: number, blockType: BlockType) => {
+      await insertBlock(guideId, atIndex, blockType, '');
+      await loadGuide();
+    },
+    [guideId, loadGuide],
+  );
+
   const openInFullView = useCallback((targetGuideId: string, options?: OpenInFullViewOptions) => {
     const params = new URLSearchParams({ guideId: targetGuideId });
     if (options?.stepId) params.set('stepId', options.stepId);
@@ -201,6 +213,39 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
   }
 
   const metaGenerating = title === i18n.t('fullview.untitledGuide') && data.steps.length > 0 && !description;
+  const actionCount = actionSteps(data.steps).length;
+  const numbers = stepNumbers(data.steps);
+
+  const dragHandlers = (idx: number) =>
+    editing
+      ? {
+          onDragStart: (e: React.DragEvent) => {
+            setDragIndex(idx);
+            e.dataTransfer.effectAllowed = 'move';
+          },
+          onDragOver: (e: React.DragEvent) => {
+            e.preventDefault();
+            setDragOverIndex(idx);
+          },
+          onDragEnd: () => {
+            if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
+              setData((prev) => {
+                if (!prev) return prev;
+                const newSteps = [...prev.steps];
+                const [moved] = newSteps.splice(dragIndex, 1);
+                newSteps.splice(dragOverIndex, 0, moved);
+                reorderSteps(
+                  guideId,
+                  newSteps.map((s) => s.id),
+                );
+                return { ...prev, steps: newSteps };
+              });
+            }
+            setDragIndex(null);
+            setDragOverIndex(null);
+          },
+        }
+      : undefined;
 
   return (
     <div className="min-h-screen bg-card flex flex-col">
@@ -305,9 +350,9 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
         <div className="text-[11px] flex items-center gap-2 text-muted-foreground" style={{ marginLeft: '34px' }}>
           <span className="flex items-center gap-1">
             <Layers size={11} />
-            {data.steps.length !== 1
-              ? i18n.t('fullview.stepCountPlural', [String(data.steps.length)])
-              : i18n.t('fullview.stepCount', [String(data.steps.length)])}
+            {actionCount !== 1
+              ? i18n.t('fullview.stepCountPlural', [String(actionCount)])
+              : i18n.t('fullview.stepCount', [String(actionCount)])}
           </span>
           {(() => {
             const d = getMostCommonDomain(data.steps);
@@ -324,58 +369,47 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
       </div>
       <div className="px-4 pt-1 pb-4 flex-1 flex flex-col">
         {data.steps.length === 0 ? (
-          <EmptyGuideState />
+          <>
+            <EmptyGuideState />
+            {editing && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(0, blockType)} />}
+          </>
         ) : (
-          data.steps.map((step, idx) => (
-            <div key={step.id}>
-              {dragOverIndex === idx && dragIndex !== null && dragIndex !== idx && (
-                <div className="h-1 bg-accent rounded-full mx-4 mb-1" />
-              )}
-              <StepCard
-                step={step}
-                screenshot={data.screenshots.get(step.id)}
-                placeholderRatio={dominantRatio(data.screenshots)}
-                frameRatio={dominantRatio(data.screenshots)}
-                onDescriptionChange={handleDescriptionChange}
-                onDelete={handleDeleteStep}
-                onOpenEditor={(stepId, tool) => openInFullView(guideId, { stepId, tool })}
-                readOnly={!editing}
-                hasApiKey={hasApiKey}
-                onChanged={loadGuide}
-                dragHandleProps={
-                  editing
-                    ? {
-                        onDragStart: (e: React.DragEvent) => {
-                          setDragIndex(idx);
-                          e.dataTransfer.effectAllowed = 'move';
-                        },
-                        onDragOver: (e: React.DragEvent) => {
-                          e.preventDefault();
-                          setDragOverIndex(idx);
-                        },
-                        onDragEnd: () => {
-                          if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
-                            setData((prev) => {
-                              if (!prev) return prev;
-                              const newSteps = [...prev.steps];
-                              const [moved] = newSteps.splice(dragIndex, 1);
-                              newSteps.splice(dragOverIndex, 0, moved);
-                              reorderSteps(
-                                guideId,
-                                newSteps.map((s) => s.id),
-                              );
-                              return { ...prev, steps: newSteps };
-                            });
-                          }
-                          setDragIndex(null);
-                          setDragOverIndex(null);
-                        },
-                      }
-                    : undefined
-                }
-              />
-            </div>
-          ))
+          <>
+            {editing && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(0, blockType)} />}
+            {data.steps.map((step, idx) => (
+              <div key={step.id}>
+                {dragOverIndex === idx && dragIndex !== null && dragIndex !== idx && (
+                  <div className="h-1 bg-accent rounded-full mx-4 mb-1" />
+                )}
+                {isBlock(step) ? (
+                  <BlockCard
+                    step={step}
+                    onDescriptionChange={handleDescriptionChange}
+                    onDelete={handleDeleteStep}
+                    onChanged={loadGuide}
+                    readOnly={!editing}
+                    dragHandleProps={dragHandlers(idx)}
+                  />
+                ) : (
+                  <StepCard
+                    step={step}
+                    number={numbers.get(step.id) ?? 0}
+                    screenshot={data.screenshots.get(step.id)}
+                    placeholderRatio={dominantRatio(data.screenshots)}
+                    frameRatio={dominantRatio(data.screenshots)}
+                    onDescriptionChange={handleDescriptionChange}
+                    onDelete={handleDeleteStep}
+                    onOpenEditor={(stepId, tool) => openInFullView(guideId, { stepId, tool })}
+                    readOnly={!editing}
+                    hasApiKey={hasApiKey}
+                    onChanged={loadGuide}
+                    dragHandleProps={dragHandlers(idx)}
+                  />
+                )}
+                {editing && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(idx + 1, blockType)} />}
+              </div>
+            ))}
+          </>
         )}
       </div>
     </div>

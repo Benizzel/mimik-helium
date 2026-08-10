@@ -18,6 +18,7 @@ interface DragHandleProps {
 
 interface StepCardProps {
   step: Step;
+  number: number;
   screenshot: Screenshot | undefined;
   onDescriptionChange: (stepId: string, description: string) => void;
   onDelete: (stepId: string) => void;
@@ -33,6 +34,7 @@ interface StepCardProps {
 
 export default function StepCard({
   step,
+  number,
   screenshot,
   onDescriptionChange,
   onDelete,
@@ -121,7 +123,7 @@ export default function StepCard({
       {screenshot ? (
         <ScreenshotView
           screenshot={screenshot}
-          alt={`Step ${step.index + 1} screenshot`}
+          alt={`Step ${number} screenshot`}
           className="!rounded-none !border-0"
           crop
           frameRatio={frameRatio}
@@ -141,7 +143,7 @@ export default function StepCard({
       <div className="px-3 pt-2 pb-2">
         <div className="flex items-center gap-2">
           <span className="flex items-center justify-center w-[22px] h-[22px] rounded-full text-[11px] font-bold shrink-0 bg-primary text-primary-foreground">
-            {step.index + 1}
+            {number}
           </span>
           {step.aiPending ? (
             <span className="flex items-center gap-1.5 text-[13px] font-medium leading-snug flex-1 text-muted-foreground">
