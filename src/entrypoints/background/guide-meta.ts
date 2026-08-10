@@ -1,6 +1,7 @@
 import { i18n } from '#imports';
 import { generateGuideMeta } from '@/core/capture/ai/meta';
 import { AI_PROVIDERS } from '@/core/capture/ai/models';
+import { actionSteps } from '@/core/guides/blocks';
 import { getGuideDomain, getStepsForGuide, updateGuideDescription, updateGuideTitle } from '@/core/guides/service';
 import { localStorage } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
@@ -16,7 +17,7 @@ async function resolveGuideMetaInputs(guideId: string): Promise<GuideMetaInputs>
   const settings = await localStorage.get(['aiApiKey', 'aiProvider', 'aiModel']);
   if (!settings.aiApiKey) return { ok: false, reason: 'no-api-key' };
 
-  const steps = await getStepsForGuide(guideId);
+  const steps = actionSteps(await getStepsForGuide(guideId));
   const described = steps.filter((s) => s.description).map((s) => ({ description: s.description, url: s.url }));
   if (described.length === 0) return { ok: false, reason: 'no-steps' };
 
