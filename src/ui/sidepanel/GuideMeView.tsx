@@ -4,6 +4,7 @@ import { browser, i18n } from '#imports';
 import { stepRequiresManual } from '@/core/guideme/manual';
 import type { GuideMeSession } from '@/core/guideme/session';
 import { BLOCKED_KEY, SESSION_KEY } from '@/core/guideme/session';
+import { actionSteps } from '@/core/guides/blocks';
 import { getGuide } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { sendMessage } from '@/lib/messaging';
@@ -112,13 +113,14 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
     });
   }, []);
 
-  const viewedStep = data?.steps[activeStepIndex] ?? null;
+  const steps = actionSteps(data?.steps ?? []);
+  const viewedStep = steps[activeStepIndex] ?? null;
   const viewedScreenshot = viewedStep ? data?.screenshots.get(viewedStep.id) : undefined;
 
   if (loading) return <p className="text-sm text-purple p-4">{i18n.t('common.loading')}</p>;
   if (!data) return <p className="text-sm text-purple p-4">{i18n.t('guideme.guideNotFound')}</p>;
 
-  const totalSteps = data.steps.length;
+  const totalSteps = steps.length;
   const viewedIsManual = viewedStep ? stepRequiresManual(viewedStep, viewedScreenshot) : false;
   const showRoadblock = !viewedIsManual && blockedStepIndex === activeStepIndex;
   const goTo = (stepIndex: number) => sendMessage('guideMeGoTo', { stepIndex }).catch(() => {});
@@ -141,7 +143,7 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
       </div>
 
       <div className="px-4 pb-3 flex gap-1">
-        {data.steps.map((step, idx) => (
+        {steps.map((step, idx) => (
           <div
             key={step.id}
             className={`flex-1 h-[3px] rounded-[1.5px] ${
@@ -210,7 +212,7 @@ export default function GuideMeView({ guideId, onExit, onComplete }: GuideMeView
       </div>
 
       <div className="flex-1 px-4 pb-4 overflow-y-auto">
-        {data.steps.map((step, idx) => {
+        {steps.map((step, idx) => {
           const isDone = idx < activeStepIndex;
           const isActive = idx === activeStepIndex;
           return (

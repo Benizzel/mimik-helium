@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { reorderSteps } from '@/core/guides/service';
-import type { Screenshot, Step } from '@/core/guides/types';
+import { isBlock, stepNumbers } from '@/core/guides/blocks';
+import { insertBlock, reorderSteps } from '@/core/guides/service';
+import type { BlockType, Screenshot, Step } from '@/core/guides/types';
 import { useFullview } from '@/stores/fullview';
+import BlockCard from '@/ui/shared/BlockCard';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import { dominantRatio } from '@/ui/shared/ImagePlaceholder';
+import InsertBlockMenu from '@/ui/shared/InsertBlockMenu';
 import StepCard from '@/ui/sidepanel/StepCard';
 
 interface GuideStepListProps {
@@ -40,6 +43,7 @@ export default function GuideStepList({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const stepRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const frameRatio = dominantRatio(screenshots);
+  const numbers = stepNumbers(steps);
 
   useEffect(() => {
     if (scrollToStepId) {
@@ -78,12 +82,38 @@ export default function GuideStepList({
     setDragOverIndex(null);
   };
 
+  const handleInsertBlock = async (atIndex: number, blockType: BlockType) => {
+    await insertBlock(guideId, atIndex, blockType, '');
+    onChanged?.();
+  };
+
+  const dragHandlers = (idx: number) =>
+    readOnly
+      ? undefined
+      : {
+          onDragStart: (e: React.DragEvent) => {
+            setDragIndex(idx);
+            e.dataTransfer.effectAllowed = 'move';
+          },
+          onDragOver: (e: React.DragEvent) => {
+            e.preventDefault();
+            setDragOverIndex(idx);
+          },
+          onDragEnd: handleDragEnd,
+        };
+
   if (steps.length === 0) {
-    return <EmptyGuideState />;
+    return (
+      <div className="flex flex-col">
+        <EmptyGuideState />
+        {!readOnly && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(0, blockType)} />}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
+      {!readOnly && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(0, blockType)} />}
       {steps.map((step, idx) => (
         <div
           key={step.id}
@@ -96,33 +126,32 @@ export default function GuideStepList({
           {dragOverIndex === idx && dragIndex !== null && dragIndex !== idx && (
             <div className="h-1 bg-accent rounded-full mx-4 mb-2" />
           )}
-          <StepCard
-            step={step}
-            screenshot={screenshots.get(step.id)}
-            placeholderRatio={frameRatio}
-            frameRatio={frameRatio}
-            onDescriptionChange={onDescriptionChange}
-            onDelete={onDelete}
-            onOpenEditor={onOpenEditor}
-            readOnly={readOnly}
-            hasApiKey={hasApiKey}
-            onChanged={onChanged}
-            dragHandleProps={
-              readOnly
-                ? undefined
-                : {
-                    onDragStart: (e: React.DragEvent) => {
-                      setDragIndex(idx);
-                      e.dataTransfer.effectAllowed = 'move';
-                    },
-                    onDragOver: (e: React.DragEvent) => {
-                      e.preventDefault();
-                      setDragOverIndex(idx);
-                    },
-                    onDragEnd: handleDragEnd,
-                  }
-            }
-          />
+          {isBlock(step) ? (
+            <BlockCard
+              step={step}
+              onDescriptionChange={onDescriptionChange}
+              onDelete={onDelete}
+              onChanged={onChanged}
+              readOnly={readOnly}
+              dragHandleProps={dragHandlers(idx)}
+            />
+          ) : (
+            <StepCard
+              step={step}
+              number={numbers.get(step.id) ?? 0}
+              screenshot={screenshots.get(step.id)}
+              placeholderRatio={frameRatio}
+              frameRatio={frameRatio}
+              onDescriptionChange={onDescriptionChange}
+              onDelete={onDelete}
+              onOpenEditor={onOpenEditor}
+              readOnly={readOnly}
+              hasApiKey={hasApiKey}
+              onChanged={onChanged}
+              dragHandleProps={dragHandlers(idx)}
+            />
+          )}
+          {!readOnly && <InsertBlockMenu onInsert={(blockType) => handleInsertBlock(idx + 1, blockType)} />}
         </div>
       ))}
     </div>

@@ -189,6 +189,20 @@ editor:
   rewriteErrorFailed: "No se pudo reescribir la selecci\xF3n. Int\xE9ntalo de nuevo."
   rewriteErrorStale: "El texto cambi\xF3. Vuelve a seleccionarlo."
 
+blocks:
+  add: "Añadir bloque"
+  heading: Encabezado
+  callout: Nota
+  headingPlaceholder: "Título de sección"
+  calloutPlaceholder: Escribe una nota
+  deleteHeading: "¿Eliminar este encabezado?"
+  deleteCallout: "¿Eliminar esta nota?"
+  variantInfo: "Información"
+  variantWarning: Advertencia
+  variantError: Error
+  variantSuccess: "Éxito"
+  variantCustom: Personalizado
+
 history:
   title: Historial de versiones
   current: Actual

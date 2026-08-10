@@ -3,6 +3,7 @@ import { rewriteSelection } from '@/core/capture/ai/rewrite';
 import { validateApiKey } from '@/core/capture/ai/validate';
 import { stepRequiresManual } from '@/core/guideme/manual';
 import { advanceSession, cancelSession, completeSession, getSession, startSession } from '@/core/guideme/session';
+import { actionSteps } from '@/core/guides/blocks';
 import { createGuide, getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
 import type { Step } from '@/core/guides/types';
 import { getActiveTab, localStorage, sendMessageToTab, setSidePanelBehavior, updateTab } from '@/lib/browser-api';
@@ -154,7 +155,7 @@ export default defineBackground(() => {
   });
 
   onMessage('startGuideMe', async ({ data }) => {
-    const steps = await getStepsForGuide(data.guideId);
+    const steps = actionSteps(await getStepsForGuide(data.guideId));
     if (steps.length === 0) return { started: false, error: 'No steps' };
 
     const firstStep = steps.find((s) => s.elementMeta) ?? steps[0];
@@ -175,7 +176,7 @@ export default defineBackground(() => {
     const session = sessionData.guideMeSession as { guideId: string } | undefined;
     if (!session) return { advanced: false };
 
-    const steps = await getStepsForGuide(session.guideId);
+    const steps = actionSteps(await getStepsForGuide(session.guideId));
     const nextIndex = data.stepIndex + 1;
 
     if (nextIndex >= steps.length) {
@@ -208,7 +209,7 @@ export default defineBackground(() => {
     const session = sessionData.guideMeSession as { guideId: string } | undefined;
     if (!session) return { moved: false };
 
-    const steps = await getStepsForGuide(session.guideId);
+    const steps = actionSteps(await getStepsForGuide(session.guideId));
     const target = steps[data.stepIndex];
     if (!target) return { moved: false };
     await advanceSession(target, data.stepIndex, await resolveManual(target));

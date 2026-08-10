@@ -189,6 +189,20 @@ editor:
   descriptionErrorSaveFailed: Die Beschreibung wurde erstellt, konnte aber nicht gespeichert werden. Versuche es erneut.
   writingStepDescription: "Beschreibung wird geschrieben…"
 
+blocks:
+  add: "Block hinzufügen"
+  heading: "Überschrift"
+  callout: Hinweis
+  headingPlaceholder: Abschnittstitel
+  calloutPlaceholder: Hinweis schreiben
+  deleteHeading: "Diese Überschrift löschen?"
+  deleteCallout: "Diesen Hinweis löschen?"
+  variantInfo: Info
+  variantWarning: Warnung
+  variantError: Fehler
+  variantSuccess: Erfolg
+  variantCustom: Benutzerdefiniert
+
 history:
   title: Versionsverlauf
   current: Aktuell

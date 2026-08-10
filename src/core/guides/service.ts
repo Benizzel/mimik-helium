@@ -2,7 +2,7 @@ import { i18n } from '#imports';
 import type { ScreenshotEdits } from '@/core/screenshot/types';
 import { db } from './db';
 import { hashPayload } from './snapshot-hash';
-import type { Guide, Screenshot, Snapshot, Step } from './types';
+import type { BlockType, CalloutVariant, Guide, Screenshot, Snapshot, Step } from './types';
 
 export type GuideChangeEvent = { type: 'starred'; id: string; starred: boolean } | { type: 'mutated' };
 
@@ -137,6 +137,37 @@ export async function reorderSteps(guideId: string, orderedStepIds: string[]): P
 
 export async function createStep(step: Step): Promise<void> {
   await db.steps.add(step);
+}
+
+export async function insertBlock(
+  guideId: string,
+  atIndex: number,
+  blockType: BlockType,
+  description: string,
+): Promise<string> {
+  const id = crypto.randomUUID();
+  await db.transaction('rw', db.steps, db.guides, async () => {
+    const steps = await db.steps.where('guideId').equals(guideId).sortBy('index');
+    const block: Step = {
+      id,
+      guideId,
+      index: 0,
+      description,
+      action: blockType,
+      url: '',
+      timestamp: Date.now(),
+      blockType,
+      ...(blockType === 'callout' ? { calloutVariant: 'info' as const } : {}),
+    };
+    steps.splice(Math.max(0, Math.min(atIndex, steps.length)), 0, block);
+    await db.steps.bulkPut(steps.map((step, index) => ({ ...step, index })));
+    await db.guides.update(guideId, { stepIds: steps.map((step) => step.id), updatedAt: Date.now() });
+  });
+  return id;
+}
+
+export async function updateCallout(stepId: string, variant: CalloutVariant, color?: string): Promise<void> {
+  await db.steps.update(stepId, { calloutVariant: variant, calloutColor: color });
 }
 
 export async function updateStepDescription(stepId: string, description: string): Promise<void> {

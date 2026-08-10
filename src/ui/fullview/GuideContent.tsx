@@ -2,6 +2,7 @@ import { History, Loader2, Play, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TypeAnimation } from 'react-type-animation';
 import { i18n } from '#imports';
+import { actionSteps } from '@/core/guides/blocks';
 import {
   deleteStep,
   getGuide,
@@ -118,7 +119,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
       }
       document.title = `${newTitle} — ${i18n.t('app_name')}`;
       setGuideTitle(newTitle);
-      setGuideStepCount(result.steps.length);
+      setGuideStepCount(actionSteps(result.steps).length);
       setGuideExportData({ guideId, ...result });
     }
     setLoading(false);
@@ -287,6 +288,7 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
   const previewView = preview && previewData?.snapshotId === preview.id ? previewData : null;
   const viewSteps = previewView ? previewView.steps : data.steps;
   const viewScreenshots = previewView ? previewView.screenshots : data.screenshots;
+  const actionCount = actionSteps(viewSteps).length;
   const domain = getMostCommonDomain(viewSteps);
   const editingScreenshot = editingStepId ? data.screenshots.get(editingStepId) : undefined;
   const animatingTitle = preview ? null : typingTitle;
@@ -431,9 +433,9 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
               {formatDate(data.guide.createdAt)}
             </span>
             <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-card border border-border px-2.5 py-0.5 rounded-full">
-              {viewSteps.length !== 1
-                ? i18n.t('fullview_stepCountPlural', [String(viewSteps.length)])
-                : i18n.t('fullview_stepCount', [String(viewSteps.length)])}
+              {actionCount !== 1
+                ? i18n.t('fullview_stepCountPlural', [String(actionCount)])
+                : i18n.t('fullview_stepCount', [String(actionCount)])}
             </span>
             {domain && (
               <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground bg-card border border-border pl-1.5 pr-2.5 py-0.5 rounded-full">

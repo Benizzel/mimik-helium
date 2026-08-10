@@ -189,6 +189,20 @@ editor:
   rewriteErrorFailed: "N\xE3o foi poss\xEDvel reescrever a sele\xE7\xE3o. Tente novamente."
   rewriteErrorStale: O texto mudou. Selecione-o novamente.
 
+blocks:
+  add: Adicionar bloco
+  heading: "Título"
+  callout: Nota
+  headingPlaceholder: "Título da seção"
+  calloutPlaceholder: Escreva uma nota
+  deleteHeading: "Excluir este título?"
+  deleteCallout: "Excluir esta nota?"
+  variantInfo: "Informação"
+  variantWarning: Aviso
+  variantError: Erro
+  variantSuccess: Sucesso
+  variantCustom: Personalizado
+
 history:
   title: Histórico de versões
   current: Atual

@@ -22,6 +22,7 @@ function renderCard(readOnly: boolean) {
   return render(
     <StepCard
       step={step}
+      number={1}
       screenshot={undefined}
       readOnly={readOnly}
       onDescriptionChange={vi.fn()}
