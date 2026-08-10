@@ -231,3 +231,14 @@ export:
 background:
   guideOnDomain: "Guide sur $1"
   newGuide: Nouveau guide
+
+micPermission:
+  title: Autoriser l'accès au microphone
+  checkingMessage: Vérification de l'accès au microphone de Mimik...
+  promptingMessage: Votre navigateur demande une autorisation. Choisissez Autoriser pour que Mimik puisse enregistrer votre narration pendant la capture d'un guide. Cet onglet se ferme tout seul.
+  grantedTitle: Microphone prêt
+  grantedMessage: Retour à ce que vous étiez en train de faire.
+  deniedTitle: L'accès au microphone est bloqué
+  deniedMessage: Votre navigateur bloque le microphone pour Mimik, la narration vocale ne peut donc pas enregistrer. Ouvrez les paramètres du site depuis l'icône à gauche de la barre d'adresse, réglez Microphone sur Autoriser, puis réessayez. La capture de guides continue de fonctionner sans cela.
+  retry: Réessayer
+  privacy: L'audio reste en mémoire pendant l'enregistrement et n'est envoyé qu'au service de transcription que vous avez configuré. Mimik ne le conserve jamais.
