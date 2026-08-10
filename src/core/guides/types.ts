@@ -10,6 +10,8 @@ export interface Guide {
   deletedAt: number | null;
 }
 
+export type DescriptionSource = 'narration' | 'ai' | 'heuristic';
+
 export interface Step {
   id: string;
   guideId: string;
@@ -21,6 +23,7 @@ export interface Step {
   screenshotId?: string;
   elementMeta?: ElementMeta;
   inputValue?: string;
+  descriptionSource?: DescriptionSource;
 }
 
 export interface ScreenshotBounds {

@@ -1,4 +1,5 @@
 import { i18n } from '#imports';
+import type { NarrationUpdate } from '@/core/capture/voice/narration-updates';
 import { db } from './db';
 import type { Guide, Screenshot, Step } from './types';
 
@@ -124,6 +125,16 @@ export async function createStep(step: Step): Promise<void> {
 
 export async function updateStepDescription(stepId: string, description: string): Promise<void> {
   await db.steps.update(stepId, { description });
+}
+
+export async function applyNarrationToSteps(updates: readonly NarrationUpdate[]): Promise<void> {
+  if (updates.length === 0) return;
+  await db.transaction('rw', db.steps, async () => {
+    for (const { stepId, description } of updates) {
+      await db.steps.update(stepId, { description, descriptionSource: 'narration' });
+    }
+  });
+  notifyGuidesChanged({ type: 'mutated' });
 }
 
 export async function getStepsForGuide(guideId: string): Promise<Step[]> {
