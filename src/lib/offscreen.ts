@@ -177,8 +177,10 @@ export function registerVoicePanelRelay(): void {
 }
 
 async function answered<T>(message: VoiceRequest, missing: T): Promise<T> {
-  if (!IS_FIREFOX) return request<T>(message);
-  const response = await request<T | undefined>(message).catch(() => undefined);
+  const response = await request<T | undefined>(message).catch((error: unknown) => {
+    logger.warn('voice: the microphone host did not answer', message.type, error);
+    return undefined;
+  });
   return response ?? missing;
 }
 

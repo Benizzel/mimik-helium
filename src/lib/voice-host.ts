@@ -236,7 +236,13 @@ export function startVoiceHost(): VoiceHost {
 
   onMessage((message, _sender, sendResponse) => {
     if (!isVoiceMessageFor(VOICE_OFFSCREEN_TARGET, message)) return undefined;
-    void host.handle(message as VoiceRequest).then(sendResponse);
+    host
+      .handle(message as VoiceRequest)
+      .then(sendResponse)
+      .catch((error: unknown) => {
+        logger.error('voice: host could not handle request', message, error);
+        sendResponse({ ok: false, started: false, reason: 'unknown', error: String(error) });
+      });
     return true;
   });
 
