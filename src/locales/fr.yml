@@ -155,6 +155,7 @@ confirmDelete:
 editor:
   backToLibrary: "Retour à la bibliothèque"
   guideMe: "Guidez-moi !"
+  guideMeUnavailable: "Aucune étape rejouable dans ce guide"
   deleteThisStep: "Supprimer cette étape ?"
   blurSensitiveArea: Flouter une zone sensible
   copyScreenshot: "Copier la capture"

@@ -155,6 +155,7 @@ confirmDelete:
 editor:
   backToLibrary: Voltar pra biblioteca
   guideMe: "Me guia!"
+  guideMeUnavailable: Esse guia não tem passos pra repetir
   deleteThisStep: "Excluir esse passo?"
   blurSensitiveArea: Desfocar área sensível
   copyScreenshot: Copiar captura
