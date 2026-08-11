@@ -672,6 +672,10 @@ function PinExtensionStep({ onNext, onSkip, index, total }: StepProps) {
 }
 
 function DoneStep() {
+  useEffect(() => {
+    localStorage.set({ onboardingCompleted: true });
+  }, []);
+
   const handleOpen = async () => {
     const permissionsPromise = requestHostPermissions();
     await permissionsPromise;
@@ -780,10 +784,6 @@ const CONFIG_STEPS =
 
 export default function OnboardingApp() {
   const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    localStorage.set({ onboardingCompleted: true });
-  }, []);
 
   const lastStep = CONFIG_STEPS.length + 1;
   const next = () => setStep((s) => Math.min(s + 1, lastStep));
