@@ -25,9 +25,9 @@ import { type ExportOptions, IMAGE_SCALE_FACTORS, loadExportOptions } from '@/co
 import { blobToArrayBuffer, extractDomain, formatDate } from '@/core/export/utils';
 import { actionSteps, calloutAccent, isBlock, stepNumbers, tint } from '@/core/guides/blocks';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
+import { resolveViewport } from '@/core/screenshot/geometry';
+import { renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
-
-type SupportedDocxImageType = 'bmp' | 'gif' | 'jpg' | 'png';
 
 const DOCX_MAX_IMAGE_WIDTH = 520;
 const DOCX_MAX_IMAGE_HEIGHT = 640; // px @ 96dpi, fits one page after margins
@@ -219,47 +219,24 @@ function buildCover(guide: Guide, steps: Step[], domain: string | null, brand: B
   return [head, rule, meta];
 }
 
-function getDocxImageType(mimeType: string): SupportedDocxImageType | null {
-  switch (mimeType) {
-    case 'image/png':
-      return 'png';
-    case 'image/jpeg':
-    case 'image/jpg':
-      return 'jpg';
-    case 'image/gif':
-      return 'gif';
-    case 'image/bmp':
-      return 'bmp';
-    default:
-      return null;
-  }
-}
-
 async function buildImageParagraph(
   screenshot: Screenshot,
   stepIndex: number,
   scale: number,
 ): Promise<Paragraph | null> {
-  const imageType = getDocxImageType(screenshot.mimeType);
-  if (!imageType) {
-    logger.warn('DOCX: unsupported screenshot mime type', screenshot.mimeType, 'for step', stepIndex);
-    return null;
-  }
-
   try {
-    const arrayBuffer = await blobToArrayBuffer(screenshot.blob);
-    const fitted = fitDocxImageSize(screenshot.width, screenshot.height, DOCX_STEP_INDENT / 2);
+    const arrayBuffer = await blobToArrayBuffer(await renderScreenshot(screenshot, { format: 'image/png' }));
+    const viewport = resolveViewport(screenshot);
+    const fitted = fitDocxImageSize(viewport.width, viewport.height, DOCX_STEP_INDENT / 2);
     const width = Math.max(1, Math.round(fitted.width * scale));
     const height = Math.max(1, Math.round(fitted.height * scale));
 
     return new Paragraph({
       alignment: AlignmentType.LEFT,
-      children: [
-        new ImageRun({ type: imageType, data: new Uint8Array(arrayBuffer), transformation: { width, height } }),
-      ],
+      children: [new ImageRun({ type: 'png', data: new Uint8Array(arrayBuffer), transformation: { width, height } })],
     });
   } catch (err) {
-    logger.warn('DOCX: failed to load screenshot for step', stepIndex, err);
+    logger.warn('DOCX: failed to render screenshot for step', stepIndex, err);
     return null;
   }
 }
