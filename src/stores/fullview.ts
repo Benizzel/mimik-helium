@@ -34,6 +34,18 @@ interface FullviewStore {
   scrollToStep: (stepId: string) => void;
   activeStepId: string | null;
   setActiveStepId: (id: string | null) => void;
+
+  editing: boolean;
+  setEditing: (editing: boolean) => void;
+  historyOpen: boolean;
+  setHistoryOpen: (open: boolean) => void;
+  historyRefreshKey: number;
+  bumpHistoryRefresh: () => void;
+}
+
+function flushFocusedField() {
+  const el = document.activeElement;
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) el.blur();
 }
 
 export const useFullviewStore = create<FullviewStore>((set) => ({
@@ -56,7 +68,12 @@ export const useFullviewStore = create<FullviewStore>((set) => ({
   guideStepCount: 0,
   setGuideStepCount: (guideStepCount) => set({ guideStepCount }),
   guideExportData: null,
-  setGuideExportData: (guideExportData) => set({ guideExportData }),
+  setGuideExportData: (guideExportData) =>
+    set((s) =>
+      s.guideExportData?.guideId === guideExportData?.guideId
+        ? { guideExportData }
+        : { guideExportData, editing: false, historyOpen: false, historyRefreshKey: 0 },
+    ),
   scrollToStepId: null,
   scrollToStep: (stepId) => {
     set({ scrollToStepId: stepId });
@@ -64,6 +81,19 @@ export const useFullviewStore = create<FullviewStore>((set) => ({
   },
   activeStepId: null,
   setActiveStepId: (activeStepId) => set({ activeStepId }),
+
+  editing: false,
+  setEditing: (editing) => {
+    if (!editing) flushFocusedField();
+    set({ editing });
+  },
+  historyOpen: false,
+  setHistoryOpen: (historyOpen) => {
+    if (historyOpen) flushFocusedField();
+    set({ historyOpen });
+  },
+  historyRefreshKey: 0,
+  bumpHistoryRefresh: () => set((s) => ({ historyRefreshKey: s.historyRefreshKey + 1 })),
 }));
 
 export function useFullview<T>(selector: (s: FullviewStore) => T): T {

@@ -1,6 +1,6 @@
 import { hasVoiceApiKey, VOICE_KEY_SETTINGS } from '@/core/capture/voice/api-key';
 import { narrationUpdates } from '@/core/capture/voice/narration-updates';
-import { applyNarrationToSteps, getStepsForGuide } from '@/core/guides/service';
+import { applyNarrationToSteps, findExistingStepIds, getStepsForGuide } from '@/core/guides/service';
 import { localStorage, onMessage as onRuntimeMessage } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import {
@@ -188,16 +188,14 @@ export async function stopVoiceNarration(guideId: string): Promise<void> {
   }
 }
 
-async function applyNarration(guideId: string, result: VoiceResultEvent['result']): Promise<void> {
+async function applyNarration(_guideId: string, result: VoiceResultEvent['result']): Promise<void> {
   try {
     transcribingGuideId = null;
-    const steps = await getStepsForGuide(guideId);
-    const updates = narrationUpdates(
-      result,
-      steps.map((step) => step.id),
-    );
+    const narrated = result.descriptions.map((entry) => entry.stepId);
+    const surviving = await findExistingStepIds(narrated);
+    const updates = narrationUpdates(result, surviving);
     await applyNarrationToSteps(updates);
-    logger.info('voice: narration applied', { narrated: updates.length, of: steps.length, stats: result.stats });
+    logger.info('voice: narration applied', { narrated: updates.length, of: narrated.length, stats: result.stats });
     report({ phase: 'idle', narrated: updates.length });
   } catch (error) {
     logger.error('voice: narration could not be applied', error);

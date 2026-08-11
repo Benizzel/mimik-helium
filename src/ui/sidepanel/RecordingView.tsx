@@ -1,4 +1,4 @@
-import { Check, EyeOff, X } from 'lucide-react';
+import { Check, EyeOff, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { deleteStep, getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
@@ -9,9 +9,9 @@ import type { PanelVoiceUpdate } from '@/lib/port';
 import { extractDomain } from '@/lib/utils';
 import { Button } from '@/ui/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
+import ScreenshotView from '@/ui/shared/ScreenshotView';
 import MicToggle from './MicToggle';
 import VoiceStatus from './VoiceStatus';
-import ZoomScreenshot from './ZoomScreenshot';
 
 interface RecordingViewProps {
   guideId: string;
@@ -157,20 +157,28 @@ export default function RecordingView({ guideId, onStop, voice }: RecordingViewP
                 <div className="px-4 pb-4 group">
                   {liveStep.screenshot && (
                     <div className="mb-2">
-                      <ZoomScreenshot
+                      <ScreenshotView
                         screenshot={liveStep.screenshot}
                         alt={liveStep.step.description}
                         className="shadow-sm"
                         crop
                         animate
+                        readOnly
                       />
                     </div>
                   )}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-[13px] font-medium leading-snug text-foreground">
-                        {liveStep.step.description}
-                      </p>
+                      {liveStep.step.aiPending ? (
+                        <p className="flex items-center gap-1.5 text-[13px] font-medium leading-snug text-muted-foreground">
+                          <Loader2 size={13} className="animate-spin" />
+                          {i18n.t('editor.writingStepDescription')}
+                        </p>
+                      ) : (
+                        <p className="text-[13px] font-medium leading-snug text-foreground">
+                          {liveStep.step.description}
+                        </p>
+                      )}
                       <span className="text-[10px] text-purple">
                         {timeAgo(liveStep.step.timestamp)} · {extractDomain(liveStep.step.url || siteUrl)}
                       </span>

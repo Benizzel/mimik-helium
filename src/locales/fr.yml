@@ -44,11 +44,13 @@ library:
 
 guideme:
   live: En direct
+  roadblock: "Nous avons rencontré un obstacle. Agissez à l'écran pour continuer."
+  manualStep: "Cette étape a été modifiée, elle ne peut donc pas être détectée automatiquement. Utilisez Suivant une fois faite."
   stepOf: "Étape $1 sur $2"
   noDescription: Aucune description
   prev: "Préc."
   next: Suiv.
-  finish: Terminer
+  finish: "Terminer"
   exitTitle: "Vous partez déjà ?"
   exitMessage: "La visite guidée va s'arrêter et le calque sera retiré de la page."
   stay: Rester
@@ -99,8 +101,25 @@ settings:
   microphoneTestStop: "Arrêter le test"
   microphoneTestHint: "Un souci de micro ? Lancez un test et dites quelque chose pour vérifier qu'il fonctionne."
   microphoneTestFailed: "Ce micro n'a pas pu être ouvert. Choisissez-en un autre et réessayez."
+  targetColor: "Couleur de marque"
+  targetColorHint: "Surbrillance des clics et accents des exports"
+  branding: "Image de marque des exports"
+  brandLogo: "Logo"
+  brandLogoHint: "Affiché sur la couverture de chaque export. PNG transparent recommandé."
+  uploadLogo: "Téléverser un logo"
+  replaceLogo: "Remplacer"
+  removeLogo: "Supprimer le logo"
+  footerLine: "Ligne de pied de page"
+  footerLinePlaceholder: "p. ex. Confidentiel — usage interne"
+  footerPresetConfidential: "Confidentiel — usage interne"
+  footerPresetNoDistribute: "Ne pas diffuser"
+  attribution: 'Afficher « Made with Mimik »'
+  attributionHint: "Dans le pied de chaque export"
   saveSettings: "Enregistrer"
   saved: "Enregistré"
+  validatingKey: "V\xE9rification de la cl\xE9\u2026"
+  keyValid: "Cl\xE9 API v\xE9rifi\xE9e."
+  keyInvalid: "Cette cl\xE9 API a \xE9t\xE9 refus\xE9e. V\xE9rifiez-la et r\xE9essayez."
   smartBlur: Flou intelligent
   privacyNotice: "Votre clé API reste dans votre navigateur et n'est envoyée qu'au fournisseur IA choisi. Rien d'autre ne sort d'ici."
   bugReport: "Un bug ? Signalez-le sur GitHub"
@@ -124,6 +143,7 @@ fullview:
   guideMe: "Guidez-moi !"
   untitledGuide: Guide sans titre
   writingTitle: "Rédaction du titre à partir de vos étapes..."
+  writingDescription: "R\xE9daction d\u2019une description\u2026"
   guideNotFound: Guide introuvable.
   stepCount: "$1 étape"
   stepCountPlural: "$1 étapes"
@@ -157,18 +177,95 @@ editor:
   guideMe: "Guidez-moi !"
   guideMeUnavailable: "Aucune étape rejouable dans ce guide"
   deleteThisStep: "Supprimer cette étape ?"
-  blurSensitiveArea: Flouter une zone sensible
   copyScreenshot: "Copier la capture"
   noScreenshot: "Pas de capture"
+  edit: Modifier
+  done: Terminé
+  versionHistory: Historique des versions
+  moreActions: "Plus d'actions"
+  generateDescription: "Générer une description"
+  regenerateDescription: "Régénérer la description"
+  generatingDescription: "Génération\u2026"
+  descriptionPlaceholder: "Ajouter une description"
+  descriptionErrorNoApiKey: "Ajoutez une clé API d'IA dans les paramètres pour générer des descriptions."
+  descriptionErrorNoSteps: "Ce guide n'a aucune étape décrite à résumer."
+  descriptionErrorFailed: "Impossible de générer une description. Réessayez."
+  descriptionErrorSaveFailed: "Description générée mais impossible de l'enregistrer. Réessayez."
+  writingStepDescription: "R\xE9daction de la description\u2026"
+  rewriteAskAi: "Demander \xE0 l'IA"
+  rewritePlaceholder: "Dites \xE0 l'IA comment modifier ce texte\u2026"
+  rewriteEnter: "Entr\xE9e"
+  rewriteShorter: Plus court
+  rewriteDetail: "Plus de d\xE9tails"
+  rewriteGrammar: Corriger la grammaire
+  rewriteFormal: Plus formel
+  rewriteCasual: "Plus d\xE9contract\xE9"
+  rewriteReplace: Remplacer
+  rewriteDiscard: Abandonner
+  rewriteErrorNoApiKey: "Ajoutez une cl\xE9 d'API d'IA dans les r\xE9glages pour r\xE9\xE9crire du texte."
+  rewriteErrorFailed: "Impossible de r\xE9\xE9crire la s\xE9lection. R\xE9essayez."
+  rewriteErrorStale: "Le texte a chang\xE9. S\xE9lectionnez-le \xE0 nouveau."
+
+capture:
+  recordSteps: "Enregistrer des étapes"
+  moreStepsTitle: "Capturer d'autres étapes"
+  moreStepsBody: "Les nouvelles étapes sont insérées ici. Choisissez l'onglet à enregistrer."
+  startCapture: "Démarrer la capture"
+  noRecordableTabs: "Aucun onglet enregistrable n'est ouvert dans cette fenêtre."
+
+blocks:
+  add: Ajouter un bloc
+  heading: Titre
+  callout: Note
+  headingPlaceholder: "Titre de section"
+  calloutPlaceholder: "Écrivez une note"
+  deleteHeading: "Supprimer ce titre ?"
+  deleteCallout: "Supprimer cette note ?"
+  variantInfo: Information
+  variantWarning: Avertissement
+  variantError: Erreur
+  variantSuccess: "Succès"
+  variantCustom: "Personnalisé"
+
+history:
+  title: Historique des versions
+  current: Actuelle
+  restore: Restaurer
+  unchangedVersions: "Versions inchangées ($1)"
+  readOnlyBanner: "Vous consultez une version antérieure. Fermez l'historique des versions pour revenir au guide actuel."
+  loadError: "Impossible de charger l'historique des versions. Réessayez."
+  restoreError: Impossible de restaurer. Réessayez dans un instant.
+  storageFull: "Espace insuffisant pour enregistrer un point d'annulation. Supprimez un guide et réessayez."
+  empty: Pas encore de version antérieure. Elles apparaîtront ici dès que vous modifierez ce guide.
+  nameVersion: Nommer cette version
+  namePlaceholder: Nom de la version
+  allVersions: Toutes les versions
+  namedOnly: Versions nommées uniquement
+  emptyNamed: "Aucune version nommée pour l'instant. Nommez-en une pour la retrouver plus tard."
+  renameError: "Impossible d'enregistrer ce nom. Réessayez."
+  changeTitle: Titre modifié
+  changeStepAdded: "$1 étape ajoutée"
+  changeStepsAdded: "$1 étapes ajoutées"
+  changeStepRemoved: "$1 étape supprimée"
+  changeStepsRemoved: "$1 étapes supprimées"
+  changeStepEdited: "$1 étape modifiée"
+  changeStepsEdited: "$1 étapes modifiées"
+  changeStepReordered: Étapes réordonnées
+  changeLink: "$1 lien modifié"
+  changeLinks: "$1 liens modifiés"
+  changeImageReplaced: "$1 image remplacée"
+  changeImagesReplaced: "$1 images remplacées"
+  changeImageCropped: "$1 image recadrée"
+  changeImagesCropped: "$1 images recadrées"
+  changeImageAnnotated: "$1 image annotée"
+  changeImagesAnnotated: "$1 images annotées"
+  changeImageBlurred: "$1 image floutée"
+  changeImagesBlurred: "$1 images floutées"
+  changeAltText: Texte alternatif modifié
 
 emptyGuide:
   title: Ce guide est vide
   subtitle: "Enregistrez quelques étapes pour lui donner vie"
-
-blurCanvas:
-  drawInstructions: "Dessinez des rectangles pour flouter"
-  regionCount: "$1 zone"
-  regionCountPlural: "$1 zones"
 
 blurPanel:
   title: Flou intelligent
@@ -178,10 +275,101 @@ blurPanel:
   doneResume: "Terminé \xB7 Reprendre l'enregistrement"
   resetAll: Tout réinitialiser
 
+screenshotView:
+  zoomIn: "Zoom avant"
+  zoomOut: "Zoom arrière"
+  saved: "Enregistré"
+  editMenu: "Modifier la capture"
+  downloadEdited: "Image modifiée"
+  downloadOriginal: "Image originale"
+  edit: "Modifier"
+  addImage: "Ajouter une image"
+  replaceImage: "Remplacer l'image"
+  replaceHint: "Choisissez une nouvelle image pour cette étape"
+  replaceDrop: "Cliquez pour parcourir ou déposez une image ici"
+  replaceFormats: "PNG, JPG ou WebP"
+  download: "Télécharger"
+  deleteImage: "Supprimer l'image"
+  deleteConfirm: "Supprimer cette capture ? Pas de retour en arrière."
+  imageDeleted: "Image supprimée"
+  altButton: "ALT"
+  altLabel: "Texte alternatif"
+  altPlaceholder: "Décrivez cette image pour les lecteurs d'écran"
+
+annotationEditor:
+  title: "Modifier la capture"
+  toolBox: Rectangle
+  toolArrow: "Flèche"
+  toolText: Texte
+  toolSelect: "Sélectionner"
+  addTarget: "Ajouter la cible de clic"
+  toolRedact: Masquer
+  toolCrop: Recadrer
+  colorLabel: Couleur
+  textPlaceholder: "Écrivez quelque chose..."
+  targetBorder: Style de bordure
+  modeAnnotate: "Annoter"
+  toolLine: "Ligne"
+  duplicate: "Dupliquer"
+  toolEllipse: "Ellipse"
+  lineColor: "Couleur"
+  fillColor: "Remplissage"
+  lineWidth: "Épaisseur"
+  cornerRadius: "Rayon"
+  font: "Police"
+  bold: "Gras"
+  italic: "Italique"
+  lineHeight: "Interligne"
+  width_none: "Sans contour"
+  width_xs: "Très fin"
+  width_sm: "Fin"
+  width_ms: "Moyen fin"
+  width_md: "Moyen"
+  width_ml: "Moyen épais"
+  width_lg: "Épais"
+  width_xl: "Très épais"
+  zoom: "Zoom"
+  cropHint: "Faites glisser pour recadrer, ou un coin pour redimensionner"
+  resetCrop: "Réinitialiser"
+  arrowEnd: "Extrémité de flèche"
+  fontSize: "Taille"
+  undo: "Annuler"
+  redo: "Rétablir"
+  end_none: "Aucune"
+  end_bar: "Barre"
+  end_arrow: "Flèche"
+  end_arrow_solid: "Flèche pleine"
+  end_circle: "Cercle"
+  end_circle_solid: "Cercle plein"
+  end_square: "Carré"
+  end_square_solid: "Carré plein"
+  done: "Terminé"
+
+exportPreview:
+  title: "Aperçu de l’export"
+  cover: "Page de couverture"
+  coverHint: "Une première page avec le titre et les détails"
+  screenshots: "Captures"
+  screenshotsHint: "Désactivez pour un document compact, texte seul"
+  stepUrls: "Liens des étapes"
+  stepUrlsHint: "Affiche l’adresse de chaque étape"
+  imageScale: "Taille des captures"
+  scale_small: "Petite"
+  scale_medium: "Moyenne"
+  scale_large: "Grande"
+  download: "Exporter $1"
+  rendering: "Mise à jour de l’aperçu"
+  truncated: "L’aperçu montre les $1 premières étapes sur $2"
+  modeDocument: "Document"
+  modeVideo: "Vidéo"
+  encodingVideo: "Encodage de l’aperçu vidéo"
+  videoFailed: "Impossible de créer l’aperçu vidéo"
 exportMenu:
+  docx: DOCX
   html: HTML
   markdown: Markdown
   pdf: PDF
+  video: Vidéo
 
 onboarding:
   welcomeBadge: Bienvenue
@@ -245,6 +433,10 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  guideLabel: "GUIDE"
+  stepsRange: "Étapes $1–$2 sur $3"
+  stepOf: "Étape $1 sur $2"
+  madeWith: "Made with Mimik"
   created: "Créé"
   source: Source
   step: "Étape"

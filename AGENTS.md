@@ -38,17 +38,16 @@ src/
 │   │   │   ├── highlight.ts     # HighlightManager (dashed border overlay)
 │   │   │   └── input-session.ts # InputSession (typing lifecycle)
 │   │   ├── machine.ts        # xstate capture state machine
-│   │   ├── rrweb-recorder.ts # DOM recording for replay
 │   │   ├── session.ts        # CaptureSession (lifecycle manager)
 │   │   ├── spa-nav.ts        # SPA navigation tracking
 │   │   ├── start-notification.ts # Recording notification overlay
 │   │   └── step-description.ts   # Fallback rule-based descriptions
 │   ├── blur/                # Smart blur: regex presets, DOM scanner, element picker, panel UI
-│   ├── export/              # HTML, PDF, Markdown export generators + shared utils
+│   ├── export/              # HTML, PDF, DOCX, Markdown, video generators + shared utils
 │   └── guides/              # Data layer: types, Dexie DB, CRUD service
 ├── entrypoints/             # Chrome extension entry points (WXT)
 │   ├── background/          # Service worker: state machine, message handlers, tab management
-│   ├── content.ts           # Content script: CaptureSession, event listeners, rrweb
+│   ├── content.ts           # Content script: CaptureSession, event listeners
 │   ├── sidepanel/           # Side panel React mount
 │   ├── fullview/            # Full-page view React mount
 │   ├── onboarding/          # Onboarding wizard (opens on first install)
@@ -95,7 +94,7 @@ src/
 |-------|------|---------|
 | Capture lifecycle | xstate | State machine (IDLE ↔ RECORDING) in background service worker |
 | Fullview UI | Zustand | Search modal, guide counts, active guide data |
-| Persistence | Dexie (IndexedDB) | Guides, steps, screenshots, rrweb chunks |
+| Persistence | Dexie (IndexedDB) | Guides, steps, screenshots, snapshots |
 | Service worker recovery | sessionStorage | xstate machine snapshot persistence |
 | Background → Sidepanel | Port messaging | Real-time state broadcast |
 | Cross-context sync | BroadcastChannel | Guide mutations (star, delete) across sidepanel/fullview |
@@ -105,7 +104,7 @@ src/
 | Entry Point | File | Purpose |
 |-------------|------|---------|
 | Background | `entrypoints/background/` | Service worker: xstate actor, message handlers, tab management |
-| Content Script | `entrypoints/content.ts` | Injected into all tabs: CaptureSession, event listeners, rrweb |
+| Content Script | `entrypoints/content.ts` | Injected into all tabs: CaptureSession, event listeners |
 | Side Panel | `entrypoints/sidepanel/` | Recording controls, library, guide editor, settings |
 | Full View | `entrypoints/fullview/` | Dashboard: library browse, guide viewer, Ctrl+K search |
 | Onboarding | `entrypoints/onboarding/` | First-install wizard: AI setup, smart blur, pin extension |
@@ -124,7 +123,6 @@ Content Script ←→ Background Service Worker ←→ Sidepanel / Fullview
 - `captureStep({guideId, action, elementMeta, domContext})` → screenshots + creates step
 - `updateInputStep({stepId, description})` → updates typing step description
 - `finalizeInputStep({stepId, elementMeta, domContext})` → final screenshot + AI description
-- `rrwebChunk({guideId, events, timestamp})` → stores DOM recording chunk
 
 **Tab messages** (content script ↔ background, `lib/tab-messages.ts`):
 - `PING` / `START_CAPTURE` / `STOP_CAPTURE` — lifecycle
@@ -138,7 +136,7 @@ Content Script ←→ Background Service Worker ←→ Sidepanel / Fullview
 1. User clicks "Start Capture" in sidepanel
 2. Background transitions xstate machine IDLE → RECORDING
 3. Creates Guide in IndexedDB, broadcasts `START_CAPTURE` to all tabs
-4. Content scripts create CaptureSession → CaptureController (event listeners) + rrweb
+4. Content scripts create CaptureSession → CaptureController (event listeners)
 5. Shows recording notification overlay on active tab
 
 **Capture a click:**
@@ -158,7 +156,7 @@ Content Script ←→ Background Service Worker ←→ Sidepanel / Fullview
 
 **Stop recording:**
 1. Background transitions RECORDING → IDLE
-2. Broadcasts `STOP_CAPTURE`, content scripts flush pending input sessions + rrweb events
+2. Broadcasts `STOP_CAPTURE`, content scripts flush pending input sessions
 3. Background generates guide title from step descriptions + URLs via AI
 4. Opens fullview dashboard with the guide
 
@@ -187,6 +185,14 @@ Extraction walks up from the target element to find:
 | HTML | `core/export/html-export.ts` | Self-contained, base64 images, inline CSS |
 | PDF | `core/export/pdf-export.ts` | jsPDF, A4 portrait, auto page breaks |
 | Markdown | `core/export/markdown-export.ts` | Standard MD with base64 image data URLs |
+| DOCX | `core/export/docx-export.ts` | Lazy-imported, Word-compatible |
+| Video | `core/export/video-export.ts` | WebCodecs via mediabunny (lazy), mp4/H.264 with WebM/VP9 fallback |
+
+Video frames reuse `renderScreenshot`, so the auto-crop, click-target outline, annotations and
+redactions are already baked in. Each step holds 1.5s wide, eases into a crop around the target
+over 0.73s, holds 3s close, and consecutive steps cross-dissolve over 0.33s at 30fps. Capability
+probing lives in `video-support.ts`, which must stay free of mediabunny imports because both
+export UIs load it eagerly.
 
 ## Tech Stack
 
@@ -201,8 +207,7 @@ Extraction walks up from the target element to find:
 | State (UI) | Zustand |
 | Storage | Dexie.js (IndexedDB) |
 | Messaging | webext-core |
-| Session recording | rrweb |
-| Export | jsPDF, client-side HTML/Markdown |
+| Export | jsPDF, docx, mediabunny (WebCodecs video), client-side HTML/Markdown |
 | AI (optional) | Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic`) |
 | Event queue | p-queue (concurrency: 1) |
 | Icons | Lucide React |

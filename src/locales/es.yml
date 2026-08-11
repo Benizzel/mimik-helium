@@ -44,11 +44,13 @@ library:
 
 guideme:
   live: En vivo
+  roadblock: "Nos encontramos con un obstáculo. Actúa en la pantalla para avanzar."
+  manualStep: "Este paso fue editado, así que no se puede detectar automáticamente. Usa Siguiente cuando lo hayas hecho."
   stepOf: "Paso $1 de $2"
   noDescription: Sin descripción
   prev: Anterior
   next: Siguiente
-  finish: Terminar
+  finish: "Finalizar"
   exitTitle: "¿Ya te vas?"
   exitMessage: Se detendrá el recorrido y se quitará la guía de la página.
   stay: Quedarme
@@ -99,8 +101,25 @@ settings:
   microphoneTestStop: Detener prueba
   microphoneTestHint: "¿Problemas con el micro? Empieza una prueba y di algo para comprobar que funciona."
   microphoneTestFailed: "No se pudo abrir ese micrófono. Elige otro e inténtalo de nuevo."
+  targetColor: "Color de marca"
+  targetColorHint: "Resaltados de clic y acentos de exportación"
+  branding: "Marca en exportaciones"
+  brandLogo: "Logotipo"
+  brandLogoHint: "Aparece en la portada de cada exportación. Se recomienda PNG transparente."
+  uploadLogo: "Subir logotipo"
+  replaceLogo: "Reemplazar"
+  removeLogo: "Quitar logotipo"
+  footerLine: "Línea de pie de página"
+  footerLinePlaceholder: "p. ej. Confidencial — solo uso interno"
+  footerPresetConfidential: "Confidencial — solo uso interno"
+  footerPresetNoDistribute: "No distribuir"
+  attribution: 'Mostrar "Made with Mimik"'
+  attributionHint: "En el pie de cada exportación"
   saveSettings: Guardar ajustes
   saved: Guardado
+  validatingKey: "Comprobando clave\u2026"
+  keyValid: Clave de API verificada.
+  keyInvalid: "Esa clave de API fue rechazada. Compru\xE9bala e int\xE9ntalo de nuevo."
   smartBlur: Desenfoque inteligente
   privacyNotice: Tu clave API se guarda en tu navegador y solo se envía al proveedor de IA que elijas. Nada más sale de aquí.
   bugReport: "¿Encontraste un bug? Repórtalo en GitHub"
@@ -124,6 +143,7 @@ fullview:
   guideMe: "¡Guíame!"
   untitledGuide: Guía sin título
   writingTitle: Escribiendo un título con tus pasos capturados...
+  writingDescription: "Escribiendo una descripci\xF3n\u2026"
   guideNotFound: "No se encontró la guía."
   stepCount: "$1 paso"
   stepCountPlural: "$1 pasos"
@@ -157,18 +177,95 @@ editor:
   guideMe: "¡Guíame!"
   guideMeUnavailable: Esta guía no tiene pasos que se puedan repetir
   deleteThisStep: "¿Eliminar este paso?"
-  blurSensitiveArea: Desenfocar zona sensible
   copyScreenshot: Copiar captura
   noScreenshot: Sin captura
+  edit: Editar
+  done: Listo
+  versionHistory: Historial de versiones
+  moreActions: Más acciones
+  generateDescription: Generar descripción
+  regenerateDescription: Regenerar descripción
+  generatingDescription: "Generando\u2026"
+  descriptionPlaceholder: Añadir una descripción
+  descriptionErrorNoApiKey: Añade una clave de API de IA en los ajustes para generar descripciones.
+  descriptionErrorNoSteps: Esta guía no tiene pasos descritos que resumir.
+  descriptionErrorFailed: No se pudo generar una descripción. Inténtalo de nuevo.
+  descriptionErrorSaveFailed: Se generó la descripción pero no se pudo guardar. Inténtalo de nuevo.
+  writingStepDescription: "Escribiendo descripci\xF3n\u2026"
+  rewriteAskAi: Preguntar a la IA
+  rewritePlaceholder: "Dile a la IA c\xF3mo editar este texto\u2026"
+  rewriteEnter: Intro
+  rewriteShorter: "M\xE1s corto"
+  rewriteDetail: "M\xE1s detalle"
+  rewriteGrammar: "Corregir gram\xE1tica"
+  rewriteFormal: "M\xE1s formal"
+  rewriteCasual: "M\xE1s informal"
+  rewriteReplace: Reemplazar
+  rewriteDiscard: Descartar
+  rewriteErrorNoApiKey: "A\xF1ade una clave de API de IA en los ajustes para reescribir texto."
+  rewriteErrorFailed: "No se pudo reescribir la selecci\xF3n. Int\xE9ntalo de nuevo."
+  rewriteErrorStale: "El texto cambi\xF3. Vuelve a seleccionarlo."
+
+capture:
+  recordSteps: Grabar pasos
+  moreStepsTitle: Capturar más pasos
+  moreStepsBody: "Los nuevos pasos se insertan aquí. Elige la pestaña que quieres grabar."
+  startCapture: Iniciar captura
+  noRecordableTabs: No hay pestañas grabables abiertas en esta ventana.
+
+blocks:
+  add: "Añadir bloque"
+  heading: Encabezado
+  callout: Nota
+  headingPlaceholder: "Título de sección"
+  calloutPlaceholder: Escribe una nota
+  deleteHeading: "¿Eliminar este encabezado?"
+  deleteCallout: "¿Eliminar esta nota?"
+  variantInfo: "Información"
+  variantWarning: Advertencia
+  variantError: Error
+  variantSuccess: "Éxito"
+  variantCustom: Personalizado
+
+history:
+  title: Historial de versiones
+  current: Actual
+  restore: Restaurar
+  unchangedVersions: "Versiones sin cambios ($1)"
+  readOnlyBanner: "Estás viendo una versión anterior. Cierra el historial de versiones para volver a la guía actual."
+  loadError: No se pudo cargar el historial de versiones. Inténtalo de nuevo.
+  restoreError: No se pudo restaurar. Inténtalo de nuevo en un momento.
+  storageFull: No hay espacio para guardar un punto de deshacer. Elimina una guía e inténtalo de nuevo.
+  empty: Todavía no hay versiones anteriores. Aparecerán aquí cuando edites esta guía.
+  nameVersion: Ponle nombre a esta versión
+  namePlaceholder: Nombre de la versión
+  allVersions: Todas las versiones
+  namedOnly: Solo versiones con nombre
+  emptyNamed: Todavía no hay versiones con nombre. Ponle nombre a una para encontrarla después.
+  renameError: No se pudo guardar el nombre. Inténtalo de nuevo.
+  changeTitle: Título cambiado
+  changeStepAdded: "$1 paso añadido"
+  changeStepsAdded: "$1 pasos añadidos"
+  changeStepRemoved: "$1 paso eliminado"
+  changeStepsRemoved: "$1 pasos eliminados"
+  changeStepEdited: "$1 paso editado"
+  changeStepsEdited: "$1 pasos editados"
+  changeStepReordered: Pasos reordenados
+  changeLink: "$1 enlace cambiado"
+  changeLinks: "$1 enlaces cambiados"
+  changeImageReplaced: "$1 imagen reemplazada"
+  changeImagesReplaced: "$1 imágenes reemplazadas"
+  changeImageCropped: "$1 imagen recortada"
+  changeImagesCropped: "$1 imágenes recortadas"
+  changeImageAnnotated: "$1 imagen anotada"
+  changeImagesAnnotated: "$1 imágenes anotadas"
+  changeImageBlurred: "$1 imagen desenfocada"
+  changeImagesBlurred: "$1 imágenes desenfocadas"
+  changeAltText: Texto alternativo editado
 
 emptyGuide:
   title: Esta guía está vacía
   subtitle: Graba algunos pasos para llenarla
-
-blurCanvas:
-  drawInstructions: Dibuja rectángulos para desenfocar
-  regionCount: "$1 región"
-  regionCountPlural: "$1 regiones"
 
 blurPanel:
   title: Desenfoque inteligente
@@ -178,10 +275,101 @@ blurPanel:
   doneResume: "Listo \xB7 Continuar grabación"
   resetAll: Restablecer todo
 
+screenshotView:
+  zoomIn: Acercar
+  zoomOut: Alejar
+  saved: Guardado
+  editMenu: Editar captura
+  downloadEdited: "Imagen editada"
+  downloadOriginal: "Imagen original"
+  edit: "Editar"
+  addImage: Añadir imagen
+  replaceImage: Reemplazar imagen
+  replaceHint: "Elige una nueva imagen para este paso"
+  replaceDrop: "Haz clic para buscar o suelta una imagen aquí"
+  replaceFormats: "PNG, JPG o WebP"
+  download: Descargar
+  deleteImage: Eliminar imagen
+  deleteConfirm: "¿Eliminar esta captura? No hay vuelta atrás."
+  imageDeleted: Imagen eliminada
+  altButton: ALT
+  altLabel: Texto alternativo
+  altPlaceholder: Describe esta imagen para lectores de pantalla
+
+annotationEditor:
+  title: Editar captura
+  toolBox: Rectángulo
+  toolArrow: Flecha
+  toolText: Texto
+  toolSelect: "Seleccionar"
+  addTarget: "Añadir objetivo de clic"
+  toolRedact: Ocultar
+  toolCrop: Recortar
+  colorLabel: Color
+  textPlaceholder: Escribe algo...
+  targetBorder: Estilo del borde
+  modeAnnotate: "Anotar"
+  toolLine: "Línea"
+  duplicate: "Duplicar"
+  toolEllipse: "Elipse"
+  lineColor: "Color de línea"
+  fillColor: "Relleno"
+  lineWidth: "Grosor"
+  cornerRadius: "Radio"
+  font: "Fuente"
+  bold: "Negrita"
+  italic: "Cursiva"
+  lineHeight: "Interlineado"
+  width_none: "Sin contorno"
+  width_xs: "Muy fino"
+  width_sm: "Fino"
+  width_ms: "Medio fino"
+  width_md: "Medio"
+  width_ml: "Medio grueso"
+  width_lg: "Grueso"
+  width_xl: "Muy grueso"
+  zoom: "Zoom"
+  cropHint: "Arrastra para recortar o arrastra una esquina para redimensionar"
+  resetCrop: "Restablecer recorte"
+  arrowEnd: "Punta de flecha"
+  fontSize: "Tamaño"
+  undo: "Deshacer"
+  redo: "Rehacer"
+  end_none: "Ninguna"
+  end_bar: "Barra"
+  end_arrow: "Flecha"
+  end_arrow_solid: "Flecha sólida"
+  end_circle: "Círculo"
+  end_circle_solid: "Círculo sólido"
+  end_square: "Cuadrado"
+  end_square_solid: "Cuadrado sólido"
+  done: Listo
+
+exportPreview:
+  title: "Vista previa de exportación"
+  cover: "Portada"
+  coverHint: "Una primera hoja con el título y los detalles"
+  screenshots: "Capturas"
+  screenshotsHint: "Desactiva para un documento compacto solo de texto"
+  stepUrls: "Enlaces de pasos"
+  stepUrlsHint: "Muestra la dirección de cada paso"
+  imageScale: "Tamaño de captura"
+  scale_small: "Pequeño"
+  scale_medium: "Medio"
+  scale_large: "Grande"
+  download: "Exportar $1"
+  rendering: "Actualizando vista previa"
+  truncated: "La vista previa muestra los primeros $1 de $2 pasos"
+  modeDocument: "Documento"
+  modeVideo: "Vídeo"
+  encodingVideo: "Codificando la vista previa del vídeo"
+  videoFailed: "No se pudo crear la vista previa del vídeo"
 exportMenu:
+  docx: DOCX
   html: HTML
   markdown: Markdown
   pdf: PDF
+  video: Vídeo
 
 onboarding:
   welcomeBadge: Bienvenido
@@ -245,6 +433,10 @@ steps:
   defaultAction: "$1 $2"
 
 export:
+  guideLabel: "GUÍA"
+  stepsRange: "Pasos $1–$2 de $3"
+  stepOf: "Paso $1 de $2"
+  madeWith: "Made with Mimik"
   created: Creado
   source: Fuente
   step: Paso

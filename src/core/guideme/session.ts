@@ -10,19 +10,33 @@ export interface GuideMeSession {
 
 const SESSION_KEY = 'guideMeSession';
 const STEP_KEY = 'guideMeStep';
+const BLOCKED_KEY = 'guideMeBlocked';
+const MANUAL_KEY = 'guideMeManual';
 
-export async function startSession(guideId: string, totalSteps: number, firstStep: Step): Promise<void> {
+export async function startSession(
+  guideId: string,
+  totalSteps: number,
+  firstStep: Step,
+  requiresManual: boolean,
+): Promise<void> {
   const session: GuideMeSession = { guideId, activeStepIndex: 0, totalSteps, active: true };
-  await localStorage.set({ [SESSION_KEY]: session, [STEP_KEY]: firstStep });
+  await localStorage.set({
+    [SESSION_KEY]: session,
+    [STEP_KEY]: firstStep,
+    [MANUAL_KEY]: requiresManual,
+    [BLOCKED_KEY]: requiresManual ? 0 : null,
+  });
 }
 
-export async function advanceSession(nextStep: Step, nextIndex: number): Promise<void> {
+export async function advanceSession(nextStep: Step, nextIndex: number, requiresManual: boolean): Promise<void> {
   const data = await localStorage.get([SESSION_KEY]);
   const session = data[SESSION_KEY] as GuideMeSession | undefined;
-  if (!session || !session.active) return;
+  if (!session?.active) return;
   await localStorage.set({
     [SESSION_KEY]: { ...session, activeStepIndex: nextIndex },
     [STEP_KEY]: nextStep,
+    [MANUAL_KEY]: requiresManual,
+    [BLOCKED_KEY]: requiresManual ? nextIndex : null,
   });
 }
 
@@ -33,11 +47,13 @@ export async function completeSession(): Promise<void> {
   await localStorage.set({
     [SESSION_KEY]: { ...session, active: false },
     [STEP_KEY]: null,
+    [MANUAL_KEY]: false,
+    [BLOCKED_KEY]: null,
   });
 }
 
 export async function cancelSession(): Promise<void> {
-  await localStorage.set({ [SESSION_KEY]: null, [STEP_KEY]: null });
+  await localStorage.set({ [SESSION_KEY]: null, [STEP_KEY]: null, [MANUAL_KEY]: false, [BLOCKED_KEY]: null });
 }
 
 export async function getSession(): Promise<GuideMeSession | null> {
@@ -45,4 +61,4 @@ export async function getSession(): Promise<GuideMeSession | null> {
   return (data[SESSION_KEY] as GuideMeSession) || null;
 }
 
-export { SESSION_KEY, STEP_KEY };
+export { BLOCKED_KEY, MANUAL_KEY, SESSION_KEY, STEP_KEY };

@@ -158,6 +158,9 @@ export default function LibraryView({ onOpen, searchQuery = '' }: LibraryViewPro
               <p className={`text-[13px] font-medium truncate ${isEmpty ? 'text-[#8B92A8]' : 'text-foreground'}`}>
                 {guide.title}
               </p>
+              {guide.description && (
+                <p className="text-[11px] mt-0.5 text-muted-foreground line-clamp-1">{guide.description}</p>
+              )}
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-[10px] text-[#8B92A8]">{formatRelativeTime(guide.updatedAt)}</span>
                 {guide.stepIds.length > 0 && (

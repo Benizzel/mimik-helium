@@ -38,6 +38,7 @@ import {
   reorderSteps,
   softDeleteGuide,
   toggleStar,
+  updateGuideDescription,
 } from '../service';
 import type { Guide, Screenshot, Step } from '../types';
 
@@ -85,6 +86,7 @@ afterEach(async () => {
   await db.guides.clear();
   await db.steps.clear();
   await db.screenshots.clear();
+  await db.snapshots.clear();
 });
 
 describe('createGuide', () => {
@@ -150,7 +152,7 @@ describe('addStepToGuide', () => {
 });
 
 describe('deleteStep', () => {
-  it('removes step, re-indexes remaining, cleans up screenshot', async () => {
+  it('removes step, re-indexes remaining, drops the screenshot row when there is no history', async () => {
     await seedGuide('g1', { stepIds: ['s1', 's2', 's3'] });
     await db.steps.bulkAdd([
       makeStep({ id: 's1', guideId: 'g1', index: 0, screenshotId: 'sc1' }),
@@ -283,5 +285,24 @@ describe('getTrashedGuides', () => {
     const guides = await getTrashedGuides();
 
     expect(guides.map((g) => g.id)).toEqual(['g3', 'g2']);
+  });
+});
+
+describe('updateGuideDescription', () => {
+  it('stores the description, bumps updatedAt and broadcasts mutated', async () => {
+    await seedGuide('g-desc', { updatedAt: 100 });
+
+    await updateGuideDescription('g-desc', 'Reset a locked-out user password.');
+
+    const updated = await db.guides.get('g-desc');
+    expect(updated!.description).toBe('Reset a locked-out user password.');
+    expect(updated!.updatedAt).toBeGreaterThan(100);
+    expect(broadcastMessages).toContainEqual({ type: 'mutated' });
+  });
+
+  it('leaves description undefined on a freshly created guide', async () => {
+    await createGuide('g-fresh');
+    const stored = await db.guides.get('g-fresh');
+    expect(stored!.description).toBeUndefined();
   });
 });

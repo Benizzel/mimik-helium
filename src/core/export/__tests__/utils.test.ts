@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { blobToBase64, blobToDataUrl, escapeHtml, extractDomain, formatDate } from '@/core/export/utils';
+import { blobToBase64, blobToDataUrl, escapeHtml, extractDomain, fitImage, formatDate } from '@/core/export/utils';
 import type { Step } from '@/core/guides/types';
 
 function makeStep(overrides: Partial<Step> = {}): Step {
@@ -116,5 +116,36 @@ describe('blobToDataUrl', () => {
     expect(result).toMatch(/^data:text\/plain;base64,/);
     const b64Part = result.split(',')[1];
     expect(atob(b64Part)).toBe('hello');
+  });
+});
+
+describe('fitImage', () => {
+  it('leaves an image that already fits untouched', () => {
+    expect(fitImage(103, 58, 211.5)).toEqual({ width: 103, height: 58 });
+  });
+
+  it('scales width down proportionally when the height exceeds the cap', () => {
+    const fitted = fitImage(143, 300, 211.5);
+    expect(fitted.height).toBe(211.5);
+    expect(fitted.width).toBeCloseTo(143 * (211.5 / 300), 5);
+    expect(fitted.width / fitted.height).toBeCloseTo(143 / 300, 5);
+  });
+
+  it('keeps a portrait phone screenshot inside the page at medium scale', () => {
+    const width = 103;
+    const height = (2436 / 1125) * width;
+    const fitted = fitImage(width, height, 211.5);
+    expect(height).toBeGreaterThan(211.5);
+    expect(fitted.height).toBe(211.5);
+    expect(fitted.width).toBeLessThan(width);
+  });
+
+  it('returns the input for a zero or non-finite height', () => {
+    expect(fitImage(100, 0, 200)).toEqual({ width: 100, height: 0 });
+    expect(fitImage(100, Number.NaN, 200)).toEqual({ width: 100, height: Number.NaN });
+  });
+
+  it('leaves an image exactly at the cap untouched', () => {
+    expect(fitImage(143, 211.5, 211.5)).toEqual({ width: 143, height: 211.5 });
   });
 });

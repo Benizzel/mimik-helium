@@ -1,9 +1,12 @@
-import { ChevronRight, FileText, Search, Star, Trash2 } from 'lucide-react';
+import { Check, ChevronRight, Download, FileText, History, Pencil, Search, Star, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { i18n } from '#imports';
+import { createSnapshot } from '@/core/guides/service';
+import { logger } from '@/lib/logger';
 import { useFullview } from '@/stores/fullview';
 import { Button } from '@/ui/components/ui/button';
-import ExportMenu from '@/ui/sidepanel/ExportMenu';
-import MascotIcon from './components/MascotIcon';
+import MascotIcon from '@/ui/shared/MascotIcon';
+import ExportPreviewModal from './ExportPreviewModal';
 import type { Route } from './router';
 import { navigate } from './router';
 
@@ -24,13 +27,37 @@ export default function TopNav({ route }: TopNavProps) {
     guideStepCount,
     guideExportData: exportData,
     setSearchOpen,
+    editing,
+    setEditing,
+    historyOpen,
+    setHistoryOpen,
+    bumpHistoryRefresh,
   } = useFullview((s) => ({
     counts: s.counts,
     guideTitle: s.guideTitle,
     guideStepCount: s.guideStepCount,
     guideExportData: s.guideExportData,
     setSearchOpen: s.setSearchOpen,
+    editing: s.editing,
+    setEditing: s.setEditing,
+    historyOpen: s.historyOpen,
+    setHistoryOpen: s.setHistoryOpen,
+    bumpHistoryRefresh: s.bumpHistoryRefresh,
   }));
+  const [exportOpen, setExportOpen] = useState(false);
+
+  const toggleEditing = (guideId: string) => {
+    if (editing) {
+      setEditing(false);
+      return;
+    }
+    setEditing(true);
+    createSnapshot(guideId)
+      .then((snapshot) => {
+        if (snapshot) bumpHistoryRefresh();
+      })
+      .catch((err) => logger.error(' Snapshot before editing failed', err));
+  };
 
   return (
     <header className="flex items-center gap-5 px-7 h-16 shrink-0 bg-gradient-to-br from-violet to-violet-light">
@@ -97,12 +124,34 @@ export default function TopNav({ route }: TopNavProps) {
           <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-foreground/10 text-violet-dark">⌘K</span>
         </Button>
         {route.page === 'guide' && exportData && (
-          <ExportMenu
-            guideId={exportData.guideId}
-            guide={exportData.guide}
-            steps={exportData.steps}
-            screenshots={exportData.screenshots}
-          />
+          <>
+            <Button size="sm" variant="secondary" onClick={() => toggleEditing(exportData.guideId)}>
+              {editing ? <Check size={14} /> : <Pencil size={14} />}
+              {editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setHistoryOpen(!historyOpen)}
+              title={i18n.t('editor.versionHistory')}
+            >
+              <History size={14} />
+              {i18n.t('editor.versionHistory')}
+            </Button>
+            {!editing && (
+              <Button size="sm" onClick={() => setExportOpen(true)}>
+                <Download size={14} />
+                {i18n.t('common.export')}
+              </Button>
+            )}
+            <ExportPreviewModal
+              open={exportOpen}
+              onOpenChange={setExportOpen}
+              guide={exportData.guide}
+              steps={exportData.steps}
+              screenshots={exportData.screenshots}
+            />
+          </>
         )}
       </div>
     </header>

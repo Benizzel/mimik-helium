@@ -2,6 +2,7 @@ import { Search, Settings, Video } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { CaptureState } from '@/core/capture/machine';
+import { startInsertRecording } from '@/core/capture/start-insert-recording';
 import type { GuideMeSession } from '@/core/guideme/session';
 import { SESSION_KEY } from '@/core/guideme/session';
 import {
@@ -110,6 +111,10 @@ export default function App() {
       onStateUpdate: (update) => {
         if (update.state === CaptureState.RECORDING) {
           setIsRecording(true);
+          const guideId = update.currentGuideId;
+          if (guideId) {
+            setView((prev) => (prev.name === 'recording' ? prev : { name: 'recording', guideId }));
+          }
         } else {
           setIsRecording(false);
         }
@@ -164,12 +169,20 @@ export default function App() {
     }
   }, []);
 
+  const handleInsertRecording = useCallback(async (guideId: string, insertAtIndex: number, tabId: number) => {
+    const started = await startInsertRecording(guideId, insertAtIndex, tabId);
+    if (started) {
+      setIsRecording(true);
+      setView({ name: 'recording', guideId: started });
+    }
+  }, []);
+
   const handleStopRecording = useCallback(async () => {
     try {
       const res = await sendMessage('stopRecording', undefined);
       if (res.success) {
         setIsRecording(false);
-        setView({ name: 'library' });
+        setView(res.inserted && res.guideId ? { name: 'editor', guideId: res.guideId } : { name: 'library' });
         if (res.guideId) {
           const url = getExtensionURL(`/fullview.html?guideId=${res.guideId}`);
           const tabs = await queryTabs({ url: getExtensionURL('/fullview.html') });
@@ -223,6 +236,7 @@ export default function App() {
           guideId={view.guideId}
           onBack={() => setView({ name: 'library' })}
           onGuideMe={(id) => setView({ name: 'guideme', guideId: id })}
+          onInsertRecording={handleInsertRecording}
         />
       );
     }

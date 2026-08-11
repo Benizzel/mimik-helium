@@ -10,7 +10,10 @@ import TopNav from './TopNav';
 
 export default function FullViewApp() {
   const route = useRoute();
-  const { toggleSearch } = useFullview((s) => ({ toggleSearch: s.toggleSearch }));
+  const { toggleSearch, historyOpen } = useFullview((s) => ({
+    toggleSearch: s.toggleSearch,
+    historyOpen: s.historyOpen,
+  }));
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -37,8 +40,8 @@ export default function FullViewApp() {
 
         {route.page === 'guide' && (
           <main className="flex-1 py-10 px-6">
-            <div className="max-w-[720px] mx-auto">
-              <GuideContent guideId={route.guideId} />
+            <div className={`mx-auto ${historyOpen ? 'max-w-[1032px]' : 'max-w-[720px]'}`}>
+              <GuideContent guideId={route.guideId} initialStepId={route.stepId} initialTool={route.tool} />
             </div>
           </main>
         )}

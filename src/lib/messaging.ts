@@ -11,6 +11,8 @@ export interface GetStateResponse {
 
 export interface StartRecordingData {
   url: string;
+  insertTargetGuideId?: string;
+  insertAtIndex?: number;
 }
 
 export interface StartRecordingResponse {
@@ -20,6 +22,7 @@ export interface StartRecordingResponse {
 export interface StopRecordingResponse {
   success: boolean;
   guideId?: string;
+  inserted?: boolean;
 }
 
 export interface CaptureStepData {
@@ -73,12 +76,45 @@ export interface GuideMe_CancelResponse {
   cancelled: boolean;
 }
 
-export interface GuideMe_PrevData {
+export interface GuideMe_GoToData {
   stepIndex: number;
 }
 
-export interface GuideMe_PrevResponse {
+export interface GuideMe_GoToResponse {
   moved: boolean;
+}
+
+export type GuideDescriptionError = 'no-api-key' | 'no-steps' | 'generation-failed' | 'save-failed';
+
+export interface GenerateGuideDescriptionData {
+  guideId: string;
+}
+
+export interface GenerateGuideDescriptionResponse {
+  description?: string;
+  error?: GuideDescriptionError;
+}
+
+export type RewriteError = 'no-api-key' | 'generation-failed';
+
+export interface RewriteSelectionData {
+  text: string;
+  instruction: string;
+}
+
+export interface RewriteSelectionResponse {
+  text?: string;
+  error?: RewriteError;
+}
+
+export interface ValidateApiKeyData {
+  provider: string;
+  apiKey: string;
+}
+
+export interface ValidateApiKeyResponse {
+  valid: boolean;
+  reason?: 'rejected' | 'network';
 }
 
 export interface EnterBlurModeResponse {
@@ -99,9 +135,12 @@ interface MimikProtocol {
   startGuideMe(data: StartGuideMeData): StartGuideMeResponse;
   guideMeStepCompleted(data: GuideMeStepCompletedData): GuideMeStepCompletedResponse;
   guideMeCancel(): GuideMe_CancelResponse;
-  guideMePrev(data: GuideMe_PrevData): GuideMe_PrevResponse;
+  guideMeGoTo(data: GuideMe_GoToData): GuideMe_GoToResponse;
   enterBlurMode(): EnterBlurModeResponse;
   exitBlurMode(): ExitBlurModeResponse;
+  generateGuideDescription(data: GenerateGuideDescriptionData): GenerateGuideDescriptionResponse;
+  validateApiKey(data: ValidateApiKeyData): ValidateApiKeyResponse;
+  rewriteSelection(data: RewriteSelectionData): RewriteSelectionResponse;
 }
 
 export const { sendMessage, onMessage } = defineExtensionMessaging<MimikProtocol>();

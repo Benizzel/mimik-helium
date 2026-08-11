@@ -3,7 +3,7 @@ import type * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-function TooltipProvider({ delayDuration = 200, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+function TooltipProvider({ delayDuration = 350, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
   return <TooltipPrimitive.Provider data-slot="tooltip-provider" delayDuration={delayDuration} {...props} />;
 }
 
@@ -17,7 +17,7 @@ function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimiti
 
 function TooltipContent({
   className,
-  sideOffset = 4,
+  sideOffset = 6,
   collisionPadding = 8,
   children,
   ...props
@@ -29,13 +29,13 @@ function TooltipContent({
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
         className={cn(
-          'z-50 w-fit max-w-56 origin-(--radix-tooltip-content-transform-origin) rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-balance text-primary-foreground shadow-md',
+          'z-[60] max-w-56 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-balance text-primary-foreground shadow-lg data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0',
           className,
         )}
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-primary fill-primary" />
+        <TooltipPrimitive.Arrow className="fill-primary" width={9} height={4} />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );
