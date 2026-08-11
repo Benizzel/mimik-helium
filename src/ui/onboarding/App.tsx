@@ -325,11 +325,15 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
     });
   }, []);
 
+  const handleMicrophoneChange = (deviceId: string) => {
+    setMicrophoneId(deviceId);
+    localStorage.set({ voiceMicrophoneId: deviceId });
+  };
+
   const handleContinue = async () => {
     await localStorage.set({
       voiceProvider: provider,
       ...(apiKey ? { voiceApiKey: apiKey } : {}),
-      ...(microphoneId ? { voiceMicrophoneId: microphoneId } : {}),
     });
     onNext();
   };
@@ -400,7 +404,7 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
               </div>
             </div>
 
-            <MicrophonePicker value={microphoneId} onChange={setMicrophoneId} />
+            <MicrophonePicker value={microphoneId} onChange={handleMicrophoneChange} />
 
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-secondary text-[11px] text-muted-foreground leading-relaxed">
               <Mic size={12} className="shrink-0 mt-0.5 text-accent" />
