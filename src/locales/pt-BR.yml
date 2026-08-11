@@ -405,6 +405,10 @@ onboarding:
   pinStep3Title: Clica no pin
   pinStep3Sub: O Mimik vai aparecer na sua barra
   pinScreenshotAlt: Fixar extensão Mimik
+  starTitle: "Que tal deixar uma estrela?"
+  starMessage: "O Mimik é gratuito e de código aberto. Uma estrela é o jeito mais fácil de agradecer, e ajuda outras pessoas a encontrarem o projeto."
+  starAction: Deixar uma estrela no GitHub
+  starLater: Talvez depois
   doneTitle: "Tudo pronto!"
   doneMessage: "O Mimik tá pronto pra capturar. Clica em \"Começar a capturar\" na extensão pra gravar seu primeiro guia."
   featureAutoCapture: Captura automática

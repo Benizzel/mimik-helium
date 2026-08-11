@@ -405,6 +405,10 @@ onboarding:
   pinStep3Title: Click the pin icon
   pinStep3Sub: Mimik will appear in your toolbar
   pinScreenshotAlt: Pin Mimik extension
+  starTitle: Mind giving us a star?
+  starMessage: "Mimik is free and open source. A star is the easiest way to say thanks, and it helps other people find it."
+  starAction: Star on GitHub
+  starLater: Maybe later
   doneTitle: "You're all set!"
   doneMessage: "Mimik is ready to capture your workflows. Click \"Start Capture\" in the extension to record your first guide."
   featureAutoCapture: Auto-capture

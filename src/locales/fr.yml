@@ -405,6 +405,10 @@ onboarding:
   pinStep3Title: "Cliquez sur l'épingle"
   pinStep3Sub: "Mimik apparaîtra dans votre barre"
   pinScreenshotAlt: "Épingler Mimik"
+  starTitle: "Vous nous mettez une étoile ?"
+  starMessage: "Mimik est gratuit et open source. Une étoile est le moyen le plus simple de nous remercier, et elle aide d'autres personnes à le découvrir."
+  starAction: "Mettre une étoile sur GitHub"
+  starLater: Plus tard
   doneTitle: "Tout est prêt !"
   doneMessage: "Mimik est prêt à capturer. Cliquez sur « Lancer la capture » pour enregistrer votre premier guide."
   featureAutoCapture: Capture automatique
