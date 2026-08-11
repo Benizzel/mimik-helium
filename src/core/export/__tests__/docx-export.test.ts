@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
 import { strFromU8, unzipSync } from 'fflate';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { exportGuideAsDOCX, fitDocxImageSize } from '@/core/export/docx-export';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
+
+const rendered = vi.hoisted(() => vi.fn(async () => new Blob(['rendered'], { type: 'image/png' })));
+
+vi.mock('@/core/screenshot/render', () => ({ renderScreenshot: rendered }));
 
 function makeGuide(overrides: Partial<Guide> = {}): Guide {
   return {
@@ -96,6 +100,53 @@ describe('exportGuideAsDOCX', () => {
     const files = await unzipDocx(blob);
 
     expect(Object.keys(files).some((name) => name.startsWith('word/media/'))).toBe(false);
+  });
+
+  it('includes the guide description', async () => {
+    const guide = makeGuide({ description: 'A short SOP narrative.' });
+    const xml = await readDocumentXml(await exportGuideAsDOCX(guide, [makeStep()], new Map()));
+
+    expect(xml).toContain('A short SOP narrative.');
+  });
+
+  it('embeds the rendered screenshot so annotations and redactions are applied', async () => {
+    rendered.mockClear();
+    const step = makeStep();
+    const screenshot = makeScreenshot(step.id, 'raw-pixels');
+    screenshot.edits = {
+      annotations: [{ id: 'r1', type: 'redact', x: 0, y: 0, w: 10, h: 10, style: 'solid' }],
+    };
+
+    const blob = await exportGuideAsDOCX(makeGuide(), [step], new Map([[step.id, screenshot]]));
+    const files = await unzipDocx(blob);
+    const media = Object.keys(files).filter((name) => name.startsWith('word/media/') && files[name].length > 0);
+
+    expect(rendered).toHaveBeenCalledWith(screenshot, expect.objectContaining({ format: 'image/png' }));
+    expect(media).toHaveLength(1);
+    expect(strFromU8(files[media[0]])).toBe('rendered');
+  });
+
+  it('sizes the image from the cropped viewport, not the original bitmap', async () => {
+    const step = makeStep();
+    const screenshot = makeScreenshot(step.id);
+    screenshot.edits = { viewport: { x: 0, y: 0, width: 400, height: 100 } };
+
+    const xml = await readDocumentXml(await exportGuideAsDOCX(makeGuide(), [step], new Map([[step.id, screenshot]])));
+
+    const extent = xml.match(/<wp:extent cx="(\d+)" cy="(\d+)"/);
+    expect(extent).not.toBeNull();
+    expect(Number(extent?.[1]) / Number(extent?.[2])).toBeCloseTo(4, 1);
+  });
+
+  it('embeds screenshots whose stored mime type is not natively supported by docx', async () => {
+    const step = makeStep();
+    const screenshot = makeScreenshot(step.id);
+    screenshot.mimeType = 'image/webp';
+
+    const blob = await exportGuideAsDOCX(makeGuide(), [step], new Map([[step.id, screenshot]]));
+    const files = await unzipDocx(blob);
+
+    expect(Object.keys(files).some((name) => name.startsWith('word/media/'))).toBe(true);
   });
 });
 

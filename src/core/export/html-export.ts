@@ -59,9 +59,10 @@ export async function exportGuideAsHTML(
     const screenshot = opts.screenshots ? screenshots.get(step.id) : undefined;
     let imgHtml = '';
     if (screenshot) {
-      const b64 = await blobToBase64(await renderScreenshot(screenshot));
+      const rendered = await renderScreenshot(screenshot);
+      const b64 = await blobToBase64(rendered);
       const altText = screenshot.edits?.alt || i18n.t('export.stepLabel', [String(number)]);
-      imgHtml = `<img src="data:${screenshot.mimeType};base64,${b64}" alt="${escapeHtml(altText)}" style="display:block;width:${imgWidthPct}%;margin-top:14px;border:1px solid #CBD5E1;" />`;
+      imgHtml = `<img src="data:${rendered.type};base64,${b64}" alt="${escapeHtml(altText)}" style="display:block;width:${imgWidthPct}%;margin-top:14px;border:1px solid #CBD5E1;" />`;
     }
 
     const stepNumber = String(number).padStart(2, '0');
