@@ -28,6 +28,7 @@ import {
   createSnapshot,
   deleteScreenshot,
   deleteStep,
+  deleteSteps,
   getGuide,
   getSnapshots,
   permanentlyDeleteGuide,
@@ -442,6 +443,23 @@ describe('append-only screenshots', () => {
     await deleteStep('g1', 's1');
 
     expect(await db.screenshots.get('sc1')).toBeDefined();
+  });
+
+  it('deleteSteps keeps the screenshot row of every deleted step', async () => {
+    await seedGuide('g1', { stepIds: ['s1', 's2'] });
+    await db.steps.bulkAdd([
+      makeStep({ id: 's1', guideId: 'g1', index: 0, screenshotId: 'sc1' }),
+      makeStep({ id: 's2', guideId: 'g1', index: 1, screenshotId: 'sc2' }),
+    ]);
+    await db.screenshots.bulkAdd([
+      makeScreenshot({ id: 'sc1', stepId: 's1' }),
+      makeScreenshot({ id: 'sc2', stepId: 's2' }),
+    ]);
+    await createSnapshot('g1');
+
+    await deleteSteps('g1', ['s1', 's2']);
+
+    expect(await db.screenshots.count()).toBe(2);
   });
 
   it('permanentlyDeleteGuide sweeps unreferenced rows and snapshots', async () => {

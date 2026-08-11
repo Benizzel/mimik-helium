@@ -177,6 +177,10 @@ editor:
   guideMe: Anleiten
   guideMeUnavailable: Keine abspielbaren Schritte in dieser Anleitung
   deleteThisStep: "Diesen Schritt löschen?"
+  selectStep: Schritt auswählen
+  selectedCount: "$1 ausgewählt"
+  deleteSelectedStep: "$1 ausgewählten Schritt löschen?"
+  deleteSelectedSteps: "$1 ausgewählte Schritte löschen?"
   copyScreenshot: Screenshot kopieren
   noScreenshot: Kein Screenshot
   edit: Bearbeiten

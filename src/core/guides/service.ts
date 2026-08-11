@@ -225,24 +225,31 @@ export async function findExistingStepIds(stepIds: readonly string[]): Promise<s
   return found as string[];
 }
 
-export async function deleteStep(guideId: string, stepId: string): Promise<void> {
-  const snapshotCount = await db.snapshots.where('guideId').equals(guideId).count();
-  if (snapshotCount === 0) {
-    const step = await db.steps.get(stepId);
-    if (step?.screenshotId) await db.screenshots.delete(step.screenshotId);
-  }
-  await db.steps.delete(stepId);
-  const guide = await db.guides.get(guideId);
-  if (guide) {
-    const newStepIds = guide.stepIds.filter((id) => id !== stepId);
-    await db.guides.update(guideId, { stepIds: newStepIds, updatedAt: Date.now() });
-    const remaining = await db.steps.where('guideId').equals(guideId).sortBy('index');
-    for (let i = 0; i < remaining.length; i++) {
-      if (remaining[i].index !== i) {
-        await db.steps.update(remaining[i].id, { index: i });
-      }
+export async function deleteSteps(guideId: string, stepIds: readonly string[]): Promise<void> {
+  if (stepIds.length === 0) return;
+  const doomed = new Set(stepIds);
+  await db.transaction('rw', db.guides, db.steps, db.screenshots, db.snapshots, async () => {
+    const snapshotCount = await db.snapshots.where('guideId').equals(guideId).count();
+    if (snapshotCount === 0) {
+      const steps = await db.steps.bulkGet([...doomed]);
+      const screenshotIds = steps.map((step) => step?.screenshotId).filter((id): id is string => !!id);
+      if (screenshotIds.length > 0) await db.screenshots.bulkDelete(screenshotIds);
     }
-  }
+    await db.steps.bulkDelete([...doomed]);
+    const remaining = await db.steps.where('guideId').equals(guideId).sortBy('index');
+    await db.steps.bulkPut(remaining.map((step, index) => ({ ...step, index })));
+    const guide = await db.guides.get(guideId);
+    if (guide) {
+      await db.guides.update(guideId, {
+        stepIds: guide.stepIds.filter((id) => !doomed.has(id)),
+        updatedAt: Date.now(),
+      });
+    }
+  });
+}
+
+export async function deleteStep(guideId: string, stepId: string): Promise<void> {
+  await deleteSteps(guideId, [stepId]);
 }
 
 export async function getGuideDomain(guideId: string): Promise<string> {

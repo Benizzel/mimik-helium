@@ -30,6 +30,7 @@ import {
   addStepToGuide,
   createGuide,
   deleteStep,
+  deleteSteps,
   getGuide,
   getGuides,
   getStarredGuides,
@@ -172,6 +173,43 @@ describe('deleteStep', () => {
     const remaining = await db.steps.where('guideId').equals('g1').sortBy('index');
     expect(remaining[0].index).toBe(0);
     expect(remaining[1].index).toBe(1);
+  });
+});
+
+describe('deleteSteps', () => {
+  it('removes a non-contiguous selection including blocks and re-indexes once', async () => {
+    await seedGuide('g1', { stepIds: ['s1', 'b1', 's2', 's3', 'b2'] });
+    await db.steps.bulkAdd([
+      makeStep({ id: 's1', guideId: 'g1', index: 0, screenshotId: 'sc1' }),
+      makeStep({ id: 'b1', guideId: 'g1', index: 1, blockType: 'heading' }),
+      makeStep({ id: 's2', guideId: 'g1', index: 2, screenshotId: 'sc2' }),
+      makeStep({ id: 's3', guideId: 'g1', index: 3 }),
+      makeStep({ id: 'b2', guideId: 'g1', index: 4, blockType: 'callout' }),
+    ]);
+    await db.screenshots.bulkAdd([
+      makeScreenshot({ id: 'sc1', stepId: 's1' }),
+      makeScreenshot({ id: 'sc2', stepId: 's2' }),
+    ]);
+
+    await deleteSteps('g1', ['s1', 's2', 'b2']);
+
+    const guide = await db.guides.get('g1');
+    expect(guide!.stepIds).toEqual(['b1', 's3']);
+
+    const remaining = await db.steps.where('guideId').equals('g1').sortBy('index');
+    expect(remaining.map((s) => s.id)).toEqual(['b1', 's3']);
+    expect(remaining.map((s) => s.index)).toEqual([0, 1]);
+    expect(await db.screenshots.count()).toBe(0);
+  });
+
+  it('leaves the guide untouched when nothing is selected', async () => {
+    await seedGuide('g1', { stepIds: ['s1'] });
+    await db.steps.add(makeStep({ id: 's1', guideId: 'g1', index: 0 }));
+
+    await deleteSteps('g1', []);
+
+    expect(await db.steps.count()).toBe(1);
+    expect((await db.guides.get('g1'))!.stepIds).toEqual(['s1']);
   });
 });
 
