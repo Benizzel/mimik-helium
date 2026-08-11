@@ -294,14 +294,12 @@ function AISetupStep({ onNext, onSkip, index, total }: StepProps) {
 }
 
 function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
-  const [enabled, setEnabled] = useState(false);
   const [provider, setProvider] = useState<VoiceProvider>('openai');
   const [apiKey, setApiKey] = useState('');
   const [microphoneId, setMicrophoneId] = useState('');
 
   const handleContinue = async () => {
     await localStorage.set({
-      voiceEnabled: enabled,
       voiceProvider: provider,
       ...(apiKey ? { voiceApiKey: apiKey } : {}),
       ...(microphoneId ? { voiceMicrophoneId: microphoneId } : {}),
@@ -347,23 +345,6 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
           </div>
 
           <div className="border border-border rounded-2xl p-4 space-y-3 mb-6">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-semibold text-foreground">{i18n.t('onboarding.voiceEnableLabel')}</span>
-              <button
-                onClick={() => setEnabled((prev) => !prev)}
-                aria-pressed={enabled}
-                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${
-                  enabled ? 'bg-accent' : 'bg-border'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                    enabled ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="block text-[11px] font-semibold text-foreground mb-1">
@@ -392,7 +373,12 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
               </div>
             </div>
 
-            {enabled && <MicrophonePicker value={microphoneId} onChange={setMicrophoneId} />}
+            <MicrophonePicker value={microphoneId} onChange={setMicrophoneId} />
+
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-secondary text-[11px] text-muted-foreground leading-relaxed">
+              <Mic size={12} className="shrink-0 mt-0.5 text-accent" />
+              <span>{i18n.t('onboarding.voiceRecordHint')}</span>
+            </div>
 
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-secondary text-[11px] text-muted-foreground leading-relaxed">
               <Shield size={12} className="shrink-0 mt-0.5 text-accent" />

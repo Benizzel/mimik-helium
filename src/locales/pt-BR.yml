@@ -387,7 +387,7 @@ onboarding:
   voiceDoSub: "Suas palavras vão pra próxima ação que você fizer, então a descrição cai no passo certo."
   voiceDontTitle: "Não narra depois de clicar"
   voiceDontSub: "O que você fala depois de uma ação vai pro passo seguinte, e isso joga todas as descrições pro passo errado."
-  voiceEnableLabel: Narrar enquanto eu gravo
+  voiceRecordHint: "A narração fica desligada até você ativá-la. Use o botão de microfone no painel lateral enquanto grava, assim você escolhe guia a guia."
   voiceDataNotice: "Seu áudio vai pro provedor que você escolher aqui, com sua própria chave API. Nada mais do Mimik sai do seu navegador."
   voiceDemoLabel: "Como a narração é atribuída"
   voiceDemoSay: "Você fala"

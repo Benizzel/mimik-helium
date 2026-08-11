@@ -318,7 +318,7 @@ onboarding:
   voiceDoSub: Deine Worte werden der nächsten Aktion zugeordnet, damit die Beschreibung beim gemeinten Schritt landet.
   voiceDontTitle: Nicht erst nach dem Klick sprechen
   voiceDontSub: Alles, was du nach einer Aktion sagst, wird dem folgenden Schritt zugeordnet — dadurch rutscht jede Beschreibung auf den falschen Schritt.
-  voiceEnableLabel: Beim Aufnehmen mitsprechen
+  voiceRecordHint: "Die Sprachaufnahme bleibt aus, bis du sie einschaltest. Nutze die Mikrofontaste in der Seitenleiste während der Aufnahme, so entscheidest du pro Anleitung."
   voiceDataNotice: Dein Audio wird mit deinem eigenen API-Schlüssel an den hier gewählten Anbieter gesendet. Sonst verlässt nichts in Mimik deinen Browser.
   voiceDemoLabel: So landet dein Kommentar
   voiceDemoSay: Du sagst

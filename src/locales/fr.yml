@@ -387,7 +387,7 @@ onboarding:
   voiceDoSub: "Vos mots sont rattachés à l'action suivante : la description tombe donc sur l'étape voulue."
   voiceDontTitle: "Ne commentez pas après avoir cliqué"
   voiceDontSub: "Ce qui est dit après une action est rattaché à l'étape suivante, ce qui décale toutes les descriptions."
-  voiceEnableLabel: "Commenter pendant l'enregistrement"
+  voiceRecordHint: "La narration reste désactivée jusqu'à ce que vous l'activiez. Utilisez le bouton microphone dans le panneau latéral pendant l'enregistrement, pour choisir guide par guide."
   voiceDataNotice: "Votre audio est envoyé au fournisseur choisi ici, avec votre propre clé API. Rien d'autre ne sort de votre navigateur."
   voiceDemoLabel: "Comment la narration est rattachée"
   voiceDemoSay: Vous dites

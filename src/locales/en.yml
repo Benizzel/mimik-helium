@@ -387,7 +387,7 @@ onboarding:
   voiceDoSub: Your words are attached to the next action you take, so the description lands on the step you meant.
   voiceDontTitle: Do not narrate after clicking
   voiceDontSub: Anything said after an action is matched to the following step, which shifts every description onto the wrong one.
-  voiceEnableLabel: Narrate while I record
+  voiceRecordHint: Narration stays off until you turn it on. Use the microphone button in the side panel while recording, so you choose per guide.
   voiceDataNotice: Your audio is sent to the provider you pick here, using your own API key. Nothing else in Mimik leaves your browser.
   voiceDemoLabel: How narration lands
   voiceDemoSay: You say
