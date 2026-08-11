@@ -1,3 +1,4 @@
+import { resolveVoiceApiKey, VOICE_KEY_SETTINGS } from '@/core/capture/voice/api-key';
 import { detectSpeechByEnergy } from '@/core/capture/voice/energy-gate';
 import { runNarrationPipeline } from '@/core/capture/voice/pipeline';
 import { buildStepWindows } from '@/core/capture/voice/step-windows';
@@ -6,8 +7,6 @@ import type { NarrationResult } from '@/core/capture/voice/types';
 import { localStorage } from './browser-api';
 import { logger } from './logger';
 import type { VoiceStepMark } from './voice-messages';
-
-const VOICE_PROVIDERS: VoiceProvider[] = ['openai', 'groq'];
 
 export interface TranscriptionSettings {
   provider: VoiceProvider;
@@ -36,12 +35,12 @@ export const EMPTY_NARRATION: NarrationResult = {
 };
 
 export async function readTranscriptionSettings(): Promise<TranscriptionSettings> {
-  const stored = await localStorage.get(['voiceProvider', 'voiceApiKey', 'voiceLanguage', 'aiLanguage']);
-  const provider = stored.voiceProvider as VoiceProvider;
+  const stored = await localStorage.get([...VOICE_KEY_SETTINGS, 'voiceLanguage', 'aiLanguage']);
+  const { provider, apiKey } = resolveVoiceApiKey(stored);
   const locale = (stored.voiceLanguage ?? stored.aiLanguage) as string | undefined;
   return {
-    provider: VOICE_PROVIDERS.includes(provider) ? provider : 'openai',
-    apiKey: typeof stored.voiceApiKey === 'string' ? stored.voiceApiKey.trim() : '',
+    provider,
+    apiKey,
     language: locale ? locale.split('-')[0] : undefined,
   };
 }

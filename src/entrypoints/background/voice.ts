@@ -1,3 +1,4 @@
+import { hasVoiceApiKey, VOICE_KEY_SETTINGS } from '@/core/capture/voice/api-key';
 import { narrationUpdates } from '@/core/capture/voice/narration-updates';
 import { applyNarrationToSteps, getStepsForGuide } from '@/core/guides/service';
 import { localStorage, onMessage as onRuntimeMessage } from '@/lib/browser-api';
@@ -57,11 +58,11 @@ function withTimeout(work: Promise<void>, ms: number): Promise<void> {
 }
 
 async function readVoiceSettings(): Promise<{ enabled: boolean; hasApiKey: boolean; microphoneId?: string }> {
-  const stored = await localStorage.get(['voiceEnabled', 'voiceApiKey', 'voiceMicrophoneId']);
+  const stored = await localStorage.get([...VOICE_KEY_SETTINGS, 'voiceEnabled', 'voiceMicrophoneId']);
   const microphoneId = typeof stored.voiceMicrophoneId === 'string' ? stored.voiceMicrophoneId.trim() : '';
   return {
     enabled: stored.voiceEnabled === true,
-    hasApiKey: typeof stored.voiceApiKey === 'string' && stored.voiceApiKey.trim().length > 0,
+    hasApiKey: hasVoiceApiKey(stored),
     microphoneId: microphoneId || undefined,
   };
 }
