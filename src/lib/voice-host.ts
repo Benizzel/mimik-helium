@@ -25,13 +25,7 @@ import {
   type VoiceStopResponse,
   voiceMessage,
 } from './voice-messages';
-import {
-  EMPTY_NARRATION,
-  narrateRecording,
-  readTranscriptionSettings,
-  type TranscriptionSettings,
-  type VoiceRecording,
-} from './voice-narration';
+import { EMPTY_NARRATION, narrateRecording, type TranscriptionSettings, type VoiceRecording } from './voice-narration';
 
 export interface VoiceHost {
   handle(request: VoiceRequest): Promise<unknown>;
@@ -178,8 +172,8 @@ export function createVoiceHost(): VoiceHost {
       return { ok: true, audioEpochMs, durationSeconds };
     }
 
-    const settings = await readTranscriptionSettings();
-    if (!settings.apiKey) {
+    const settings = request.settings;
+    if (!settings?.apiKey) {
       return { ok: false, reason: 'missing-api-key', error: 'No transcription API key is configured' };
     }
 

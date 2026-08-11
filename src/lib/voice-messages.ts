@@ -57,11 +57,18 @@ export interface VoiceStepMark {
   timestamp: number;
 }
 
+export interface VoiceTranscriptionSettings {
+  provider: string;
+  apiKey: string;
+  language?: string;
+}
+
 export interface VoiceStopRequest extends VoiceEnvelope {
   type: typeof VoiceMessage.VOICE_STOP;
   target: typeof VOICE_OFFSCREEN_TARGET;
   guideId: string;
   steps: VoiceStepMark[];
+  settings: VoiceTranscriptionSettings;
 }
 
 export type VoiceStopResponse =

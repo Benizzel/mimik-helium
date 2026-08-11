@@ -168,7 +168,8 @@ export async function stopVoiceNarration(guideId: string): Promise<void> {
     }
 
     const steps = await getStepsForGuide(guideId);
-    const response = await stopVoiceCapture(guideId, stepMarks(steps));
+    const settings = await readTranscriptionSettings();
+    const response = await stopVoiceCapture(guideId, stepMarks(steps), settings);
 
     if (response.ok) {
       logger.info('voice: transcribing narration', response);
