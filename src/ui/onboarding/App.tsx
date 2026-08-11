@@ -1,4 +1,4 @@
-import { Mic, MousePointerClick, Shield, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Mic, MousePointerClick, Shield, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
@@ -13,6 +13,7 @@ import MicrophonePicker from '@/ui/shared/MicrophonePicker';
 interface StepProps {
   onNext: () => void;
   onSkip: () => void;
+  onBack: () => void;
   index: number;
   total: number;
 }
@@ -111,11 +112,22 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-function AISetupStep({ onNext, onSkip, index, total }: StepProps) {
+function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   const [provider, setProvider] = useState<AIProviderKey>('openai');
   const [model, setModel] = useState(AI_PROVIDERS.openai.defaultModel);
   const [apiKey, setApiKey] = useState('');
   const [aiLanguage, setAiLanguage] = useState<AILanguageCode>('en');
+
+  useEffect(() => {
+    localStorage.get(['aiProvider', 'aiModel', 'aiApiKey', 'aiLanguage']).then((stored) => {
+      if (typeof stored.aiProvider === 'string' && stored.aiProvider in AI_PROVIDERS) {
+        setProvider(stored.aiProvider as AIProviderKey);
+      }
+      if (typeof stored.aiModel === 'string') setModel(stored.aiModel);
+      if (typeof stored.aiApiKey === 'string') setApiKey(stored.aiApiKey);
+      if (typeof stored.aiLanguage === 'string') setAiLanguage(stored.aiLanguage as AILanguageCode);
+    });
+  }, []);
 
   const providerConfig = AI_PROVIDERS[provider];
 
@@ -220,6 +232,13 @@ function AISetupStep({ onNext, onSkip, index, total }: StepProps) {
             >
               {i18n.t('common.skip')}
             </button>
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 px-4 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+            >
+              <ArrowLeft size={15} />
+              {i18n.t('common.back')}
+            </button>
           </div>
 
           <div className="mt-6">
@@ -293,10 +312,18 @@ function AISetupStep({ onNext, onSkip, index, total }: StepProps) {
   );
 }
 
-function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
+function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   const [provider, setProvider] = useState<VoiceProvider>('openai');
   const [apiKey, setApiKey] = useState('');
   const [microphoneId, setMicrophoneId] = useState('');
+
+  useEffect(() => {
+    localStorage.get(['voiceProvider', 'voiceApiKey', 'voiceMicrophoneId']).then((stored) => {
+      if (stored.voiceProvider === 'openai' || stored.voiceProvider === 'groq') setProvider(stored.voiceProvider);
+      if (typeof stored.voiceApiKey === 'string') setApiKey(stored.voiceApiKey);
+      if (typeof stored.voiceMicrophoneId === 'string') setMicrophoneId(stored.voiceMicrophoneId);
+    });
+  }, []);
 
   const handleContinue = async () => {
     await localStorage.set({
@@ -399,6 +426,13 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
             >
               {i18n.t('common.skip')}
             </button>
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 px-4 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+            >
+              <ArrowLeft size={15} />
+              {i18n.t('common.back')}
+            </button>
           </div>
 
           <div className="mt-6">
@@ -461,7 +495,7 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
   );
 }
 
-function SmartBlurStep({ onNext, onSkip, index, total }: StepProps) {
+function SmartBlurStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>({
     email: true,
     phone: true,
@@ -470,6 +504,14 @@ function SmartBlurStep({ onNext, onSkip, index, total }: StepProps) {
     ipAddress: false,
     macAddress: false,
   });
+
+  useEffect(() => {
+    localStorage.get(['blurPresets']).then((stored) => {
+      if (stored.blurPresets && typeof stored.blurPresets === 'object') {
+        setBlurPresets((prev) => ({ ...prev, ...(stored.blurPresets as Record<PresetKey, boolean>) }));
+      }
+    });
+  }, []);
 
   const handleToggle = (key: PresetKey) => {
     setBlurPresets((prev) => {
@@ -528,6 +570,13 @@ function SmartBlurStep({ onNext, onSkip, index, total }: StepProps) {
               className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
             >
               {i18n.t('common.skip')}
+            </button>
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 px-4 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+            >
+              <ArrowLeft size={15} />
+              {i18n.t('common.back')}
             </button>
           </div>
 
@@ -594,7 +643,7 @@ function SmartBlurStep({ onNext, onSkip, index, total }: StepProps) {
   );
 }
 
-function PinExtensionStep({ onNext, onSkip, index, total }: StepProps) {
+function PinExtensionStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   return (
     <div className="flex h-screen">
       <div className="flex-1 flex flex-col justify-center" style={{ padding: '80px 64px' }}>
@@ -649,6 +698,13 @@ function PinExtensionStep({ onNext, onSkip, index, total }: StepProps) {
               className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
             >
               {i18n.t('common.skip')}
+            </button>
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 px-4 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+            >
+              <ArrowLeft size={15} />
+              {i18n.t('common.back')}
             </button>
           </div>
 
@@ -787,13 +843,16 @@ export default function OnboardingApp() {
 
   const lastStep = CONFIG_STEPS.length + 1;
   const next = () => setStep((s) => Math.min(s + 1, lastStep));
+  const back = () => setStep((s) => Math.max(s - 1, 0));
   const CurrentStep = CONFIG_STEPS[step - 1];
 
   return (
     <div className="min-h-screen bg-card text-foreground">
       <style>{`@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes sparkle{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}`}</style>
       {step === 0 && <WelcomeStep onNext={next} />}
-      {CurrentStep && <CurrentStep onNext={next} onSkip={next} index={step} total={CONFIG_STEPS.length} />}
+      {CurrentStep && (
+        <CurrentStep onNext={next} onSkip={next} onBack={back} index={step} total={CONFIG_STEPS.length} />
+      )}
       {step === lastStep && <DoneStep />}
     </div>
   );
