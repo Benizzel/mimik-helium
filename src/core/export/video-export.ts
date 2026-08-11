@@ -4,7 +4,15 @@ import { dataUrlToBytes, fitLogo, loadBranding } from '@/core/export/branding';
 import type { ExportOptions } from '@/core/export/options';
 import { loadExportOptions } from '@/core/export/options';
 import { extractDomain, formatDate } from '@/core/export/utils';
-import { FRAME_HEIGHT, FRAME_WIDTH, pickContainer } from '@/core/export/video-support';
+import {
+  FPS,
+  FRAME_HEIGHT,
+  FRAME_WIDTH,
+  pickContainer,
+  STEP_SECONDS,
+  STEP_ZOOM_TRANSITION_SEC,
+  STEP_ZOOMED_OUT_SEC,
+} from '@/core/export/video-support';
 import { actionSteps, calloutAccent, isBlock } from '@/core/guides/blocks';
 import type { BlockType, Guide, Screenshot, Step } from '@/core/guides/types';
 import type { Ctx } from '@/core/screenshot/draw';
@@ -12,10 +20,6 @@ import { drawRoundedRect } from '@/core/screenshot/draw';
 import { clamp, resolveTarget, resolveViewport } from '@/core/screenshot/geometry';
 import { renderScreenshot } from '@/core/screenshot/render';
 
-export const FPS = 30;
-const STEP_ZOOMED_OUT_SEC = 1.5;
-const STEP_ZOOM_TRANSITION_SEC = 0.73;
-const STEP_ZOOMED_IN_SEC = 3;
 const TRANSITION_DURATION_SEC = 0.33;
 const COVER_SECONDS = 3;
 const KEY_FRAME_INTERVAL_SEC = 2;
@@ -58,7 +62,7 @@ const CALLOUT_MAX_LINES = 4;
 const CALLOUT_BAR_WIDTH = 6;
 const CALLOUT_BAR_GAP = 26;
 
-export const STEP_SECONDS = STEP_ZOOMED_OUT_SEC + STEP_ZOOM_TRANSITION_SEC + STEP_ZOOMED_IN_SEC;
+export { FPS, STEP_SECONDS };
 
 export function toFrames(seconds: number, fps = FPS): number {
   return Math.round(seconds * fps);

@@ -1,6 +1,12 @@
 export const FRAME_WIDTH = 1280;
 export const FRAME_HEIGHT = 720;
 
+export const FPS = 30;
+export const STEP_ZOOMED_OUT_SEC = 1.5;
+export const STEP_ZOOM_TRANSITION_SEC = 0.73;
+export const STEP_ZOOMED_IN_SEC = 3;
+export const STEP_SECONDS = STEP_ZOOMED_OUT_SEC + STEP_ZOOM_TRANSITION_SEC + STEP_ZOOMED_IN_SEC;
+
 export const AVC_CODEC = 'avc1.64001f';
 export const VP9_CODEC = 'vp09.00.31.08';
 
