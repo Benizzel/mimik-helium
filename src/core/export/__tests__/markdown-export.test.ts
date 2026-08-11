@@ -139,6 +139,17 @@ describe('exportGuideAsMarkdown', () => {
     expect(md).toContain(b64);
   });
 
+  it('labels the data URL with the rendered mime type, not the stored one', async () => {
+    const step = makeStep();
+    const ss = makeScreenshot(step.id, 'pixel-data');
+    ss.mimeType = 'image/jpeg';
+
+    const md = await exportGuideAsMarkdown(makeGuide(), [step], new Map([[step.id, ss]]));
+
+    expect(md).toContain('](data:image/png;base64,');
+    expect(md).not.toContain('data:image/jpeg');
+  });
+
   it('renders a heading block as an H2 without a step number', async () => {
     const guide = makeGuide();
     const steps = [makeStep({ id: 'block-1', blockType: 'heading', description: 'Section title', url: '' })];
