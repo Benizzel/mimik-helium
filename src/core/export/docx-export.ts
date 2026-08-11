@@ -154,6 +154,16 @@ function buildCover(guide: Guide, steps: Step[], domain: string | null, brand: B
                   new TextRun({ text: guide.title, bold: true, color: INK, size: 60, font: DOCX_FONT_FAMILY }),
                 ],
               }),
+              ...(guide.description
+                ? [
+                    new Paragraph({
+                      spacing: { before: 220 },
+                      children: [
+                        new TextRun({ text: guide.description, color: MUTED, size: 22, font: DOCX_FONT_FAMILY }),
+                      ],
+                    }),
+                  ]
+                : []),
             ],
             CONTENT_MM - 40,
           ),

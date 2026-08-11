@@ -102,6 +102,13 @@ describe('exportGuideAsDOCX', () => {
     expect(Object.keys(files).some((name) => name.startsWith('word/media/'))).toBe(false);
   });
 
+  it('includes the guide description', async () => {
+    const guide = makeGuide({ description: 'A short SOP narrative.' });
+    const xml = await readDocumentXml(await exportGuideAsDOCX(guide, [makeStep()], new Map()));
+
+    expect(xml).toContain('A short SOP narrative.');
+  });
+
   it('embeds the rendered screenshot so annotations and redactions are applied', async () => {
     rendered.mockClear();
     const step = makeStep();
