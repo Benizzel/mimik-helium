@@ -5,7 +5,7 @@ import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
 import { AI_PROVIDERS, type AIProviderKey } from '@/core/capture/ai/models';
 import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
 import type { VoiceProvider } from '@/core/capture/voice/transcribe';
-import { localStorage, requestHostPermissions } from '@/lib/browser-api';
+import { localStorage, openSidebar, requestHostPermissions } from '@/lib/browser-api';
 import { Input } from '@/ui/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
 import MicrophonePicker from '@/ui/shared/MicrophonePicker';
@@ -787,6 +787,7 @@ function DoneStep() {
   }, []);
 
   const handleOpen = async () => {
+    openSidebar();
     const permissionsPromise = requestHostPermissions();
     await permissionsPromise;
     browser.tabs.create({ url: browser.runtime.getURL('/fullview.html') });

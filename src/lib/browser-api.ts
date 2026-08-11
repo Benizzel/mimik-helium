@@ -116,10 +116,14 @@ export function setSidePanelBehavior(openOnActionClick: boolean): void {
 }
 
 export function openSidebar(): void {
-  if (import.meta.env.BROWSER === 'firefox') {
-    browser.sidebarAction.open();
-  } else {
-    browser.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
+  try {
+    if (import.meta.env.BROWSER === 'firefox') {
+      browser.sidebarAction.open()?.catch(() => undefined);
+    } else {
+      browser.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT })?.catch(() => undefined);
+    }
+  } catch {
+    return;
   }
 }
 
