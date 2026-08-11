@@ -177,6 +177,10 @@ editor:
   guideMe: "Guidez-moi !"
   guideMeUnavailable: "Aucune étape rejouable dans ce guide"
   deleteThisStep: "Supprimer cette étape ?"
+  selectStep: "Sélectionner l'étape"
+  selectedCount: "$1 sélectionné(s)"
+  deleteSelectedStep: "Supprimer $1 étape sélectionnée ?"
+  deleteSelectedSteps: "Supprimer $1 étapes sélectionnées ?"
   copyScreenshot: "Copier la capture"
   noScreenshot: "Pas de capture"
   edit: Modifier

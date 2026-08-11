@@ -177,6 +177,10 @@ editor:
   guideMe: Guide Me
   guideMeUnavailable: No replayable steps in this guide
   deleteThisStep: "Delete this step?"
+  selectStep: Select step
+  selectedCount: "$1 selected"
+  deleteSelectedStep: "Delete $1 selected step?"
+  deleteSelectedSteps: "Delete $1 selected steps?"
   copyScreenshot: Copy screenshot
   noScreenshot: No screenshot
   edit: Edit

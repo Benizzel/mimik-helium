@@ -177,6 +177,10 @@ editor:
   guideMe: "¡Guíame!"
   guideMeUnavailable: Esta guía no tiene pasos que se puedan repetir
   deleteThisStep: "¿Eliminar este paso?"
+  selectStep: Seleccionar paso
+  selectedCount: "$1 seleccionados"
+  deleteSelectedStep: "¿Eliminar $1 paso seleccionado?"
+  deleteSelectedSteps: "¿Eliminar $1 pasos seleccionados?"
   copyScreenshot: Copiar captura
   noScreenshot: Sin captura
   edit: Editar
