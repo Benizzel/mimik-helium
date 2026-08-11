@@ -103,10 +103,16 @@ async function beginVoiceCapture(microphoneId: string | undefined, tabId: number
 }
 
 export async function startVoiceNarration(tabId?: number): Promise<void> {
-  if (!supportsVoice()) return;
+  if (!supportsVoice()) {
+    logger.warn('voice: no microphone host available in this browser, recording without narration');
+    return;
+  }
   try {
     const { enabled, hasApiKey, microphoneId } = await readVoiceSettings();
-    if (!enabled) return;
+    if (!enabled) {
+      logger.info('voice: narration is turned off, recording without it');
+      return;
+    }
     if (!hasApiKey) {
       logger.warn('voice: no transcription API key, recording without narration');
       report({ phase: 'error', reason: 'missing-api-key', error: 'No transcription API key is configured' });
