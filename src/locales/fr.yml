@@ -383,11 +383,7 @@ onboarding:
   aiGeneratedDescription: "Description générée par IA"
   voiceTitle: "Parlez, puis agissez"
   voiceMessage: "Dites ce que vous allez faire, puis faites-le. Mimik rattache votre narration à l'action qui suit : l'ordre compte plus que tout le reste."
-  voiceDoTitle: "Commentez d'abord, cliquez ensuite"
-  voiceDoSub: "Vos mots sont rattachés à l'action suivante : la description tombe donc sur l'étape voulue."
-  voiceDontTitle: "Ne commentez pas après avoir cliqué"
-  voiceDontSub: "Ce qui est dit après une action est rattaché à l'étape suivante, ce qui décale toutes les descriptions."
-  voiceEnableLabel: "Commenter pendant l'enregistrement"
+  voiceRecordHint: "La narration reste désactivée jusqu'à ce que vous l'activiez. Utilisez le bouton microphone dans le panneau latéral pendant l'enregistrement, pour choisir guide par guide."
   voiceDataNotice: "Votre audio est envoyé au fournisseur choisi ici, avec votre propre clé API. Rien d'autre ne sort de votre navigateur."
   voiceDemoLabel: "Comment la narration est rattachée"
   voiceDemoSay: Vous dites
@@ -409,10 +405,17 @@ onboarding:
   pinStep3Title: "Cliquez sur l'épingle"
   pinStep3Sub: "Mimik apparaîtra dans votre barre"
   pinScreenshotAlt: "Épingler Mimik"
+  starTitle: "Vous nous mettez une étoile ?"
+  starMessage: "Mimik est gratuit et open source. Une étoile est le moyen le plus simple de nous remercier, et elle aide d'autres personnes à le découvrir."
+  starAction: "Mettre une étoile sur GitHub"
+  starLater: Plus tard
   doneTitle: "Tout est prêt !"
   doneMessage: "Mimik est prêt à capturer. Cliquez sur « Lancer la capture » pour enregistrer votre premier guide."
   featureAutoCapture: Capture automatique
-  featureAIDescriptions: Descriptions IA
+  featureAIAssist: Assistant IA
+  featureVoice: Narration vocale
+  featureAnnotate: Annoter et masquer
+  featureExports: Exporter partout
   featureSmartBlur: Flou intelligent
   openMimik: Ouvrir Mimik
 
@@ -458,6 +461,7 @@ voice:
   micHearing: Nous vous entendons
   micQuiet: Aucun son
   nextRecording: "La narration vocale est activée : elle démarrera au prochain enregistrement."
+  orderHint: "Dites ce que vous allez faire, puis faites-le. Vos mots sont rattachés à l'action suivante."
   transcribing: "Transcription de votre narration..."
   transcribingHint: "Les descriptions des étapes se mettront à jour toutes seules à la fin."
   narrated: "Narration ajoutée à $1 étape."

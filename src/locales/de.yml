@@ -314,11 +314,7 @@ onboarding:
   aiGeneratedDescription: KI-generierte Beschreibung
   voiceTitle: Sprich, dann handle
   voiceMessage: Sag, was du als Nächstes tun wirst, und tu es dann. Mimik ordnet deinen Kommentar der Aktion zu, die darauf folgt — die Reihenfolge ist deshalb das Wichtigste.
-  voiceDoTitle: Erst sprechen, dann klicken
-  voiceDoSub: Deine Worte werden der nächsten Aktion zugeordnet, damit die Beschreibung beim gemeinten Schritt landet.
-  voiceDontTitle: Nicht erst nach dem Klick sprechen
-  voiceDontSub: Alles, was du nach einer Aktion sagst, wird dem folgenden Schritt zugeordnet — dadurch rutscht jede Beschreibung auf den falschen Schritt.
-  voiceEnableLabel: Beim Aufnehmen mitsprechen
+  voiceRecordHint: "Die Sprachaufnahme bleibt aus, bis du sie einschaltest. Nutze die Mikrofontaste in der Seitenleiste während der Aufnahme, so entscheidest du pro Anleitung."
   voiceDataNotice: Dein Audio wird mit deinem eigenen API-Schlüssel an den hier gewählten Anbieter gesendet. Sonst verlässt nichts in Mimik deinen Browser.
   voiceDemoLabel: So landet dein Kommentar
   voiceDemoSay: Du sagst
@@ -340,10 +336,17 @@ onboarding:
   pinStep3Title: Klicke auf das Pin-Symbol
   pinStep3Sub: Mimik erscheint dann in deiner Symbolleiste
   pinScreenshotAlt: Mimik-Erweiterung anpinnen
+  starTitle: "Magst du uns einen Stern geben?"
+  starMessage: "Mimik ist kostenlos und quelloffen. Ein Stern ist der einfachste Weg, Danke zu sagen, und hilft anderen, Mimik zu finden."
+  starAction: Auf GitHub mit Stern markieren
+  starLater: "Vielleicht später"
   doneTitle: "Alles bereit!"
   doneMessage: "Mimik ist bereit, deine Workflows aufzunehmen. Klicke in der Erweiterung auf \"Aufnahme starten\", um deine erste Anleitung aufzunehmen."
   featureAutoCapture: Auto-Aufnahme
-  featureAIDescriptions: KI-Beschreibungen
+  featureAIAssist: KI-Assistent
+  featureVoice: Sprachaufnahme
+  featureAnnotate: "Markieren & schwärzen"
+  featureExports: "Überall exportieren"
   featureSmartBlur: Smart Blur
   openMimik: Mimik öffnen
 
@@ -459,6 +462,7 @@ voice:
   micHearing: Ich höre dich
   micQuiet: Kein Ton
   nextRecording: Der Sprachkommentar ist aktiv und startet mit deiner nächsten Aufnahme.
+  orderHint: "Sag, was du gleich tust, und tu es dann. Deine Worte gehören zur nächsten Aktion."
   transcribing: "Dein Kommentar wird transkribiert…"
   transcribingHint: Die Schrittbeschreibungen aktualisieren sich von selbst, sobald das fertig ist.
   narrated: "Kommentar zu $1 Schritt hinzugefügt."

@@ -383,11 +383,7 @@ onboarding:
   aiGeneratedDescription: "Descripción generada por IA"
   voiceTitle: Habla y luego actúa
   voiceMessage: "Di lo que vas a hacer y después hazlo. Mimik une tu narración con la acción que viene justo después, así que el orden es lo que más importa."
-  voiceDoTitle: Narra primero, después haz clic
-  voiceDoSub: "Tus palabras se asignan a la siguiente acción que hagas, así la descripción cae en el paso que querías."
-  voiceDontTitle: No narres después de hacer clic
-  voiceDontSub: "Lo que digas después de una acción se asigna al paso siguiente, y eso corre todas las descripciones al paso equivocado."
-  voiceEnableLabel: Narrar mientras grabo
+  voiceRecordHint: "La narración permanece desactivada hasta que la actives. Usa el botón de micrófono en el panel lateral mientras grabas, así eliges guía por guía."
   voiceDataNotice: "Tu audio se envía al proveedor que elijas aquí, con tu propia clave API. Nada más de Mimik sale de tu navegador."
   voiceDemoLabel: "Cómo se asigna la narración"
   voiceDemoSay: Dices
@@ -409,10 +405,17 @@ onboarding:
   pinStep3Title: Haz clic en el pin
   pinStep3Sub: Mimik aparecerá en tu barra
   pinScreenshotAlt: Fijar extensión Mimik
+  starTitle: "¿Nos das una estrella?"
+  starMessage: "Mimik es gratuito y de código abierto. Una estrella es la forma más fácil de dar las gracias, y ayuda a que otras personas lo encuentren."
+  starAction: Dar una estrella en GitHub
+  starLater: "Quizá más tarde"
   doneTitle: "¡Ya estás listo!"
   doneMessage: "Mimik está listo para capturar. Dale clic a \"Empezar a capturar\" en la extensión para grabar tu primera guía."
   featureAutoCapture: Captura automática
-  featureAIDescriptions: Descripciones con IA
+  featureAIAssist: Asistente de IA
+  featureVoice: "Narración por voz"
+  featureAnnotate: Anotar y ocultar
+  featureExports: Exportar a todo
   featureSmartBlur: Desenfoque inteligente
   openMimik: Abrir Mimik
 
@@ -458,6 +461,7 @@ voice:
   micHearing: Te estamos oyendo
   micQuiet: Sin sonido
   nextRecording: "La narración por voz está activada y empieza en tu próxima grabación."
+  orderHint: "Di lo que vas a hacer y luego hazlo. Tus palabras se asignan a la siguiente acción."
   transcribing: "Transcribiendo tu narración..."
   transcribingHint: "Las descripciones de los pasos se actualizarán solas al terminar."
   narrated: "Narración añadida a $1 paso."

@@ -1,20 +1,24 @@
-import { Mic, MousePointerClick, Shield, TriangleAlert } from 'lucide-react';
+import { Mic, MousePointerClick, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
 import { AI_PROVIDERS, type AIProviderKey } from '@/core/capture/ai/models';
 import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
 import type { VoiceProvider } from '@/core/capture/voice/transcribe';
-import { localStorage, requestHostPermissions } from '@/lib/browser-api';
+import { localStorage, openSidebar, requestHostPermissions } from '@/lib/browser-api';
 import { Input } from '@/ui/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
+import MicrophonePicker from '@/ui/shared/MicrophonePicker';
 
 interface StepProps {
   onNext: () => void;
   onSkip: () => void;
+  onBack: () => void;
   index: number;
   total: number;
 }
+
+const REPO_URL = 'https://github.com/westpoint-io/mimik';
 
 const BLUR_PRESET_I18N: Record<PresetKey, string> = {
   email: 'email',
@@ -110,11 +114,22 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-function AISetupStep({ onNext, onSkip, index, total }: StepProps) {
+function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   const [provider, setProvider] = useState<AIProviderKey>('openai');
   const [model, setModel] = useState(AI_PROVIDERS.openai.defaultModel);
   const [apiKey, setApiKey] = useState('');
   const [aiLanguage, setAiLanguage] = useState<AILanguageCode>('en');
+
+  useEffect(() => {
+    localStorage.get(['aiProvider', 'aiModel', 'aiApiKey', 'aiLanguage']).then((stored) => {
+      if (typeof stored.aiProvider === 'string' && stored.aiProvider in AI_PROVIDERS) {
+        setProvider(stored.aiProvider as AIProviderKey);
+      }
+      if (typeof stored.aiModel === 'string') setModel(stored.aiModel);
+      if (typeof stored.aiApiKey === 'string') setApiKey(stored.aiApiKey);
+      if (typeof stored.aiLanguage === 'string') setAiLanguage(stored.aiLanguage as AILanguageCode);
+    });
+  }, []);
 
   const providerConfig = AI_PROVIDERS[provider];
 
@@ -208,6 +223,12 @@ function AISetupStep({ onNext, onSkip, index, total }: StepProps) {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={onBack}
+              className="px-8 py-3 bg-card text-foreground border border-border rounded-xl font-semibold text-sm hover:border-accent hover:text-accent transition-colors"
+            >
+              {i18n.t('common.back')}
+            </button>
+            <button
               onClick={handleContinue}
               className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
             >
@@ -215,7 +236,7 @@ function AISetupStep({ onNext, onSkip, index, total }: StepProps) {
             </button>
             <button
               onClick={onSkip}
-              className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
             >
               {i18n.t('common.skip')}
             </button>
@@ -292,14 +313,26 @@ function AISetupStep({ onNext, onSkip, index, total }: StepProps) {
   );
 }
 
-function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
-  const [enabled, setEnabled] = useState(false);
+function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   const [provider, setProvider] = useState<VoiceProvider>('openai');
   const [apiKey, setApiKey] = useState('');
+  const [microphoneId, setMicrophoneId] = useState('');
+
+  useEffect(() => {
+    localStorage.get(['voiceProvider', 'voiceApiKey', 'voiceMicrophoneId']).then((stored) => {
+      if (stored.voiceProvider === 'openai' || stored.voiceProvider === 'groq') setProvider(stored.voiceProvider);
+      if (typeof stored.voiceApiKey === 'string') setApiKey(stored.voiceApiKey);
+      if (typeof stored.voiceMicrophoneId === 'string') setMicrophoneId(stored.voiceMicrophoneId);
+    });
+  }, []);
+
+  const handleMicrophoneChange = (deviceId: string) => {
+    setMicrophoneId(deviceId);
+    localStorage.set({ voiceMicrophoneId: deviceId });
+  };
 
   const handleContinue = async () => {
     await localStorage.set({
-      voiceEnabled: enabled,
       voiceProvider: provider,
       ...(apiKey ? { voiceApiKey: apiKey } : {}),
     });
@@ -318,49 +351,7 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed mb-6">{i18n.t('onboarding.voiceMessage')}</p>
 
-          <div className="border border-border rounded-2xl divide-y divide-secondary mb-5">
-            <div className="flex items-start gap-3 p-4">
-              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                <Mic size={15} className="text-accent" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{i18n.t('onboarding.voiceDoTitle')}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                  {i18n.t('onboarding.voiceDoSub')}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-4">
-              <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-                <TriangleAlert size={15} className="text-destructive" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{i18n.t('onboarding.voiceDontTitle')}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                  {i18n.t('onboarding.voiceDontSub')}
-                </p>
-              </div>
-            </div>
-          </div>
-
           <div className="border border-border rounded-2xl p-4 space-y-3 mb-6">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-semibold text-foreground">{i18n.t('onboarding.voiceEnableLabel')}</span>
-              <button
-                onClick={() => setEnabled((prev) => !prev)}
-                aria-pressed={enabled}
-                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${
-                  enabled ? 'bg-accent' : 'bg-border'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                    enabled ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="block text-[11px] font-semibold text-foreground mb-1">
@@ -389,6 +380,13 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
               </div>
             </div>
 
+            <MicrophonePicker value={microphoneId} onChange={handleMicrophoneChange} />
+
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-secondary text-[11px] text-muted-foreground leading-relaxed">
+              <Mic size={12} className="shrink-0 mt-0.5 text-accent" />
+              <span>{i18n.t('onboarding.voiceRecordHint')}</span>
+            </div>
+
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-secondary text-[11px] text-muted-foreground leading-relaxed">
               <Shield size={12} className="shrink-0 mt-0.5 text-accent" />
               <span>{i18n.t('onboarding.voiceDataNotice')}</span>
@@ -397,6 +395,12 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={onBack}
+              className="px-8 py-3 bg-card text-foreground border border-border rounded-xl font-semibold text-sm hover:border-accent hover:text-accent transition-colors"
+            >
+              {i18n.t('common.back')}
+            </button>
+            <button
               onClick={handleContinue}
               className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
             >
@@ -404,7 +408,7 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
             </button>
             <button
               onClick={onSkip}
-              className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
             >
               {i18n.t('common.skip')}
             </button>
@@ -470,7 +474,7 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
   );
 }
 
-function SmartBlurStep({ onNext, onSkip, index, total }: StepProps) {
+function SmartBlurStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>({
     email: true,
     phone: true,
@@ -479,6 +483,14 @@ function SmartBlurStep({ onNext, onSkip, index, total }: StepProps) {
     ipAddress: false,
     macAddress: false,
   });
+
+  useEffect(() => {
+    localStorage.get(['blurPresets']).then((stored) => {
+      if (stored.blurPresets && typeof stored.blurPresets === 'object') {
+        setBlurPresets((prev) => ({ ...prev, ...(stored.blurPresets as Record<PresetKey, boolean>) }));
+      }
+    });
+  }, []);
 
   const handleToggle = (key: PresetKey) => {
     setBlurPresets((prev) => {
@@ -527,6 +539,12 @@ function SmartBlurStep({ onNext, onSkip, index, total }: StepProps) {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={onBack}
+              className="px-8 py-3 bg-card text-foreground border border-border rounded-xl font-semibold text-sm hover:border-accent hover:text-accent transition-colors"
+            >
+              {i18n.t('common.back')}
+            </button>
+            <button
               onClick={onNext}
               className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
             >
@@ -534,7 +552,7 @@ function SmartBlurStep({ onNext, onSkip, index, total }: StepProps) {
             </button>
             <button
               onClick={onSkip}
-              className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
             >
               {i18n.t('common.skip')}
             </button>
@@ -603,7 +621,7 @@ function SmartBlurStep({ onNext, onSkip, index, total }: StepProps) {
   );
 }
 
-function PinExtensionStep({ onNext, onSkip, index, total }: StepProps) {
+function PinExtensionStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   return (
     <div className="flex h-screen">
       <div className="flex-1 flex flex-col justify-center" style={{ padding: '80px 64px' }}>
@@ -648,6 +666,12 @@ function PinExtensionStep({ onNext, onSkip, index, total }: StepProps) {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={onBack}
+              className="px-8 py-3 bg-card text-foreground border border-border rounded-xl font-semibold text-sm hover:border-accent hover:text-accent transition-colors"
+            >
+              {i18n.t('common.back')}
+            </button>
+            <button
               onClick={onNext}
               className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
             >
@@ -655,7 +679,7 @@ function PinExtensionStep({ onNext, onSkip, index, total }: StepProps) {
             </button>
             <button
               onClick={onSkip}
-              className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
             >
               {i18n.t('common.skip')}
             </button>
@@ -680,8 +704,90 @@ function PinExtensionStep({ onNext, onSkip, index, total }: StepProps) {
   );
 }
 
+function MascotWithStar({ size = 300 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 200 200" width={size} height={size}>
+      <circle cx="34" cy="96" r="4" fill="#818CF8" style={{ animation: 'sparkle 1.5s ease-in-out infinite' }} />
+      <circle cx="168" cy="86" r="3.5" fill="#818CF8" style={{ animation: 'sparkle 1.5s ease-in-out infinite 0.5s' }} />
+      <circle cx="46" cy="30" r="3" fill="#A5B4FC" style={{ animation: 'sparkle 1.5s ease-in-out infinite 0.9s' }} />
+      <g transform="translate(72 2) scale(2.333)">
+        <path
+          d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z"
+          fill="#FACC15"
+        />
+      </g>
+      <circle cx="100" cy="110" r="55" fill="#C7D2FE" />
+      <rect x="55" y="110" width="90" height="44" rx="5" fill="#1E1B4B" />
+      <path d="M55 110 L55 98 Q55 80 100 80 Q145 80 145 98 L145 110Z" fill="#4F46E5" />
+      <rect x="55" y="109" width="90" height="2" fill="#C7D2FE" />
+      <path d="M80 128 Q86 120 92 128" stroke="#C7D2FE" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      <path d="M108 128 Q114 120 120 128" stroke="#C7D2FE" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      <path d="M90 140 Q100 149 110 140" stroke="#C7D2FE" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function GitHubStarStep({ onSkip, onBack, index, total }: StepProps) {
+  const handleStar = () => {
+    browser.tabs.create({ url: REPO_URL, active: true });
+  };
+
+  return (
+    <div className="flex h-screen">
+      <div className="flex-1 flex flex-col justify-center" style={{ padding: '80px 64px' }}>
+        <div className="max-w-md">
+          <p className="text-xs font-semibold text-accent mb-2 tracking-wide uppercase">
+            {i18n.t('onboarding.stepOf', [String(index), String(total)])}
+          </p>
+          <h1 className="text-3xl font-extrabold text-foreground leading-tight mb-2">
+            {i18n.t('onboarding.starTitle')}
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed mb-8">{i18n.t('onboarding.starMessage')}</p>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="px-8 py-3 bg-card text-foreground border border-border rounded-xl font-semibold text-sm hover:border-accent hover:text-accent transition-colors"
+            >
+              {i18n.t('common.back')}
+            </button>
+            <button
+              onClick={handleStar}
+              className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+            >
+              {i18n.t('onboarding.starAction')}
+            </button>
+            <button
+              onClick={onSkip}
+              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+            >
+              {i18n.t('onboarding.starLater')}
+            </button>
+          </div>
+
+          <div className="mt-6">
+            <ProgressDots current={index} total={total} />
+          </div>
+        </div>
+      </div>
+      <div className="w-1/2 bg-deep flex items-center justify-center relative overflow-hidden">
+        <div className="absolute w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(79,70,229,0.2),transparent_70%)] top-[10%] right-[-10%]" />
+        <div className="absolute w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(250,204,21,0.08),transparent_70%)] bottom-[14%] left-[8%]" />
+        <div className="animate-[float_3s_ease-in-out_infinite] relative z-10">
+          <MascotWithStar size={300} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DoneStep() {
+  useEffect(() => {
+    localStorage.set({ onboardingCompleted: true });
+  }, []);
+
   const handleOpen = async () => {
+    openSidebar();
     const permissionsPromise = requestHostPermissions();
     await permissionsPromise;
     browser.tabs.create({ url: browser.runtime.getURL('/fullview.html') });
@@ -700,61 +806,72 @@ function DoneStep() {
           {i18n.t('onboarding.doneMessage')}
         </p>
 
-        <div className="flex gap-4 justify-center mb-8">
+        <div className="grid grid-cols-3 gap-3 mb-8">
           {[
             {
               label: i18n.t('onboarding.featureAutoCapture'),
               icon: (
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
+                <>
                   <rect x="2" y="3" width="20" height="14" rx="2" />
                   <path d="M8 21h8M12 17v4" />
-                </svg>
+                </>
               ),
             },
             {
-              label: i18n.t('onboarding.featureAIDescriptions'),
+              label: i18n.t('onboarding.featureVoice'),
               icon: (
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z" />
-                </svg>
+                <>
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3" />
+                </>
+              ),
+            },
+            {
+              label: i18n.t('onboarding.featureAIAssist'),
+              icon: <path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z" />,
+            },
+            {
+              label: i18n.t('onboarding.featureAnnotate'),
+              icon: (
+                <>
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </>
               ),
             },
             {
               label: i18n.t('onboarding.featureSmartBlur'),
               icon: (
+                <>
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </>
+              ),
+            },
+            {
+              label: i18n.t('onboarding.featureExports'),
+              icon: (
+                <>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <path d="M7 10l5 5 5-5M12 15V3" />
+                </>
+              ),
+            },
+          ].map((f) => (
+            <div key={f.label} className="bg-secondary rounded-xl px-3 py-4 text-center">
+              <div className="text-accent flex justify-center mb-2">
                 <svg
-                  width="28"
-                  height="28"
+                  width="24"
+                  height="24"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
                 >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
+                  {f.icon}
                 </svg>
-              ),
-            },
-          ].map((f) => (
-            <div key={f.label} className="bg-secondary rounded-xl p-5 flex-1 max-w-[140px] text-center">
-              <div className="text-accent flex justify-center mb-2">{f.icon}</div>
+              </div>
               <p className="text-xs font-semibold text-foreground">{f.label}</p>
             </div>
           ))}
@@ -784,25 +901,24 @@ function DoneStep() {
 
 const CONFIG_STEPS =
   import.meta.env.BROWSER === 'firefox'
-    ? [AISetupStep, SmartBlurStep, PinExtensionStep]
-    : [AISetupStep, VoiceStep, SmartBlurStep, PinExtensionStep];
+    ? [AISetupStep, SmartBlurStep, PinExtensionStep, GitHubStarStep]
+    : [AISetupStep, VoiceStep, SmartBlurStep, PinExtensionStep, GitHubStarStep];
 
 export default function OnboardingApp() {
   const [step, setStep] = useState(0);
 
-  useEffect(() => {
-    localStorage.set({ onboardingCompleted: true });
-  }, []);
-
   const lastStep = CONFIG_STEPS.length + 1;
   const next = () => setStep((s) => Math.min(s + 1, lastStep));
+  const back = () => setStep((s) => Math.max(s - 1, 0));
   const CurrentStep = CONFIG_STEPS[step - 1];
 
   return (
     <div className="min-h-screen bg-card text-foreground">
       <style>{`@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes sparkle{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}`}</style>
       {step === 0 && <WelcomeStep onNext={next} />}
-      {CurrentStep && <CurrentStep onNext={next} onSkip={next} index={step} total={CONFIG_STEPS.length} />}
+      {CurrentStep && (
+        <CurrentStep onNext={next} onSkip={next} onBack={back} index={step} total={CONFIG_STEPS.length} />
+      )}
       {step === lastStep && <DoneStep />}
     </div>
   );
