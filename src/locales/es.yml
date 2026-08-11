@@ -100,8 +100,12 @@ settings:
   microphoneUnavailable: "Micrófono no disponible"
   microphoneMissing: "El micrófono que elegiste no está disponible ahora mismo, así que Mimik usará el predeterminado del sistema."
   microphoneTest: "Probar micrófono"
+  microphoneStatusAllowed: Permitido
+  microphoneStatusBlocked: Bloqueado
+  microphoneStatusPending: Aún sin permiso
+  microphoneBlocked: Tu navegador está bloqueando el micrófono para Mimik. Abre la configuración del sitio desde el icono a la izquierda de la barra de direcciones y pon Micrófono en Permitir.
+  microphoneUnblockHow: ¿Cómo lo desbloqueo?
   microphoneTestStop: Detener prueba
-  microphoneTestHint: "¿Problemas con el micro? Empieza una prueba y di algo para comprobar que funciona."
   microphoneTestFailed: "No se pudo abrir ese micrófono. Elige otro e inténtalo de nuevo."
   targetColor: "Color de marca"
   targetColorHint: "Resaltados de clic y acentos de exportación"

@@ -100,8 +100,12 @@ settings:
   microphoneUnavailable: "Micro indisponible"
   microphoneMissing: "Le micro que vous avez choisi n'est pas disponible pour le moment : Mimik utilisera celui par défaut du système."
   microphoneTest: "Tester le micro"
+  microphoneStatusAllowed: Autorisé
+  microphoneStatusBlocked: Bloqué
+  microphoneStatusPending: Pas encore autorisé
+  microphoneBlocked: Votre navigateur bloque le micro pour Mimik. Ouvrez les paramètres du site depuis l'icône à gauche de la barre d'adresse et réglez Microphone sur Autoriser.
+  microphoneUnblockHow: Comment le débloquer ?
   microphoneTestStop: "Arrêter le test"
-  microphoneTestHint: "Un souci de micro ? Lancez un test et dites quelque chose pour vérifier qu'il fonctionne."
   microphoneTestFailed: "Ce micro n'a pas pu être ouvert. Choisissez-en un autre et réessayez."
   targetColor: "Couleur de marque"
   targetColorHint: "Surbrillance des clics et accents des exports"

@@ -112,10 +112,14 @@ settings:
   microphoneGrantAccess: Mikrofonzugriff erlauben
   microphoneNone: Kein Mikrofon gefunden. Schließe eines an, dann erscheint es hier.
   microphoneUnavailable: Nicht verfügbares Mikrofon
+  microphoneStatusAllowed: Erlaubt
+  microphoneStatusBlocked: Blockiert
+  microphoneStatusPending: Noch nicht erlaubt
+  microphoneBlocked: Dein Browser blockiert das Mikrofon für Mimik. Öffne die Website-Einstellungen über das Symbol links in der Adressleiste und setze Mikrofon auf Zulassen.
+  microphoneUnblockHow: Wie hebe ich die Blockierung auf?
   microphoneMissing: Das gewählte Mikrofon ist gerade nicht verfügbar, daher nutzt Mimik den Systemstandard.
   microphoneTest: Mikrofon testen
   microphoneTestStop: Test beenden
-  microphoneTestHint: "Probleme mit dem Mikrofon? Starte einen Test und sag etwas, um zu prüfen, ob es funktioniert."
   microphoneTestFailed: Dieses Mikrofon konnte nicht geöffnet werden. Wähle ein anderes und versuche es erneut.
   saveSettings: Einstellungen speichern
   saved: Gespeichert
