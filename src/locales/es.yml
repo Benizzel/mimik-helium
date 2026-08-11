@@ -454,6 +454,7 @@ voice:
   micHearing: Te estamos oyendo
   micQuiet: Sin sonido
   nextRecording: "La narración por voz está activada y empieza en tu próxima grabación."
+  orderHint: "Di lo que vas a hacer y luego hazlo. Tus palabras se asignan a la siguiente acción."
   transcribing: "Transcribiendo tu narración..."
   transcribingHint: "Las descripciones de los pasos se actualizarán solas al terminar."
   narrated: "Narración añadida a $1 paso."

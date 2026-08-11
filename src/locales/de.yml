@@ -455,6 +455,7 @@ voice:
   micHearing: Ich höre dich
   micQuiet: Kein Ton
   nextRecording: Der Sprachkommentar ist aktiv und startet mit deiner nächsten Aufnahme.
+  orderHint: "Sag, was du gleich tust, und tu es dann. Deine Worte gehören zur nächsten Aktion."
   transcribing: "Dein Kommentar wird transkribiert…"
   transcribingHint: Die Schrittbeschreibungen aktualisieren sich von selbst, sobald das fertig ist.
   narrated: "Kommentar zu $1 Schritt hinzugefügt."

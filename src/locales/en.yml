@@ -454,6 +454,7 @@ voice:
   micHearing: Hearing you
   micQuiet: No sound
   nextRecording: Voice narration is on and starts with your next recording.
+  orderHint: Say what you are about to do, then do it. Your words attach to the next action.
   transcribing: Transcribing your narration...
   transcribingHint: Step descriptions will update on their own once this finishes.
   narrated: "Narration added to $1 step."

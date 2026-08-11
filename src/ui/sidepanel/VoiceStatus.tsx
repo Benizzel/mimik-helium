@@ -24,8 +24,9 @@ export default function VoiceStatus({ update, enabled }: VoiceStatusProps) {
 
   if (update.phase === 'recording') {
     return (
-      <div className="px-4 pt-2.5">
+      <div className="px-4 pt-2.5 space-y-1.5">
         <MicMeter />
+        <p className="text-[10px] leading-relaxed text-muted-foreground">{i18n.t('voice.orderHint')}</p>
       </div>
     );
   }
