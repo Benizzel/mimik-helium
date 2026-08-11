@@ -6,12 +6,7 @@ import { updateCallout } from '@/core/guides/service';
 import type { CalloutVariant, Step } from '@/core/guides/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
-
-interface DragHandleProps {
-  onDragStart: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragEnd: () => void;
-}
+import { DragGrip, type DragHandleProps, useCardDrag } from '@/ui/shared/card-drag';
 
 interface BlockCardProps {
   step: Step;
@@ -37,6 +32,7 @@ export default function BlockCard({
     setDescription(step.description);
   }, [step.description]);
 
+  const cardDrag = useCardDrag(dragHandleProps);
   const isHeading = step.blockType === 'heading';
   const accent = calloutAccent(step);
   const variant = step.calloutVariant ?? 'info';
@@ -57,8 +53,7 @@ export default function BlockCard({
 
   return (
     <div
-      draggable={!!dragHandleProps}
-      onDragStart={dragHandleProps?.onDragStart}
+      {...cardDrag}
       onDragOver={(e) => {
         e.preventDefault();
         dragHandleProps?.onDragOver(e);
@@ -97,6 +92,7 @@ export default function BlockCard({
       </div>
       {!readOnly && (
         <div className="flex items-center gap-1 mt-1">
+          {dragHandleProps && <DragGrip />}
           {!isHeading &&
             CALLOUT_VARIANTS.map((option) => (
               <Tooltip key={option}>

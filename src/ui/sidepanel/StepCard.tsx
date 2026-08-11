@@ -1,5 +1,5 @@
 import { Check, Copy, Loader2, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import { replaceScreenshot } from '@/core/guides/service';
 import type { Screenshot, Step } from '@/core/guides/types';
@@ -8,14 +8,9 @@ import { logger } from '@/lib/logger';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import { useAskAi } from '@/ui/shared/AskAi';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
+import { DragGrip, type DragHandleProps, useCardDrag } from '@/ui/shared/card-drag';
 import ImagePlaceholder from '@/ui/shared/ImagePlaceholder';
 import ScreenshotView from '@/ui/shared/ScreenshotView';
-
-interface DragHandleProps {
-  onDragStart: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragEnd: () => void;
-}
 
 interface StepCardProps {
   step: Step;
@@ -50,8 +45,8 @@ export default function StepCard({
   const [description, setDescription] = useState(step.description);
   const [dragOver, setDragOver] = useState(false);
   const [copied, setCopied] = useState(false);
-  const pressedOnScreenshot = useRef(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const cardDrag = useCardDrag(dragHandleProps);
 
   useEffect(() => {
     setDescription(step.description);
@@ -98,21 +93,9 @@ export default function StepCard({
     dragHandleProps?.onDragOver(e);
   };
 
-  const handleDragStart = (e: React.DragEvent) => {
-    if (pressedOnScreenshot.current) {
-      e.preventDefault();
-      return;
-    }
-    dragHandleProps?.onDragStart(e);
-  };
-
   return (
     <div
-      draggable={!!dragHandleProps}
-      onPointerDownCapture={(e) => {
-        pressedOnScreenshot.current = !!(e.target as HTMLElement).closest('[data-screenshot-frame]');
-      }}
-      onDragStart={handleDragStart}
+      {...cardDrag}
       onDragOver={handleDragOver}
       onDragLeave={() => setDragOver(false)}
       onDragEnd={() => {
@@ -143,6 +126,7 @@ export default function StepCard({
 
       <div className="px-3 pt-2 pb-2">
         <div className="flex items-center gap-2">
+          {dragHandleProps && <DragGrip />}
           <span className="flex items-center justify-center w-[22px] h-[22px] rounded-full text-[11px] font-bold shrink-0 bg-primary text-primary-foreground">
             {number}
           </span>

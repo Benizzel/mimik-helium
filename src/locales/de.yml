@@ -29,6 +29,7 @@ sidepanel:
   startCapture: Aufnahme starten
   searchPlaceholder: Anleitungen durchsuchen...
   recentLabel: Zuletzt verwendet
+  notRecordable: Öffne eine Website, um aufzuzeichnen
 
 library:
   noGuidesTitle: Noch keine Anleitungen

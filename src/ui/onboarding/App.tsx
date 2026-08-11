@@ -474,7 +474,7 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   );
 }
 
-function SmartBlurStep({ onNext, onSkip, onBack, index, total }: StepProps) {
+function SmartBlurStep({ onNext, onBack, index, total }: StepProps) {
   const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>({
     email: true,
     phone: true,
@@ -550,12 +550,6 @@ function SmartBlurStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             >
               {i18n.t('common.continue')}
             </button>
-            <button
-              onClick={onSkip}
-              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
-            >
-              {i18n.t('common.skip')}
-            </button>
           </div>
 
           <div className="mt-6">
@@ -621,7 +615,7 @@ function SmartBlurStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   );
 }
 
-function PinExtensionStep({ onNext, onSkip, onBack, index, total }: StepProps) {
+function PinExtensionStep({ onNext, onBack, index, total }: StepProps) {
   return (
     <div className="flex h-screen">
       <div className="flex-1 flex flex-col justify-center" style={{ padding: '80px 64px' }}>
@@ -676,12 +670,6 @@ function PinExtensionStep({ onNext, onSkip, onBack, index, total }: StepProps) {
               className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
             >
               {i18n.t('common.continue')}
-            </button>
-            <button
-              onClick={onSkip}
-              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
-            >
-              {i18n.t('common.skip')}
             </button>
           </div>
 
