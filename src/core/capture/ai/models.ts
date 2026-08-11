@@ -32,3 +32,10 @@ export const AI_PROVIDERS: Record<string, AIProviderConfig> = {
 };
 
 export type AIProviderKey = keyof typeof AI_PROVIDERS;
+
+export const CUSTOM_MODEL_VALUE = 'mimik-custom-model';
+
+export function isCustomModel(model: string, provider: AIProviderConfig): boolean {
+  const id = model.trim();
+  return id.length > 0 && !provider.models.some((option) => option.id === id);
+}

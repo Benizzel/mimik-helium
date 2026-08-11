@@ -84,6 +84,7 @@ settings:
   aiDescriptions: Descriptions IA
   provider: Fournisseur
   model: "Modèle"
+  modelCustom: Modèle personnalisé
   apiKey: "Clé API"
   aiLanguage: Langue des descriptions
   voiceNarration: "Narration vocale"

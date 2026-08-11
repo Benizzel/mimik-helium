@@ -96,6 +96,7 @@ settings:
   targetColor: "Markenfarbe"
   title: Einstellungen
   aiDescriptions: KI-Beschreibungen
+  modelCustom: Eigenes Modell
   provider: Anbieter
   model: Modell
   apiKey: API-Schlüssel

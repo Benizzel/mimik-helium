@@ -84,6 +84,7 @@ settings:
   aiDescriptions: AI Descriptions
   provider: Provider
   model: Model
+  modelCustom: Custom model
   apiKey: API Key
   aiLanguage: Description Language
   voiceNarration: Voice Narration
