@@ -974,7 +974,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
               type="button"
               onClick={handleDone}
               disabled={saving}
-              className="px-4 h-8 text-[12px] font-bold text-white bg-accent rounded-lg hover:bg-accent/90 disabled:opacity-50"
+              className="px-4 h-8 text-[12px] font-bold text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50"
             >
               {i18n.t('annotationEditor.done')}
             </button>

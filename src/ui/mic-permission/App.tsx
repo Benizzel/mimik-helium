@@ -158,7 +158,7 @@ export default function MicPermissionApp() {
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => void evaluate(true)}
-              className="px-7 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+              className="px-7 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
             >
               {i18n.t('micPermission.retry')}
             </button>
