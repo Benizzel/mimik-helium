@@ -340,7 +340,6 @@ onboarding:
   starMessage: "Mimik ist kostenlos und quelloffen. Ein Stern ist der einfachste Weg, Danke zu sagen, und hilft anderen, Mimik zu finden."
   starAction: Auf GitHub mit Stern markieren
   starLater: "Vielleicht später"
-  starThanks: "Wir haben das Repository in einem neuen Tab geöffnet. Vergib dort einen Stern und komm zum Weitermachen zurück."
   doneTitle: "Alles bereit!"
   doneMessage: "Mimik ist bereit, deine Workflows aufzunehmen. Klicke in der Erweiterung auf \"Aufnahme starten\", um deine erste Anleitung aufzunehmen."
   featureAutoCapture: Auto-Aufnahme

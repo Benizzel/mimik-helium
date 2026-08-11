@@ -727,12 +727,9 @@ function MascotWithStar({ size = 300 }: { size?: number }) {
   );
 }
 
-function GitHubStarStep({ onNext, onSkip, onBack, index, total }: StepProps) {
-  const [starred, setStarred] = useState(false);
-
+function GitHubStarStep({ onSkip, onBack, index, total }: StepProps) {
   const handleStar = () => {
     browser.tabs.create({ url: REPO_URL, active: true });
-    setStarred(true);
   };
 
   return (
@@ -745,9 +742,7 @@ function GitHubStarStep({ onNext, onSkip, onBack, index, total }: StepProps) {
           <h1 className="text-3xl font-extrabold text-foreground leading-tight mb-2">
             {i18n.t('onboarding.starTitle')}
           </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-            {i18n.t(starred ? 'onboarding.starThanks' : 'onboarding.starMessage')}
-          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed mb-8">{i18n.t('onboarding.starMessage')}</p>
 
           <div className="flex items-center gap-3">
             <button
@@ -756,29 +751,18 @@ function GitHubStarStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             >
               {i18n.t('common.back')}
             </button>
-            {starred ? (
-              <button
-                onClick={onNext}
-                className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
-              >
-                {i18n.t('common.continue')}
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={handleStar}
-                  className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
-                >
-                  {i18n.t('onboarding.starAction')}
-                </button>
-                <button
-                  onClick={onSkip}
-                  className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
-                >
-                  {i18n.t('onboarding.starLater')}
-                </button>
-              </>
-            )}
+            <button
+              onClick={handleStar}
+              className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+            >
+              {i18n.t('onboarding.starAction')}
+            </button>
+            <button
+              onClick={onSkip}
+              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+            >
+              {i18n.t('onboarding.starLater')}
+            </button>
           </div>
 
           <div className="mt-6">

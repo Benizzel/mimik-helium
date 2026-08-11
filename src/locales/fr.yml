@@ -409,7 +409,6 @@ onboarding:
   starMessage: "Mimik est gratuit et open source. Une étoile est le moyen le plus simple de nous remercier, et elle aide d'autres personnes à le découvrir."
   starAction: "Mettre une étoile sur GitHub"
   starLater: Plus tard
-  starThanks: "Nous avons ouvert le dépôt dans un nouvel onglet. Mettez-y une étoile, puis revenez pour continuer."
   doneTitle: "Tout est prêt !"
   doneMessage: "Mimik est prêt à capturer. Cliquez sur « Lancer la capture » pour enregistrer votre premier guide."
   featureAutoCapture: Capture automatique

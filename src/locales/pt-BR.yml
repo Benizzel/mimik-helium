@@ -409,7 +409,6 @@ onboarding:
   starMessage: "O Mimik é gratuito e de código aberto. Uma estrela é o jeito mais fácil de agradecer, e ajuda outras pessoas a encontrarem o projeto."
   starAction: Deixar uma estrela no GitHub
   starLater: Talvez depois
-  starThanks: "Abrimos o repositório em uma nova aba. Deixe a estrela por lá e volte para continuar."
   doneTitle: "Tudo pronto!"
   doneMessage: "O Mimik tá pronto pra capturar. Clica em \"Começar a capturar\" na extensão pra gravar seu primeiro guia."
   featureAutoCapture: Captura automática
