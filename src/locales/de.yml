@@ -314,10 +314,6 @@ onboarding:
   aiGeneratedDescription: KI-generierte Beschreibung
   voiceTitle: Sprich, dann handle
   voiceMessage: Sag, was du als Nächstes tun wirst, und tu es dann. Mimik ordnet deinen Kommentar der Aktion zu, die darauf folgt — die Reihenfolge ist deshalb das Wichtigste.
-  voiceDoTitle: Erst sprechen, dann klicken
-  voiceDoSub: Deine Worte werden der nächsten Aktion zugeordnet, damit die Beschreibung beim gemeinten Schritt landet.
-  voiceDontTitle: Nicht erst nach dem Klick sprechen
-  voiceDontSub: Alles, was du nach einer Aktion sagst, wird dem folgenden Schritt zugeordnet — dadurch rutscht jede Beschreibung auf den falschen Schritt.
   voiceRecordHint: "Die Sprachaufnahme bleibt aus, bis du sie einschaltest. Nutze die Mikrofontaste in der Seitenleiste während der Aufnahme, so entscheidest du pro Anleitung."
   voiceDataNotice: Dein Audio wird mit deinem eigenen API-Schlüssel an den hier gewählten Anbieter gesendet. Sonst verlässt nichts in Mimik deinen Browser.
   voiceDemoLabel: So landet dein Kommentar

@@ -1,4 +1,4 @@
-import { Mic, MousePointerClick, Shield, TriangleAlert } from 'lucide-react';
+import { Mic, MousePointerClick, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
@@ -348,31 +348,6 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             {i18n.t('onboarding.voiceTitle')}
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed mb-6">{i18n.t('onboarding.voiceMessage')}</p>
-
-          <div className="border border-border rounded-2xl divide-y divide-secondary mb-5">
-            <div className="flex items-start gap-3 p-4">
-              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                <Mic size={15} className="text-accent" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{i18n.t('onboarding.voiceDoTitle')}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                  {i18n.t('onboarding.voiceDoSub')}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-4">
-              <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-                <TriangleAlert size={15} className="text-destructive" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{i18n.t('onboarding.voiceDontTitle')}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                  {i18n.t('onboarding.voiceDontSub')}
-                </p>
-              </div>
-            </div>
-          </div>
 
           <div className="border border-border rounded-2xl p-4 space-y-3 mb-6">
             <div className="flex gap-3">
