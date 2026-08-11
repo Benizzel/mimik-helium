@@ -14,6 +14,7 @@ import { createTab, focusWindow, getExtensionURL, queryTabs, updateTab } from '@
 import { sendMessage } from '@/lib/messaging';
 import { getMostCommonDomain } from '@/lib/utils';
 import { Input } from '@/ui/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
 import BlurCanvas from './BlurCanvas';
@@ -127,49 +128,68 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
       )}
       <div className="px-4 pt-3 pb-2">
         <div className="flex items-center gap-2">
-          <button
-            onClick={onBack}
-            className="shrink-0 p-1 rounded text-purple hover:text-foreground"
-            title={i18n.t('editor.backToLibrary')}
-          >
-            <ArrowLeft size={18} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={onBack} className="shrink-0 p-1 rounded text-purple hover:text-foreground">
+                <ArrowLeft size={18} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent align="start">{i18n.t('editor.backToLibrary')}</TooltipContent>
+          </Tooltip>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={handleTitleBlur}
             className="text-lg font-bold bg-transparent border-0 border-b border-transparent hover:border-border focus-visible:ring-0 focus-visible:border-accent shadow-none p-0 h-auto text-foreground"
           />
-          <button
-            onClick={() => {
-              const url = getExtensionURL(`/fullview.html?guideId=${guideId}`);
-              queryTabs({ url: getExtensionURL('/fullview.html') }).then((tabs) => {
-                if (tabs.length > 0 && tabs[0].id) {
-                  updateTab(tabs[0].id, { active: true, url: getExtensionURL(`/fullview.html?guideId=${guideId}`) });
-                  if (tabs[0].windowId) focusWindow(tabs[0].windowId);
-                } else {
-                  createTab({ url });
-                }
-              });
-            }}
-            className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
-            title={i18n.t('library.openInFullView')}
-          >
-            <Maximize2 size={15} />
-          </button>
-          {data.steps.length > 0 && (
-            <button
-              onClick={async () => {
-                await sendMessage('startGuideMe', { guideId });
-                onGuideMe?.(guideId);
-              }}
-              disabled={!data.steps.some((s) => s.elementMeta)}
-              className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-              title={i18n.t('editor.guideMe')}
-            >
-              <Play size={15} />
-            </button>
-          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => {
+                  const url = getExtensionURL(`/fullview.html?guideId=${guideId}`);
+                  queryTabs({ url: getExtensionURL('/fullview.html') }).then((tabs) => {
+                    if (tabs.length > 0 && tabs[0].id) {
+                      updateTab(tabs[0].id, {
+                        active: true,
+                        url: getExtensionURL(`/fullview.html?guideId=${guideId}`),
+                      });
+                      if (tabs[0].windowId) focusWindow(tabs[0].windowId);
+                    } else {
+                      createTab({ url });
+                    }
+                  });
+                }}
+                className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
+              >
+                <Maximize2 size={15} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{i18n.t('library.openInFullView')}</TooltipContent>
+          </Tooltip>
+          {data.steps.length > 0 &&
+            (() => {
+              const replayable = data.steps.some((s) => s.elementMeta);
+              const label = i18n.t(replayable ? 'editor.guideMe' : 'editor.guideMeUnavailable');
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={async () => {
+                        if (!replayable) return;
+                        await sendMessage('startGuideMe', { guideId });
+                        onGuideMe?.(guideId);
+                      }}
+                      aria-disabled={!replayable}
+                      aria-label={label}
+                      className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary aria-disabled:opacity-30 aria-disabled:cursor-not-allowed aria-disabled:hover:text-purple aria-disabled:hover:bg-transparent"
+                    >
+                      <Play size={15} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{label}</TooltipContent>
+                </Tooltip>
+              );
+            })()}
           <div className="ml-auto shrink-0">
             <ExportMenu guideId={guideId} guide={data.guide} steps={data.steps} screenshots={data.screenshots} />
           </div>

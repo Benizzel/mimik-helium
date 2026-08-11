@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { getVoiceStatus } from '@/lib/offscreen';
 import { observeVoiceFromBackground, type PanelVoiceUpdate } from '@/lib/port';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import { voiceNotice } from '../voice-notice';
 
 const IDLE: PanelVoiceUpdate = { type: 'VOICE_UPDATE', phase: 'idle' };
@@ -96,13 +97,17 @@ export default function VoiceNotice() {
             )}
           </div>
 
-          <button
-            onClick={() => setDismissed(shown.signature)}
-            title={i18n.t('common.close')}
-            className="shrink-0 p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X size={14} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setDismissed(shown.signature)}
+                className="shrink-0 p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent align="end">{i18n.t('common.close')}</TooltipContent>
+          </Tooltip>
         </div>
       )}
     </div>

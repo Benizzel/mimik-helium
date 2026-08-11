@@ -4,6 +4,7 @@ import { browser, i18n } from '#imports';
 import { hasVoiceApiKey, VOICE_KEY_SETTINGS } from '@/core/capture/voice/api-key';
 import { getActiveTab, localStorage } from '@/lib/browser-api';
 import { abortVoiceCapture, openMicPermissionPage } from '@/lib/offscreen';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 
 interface MicToggleProps {
   enabled: boolean;
@@ -67,21 +68,25 @@ export default function MicToggle({ enabled, live, onChange }: MicToggleProps) {
   const label = locked ? i18n.t('voice.needsApiKey') : i18n.t(enabled ? 'voice.turnOff' : 'voice.turnOn');
 
   return (
-    <button
-      onClick={() => void toggle()}
-      aria-pressed={enabled}
-      aria-disabled={locked}
-      aria-label={label}
-      className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors ${
-        locked
-          ? 'border-dashed border-border text-muted-foreground opacity-60 cursor-not-allowed'
-          : enabled
-            ? 'border-accent bg-secondary text-accent'
-            : 'border-border text-muted-foreground hover:border-accent hover:text-accent'
-      }`}
-      title={label}
-    >
-      <Icon size={16} />
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={() => void toggle()}
+          aria-pressed={enabled}
+          aria-disabled={locked}
+          aria-label={label}
+          className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors ${
+            locked
+              ? 'border-dashed border-border text-muted-foreground opacity-60 cursor-not-allowed'
+              : enabled
+                ? 'border-accent bg-secondary text-accent'
+                : 'border-border text-muted-foreground hover:border-accent hover:text-accent'
+          }`}
+        >
+          <Icon size={16} />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
 }

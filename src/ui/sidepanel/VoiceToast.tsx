@@ -2,6 +2,7 @@ import { Check, Loader2, TriangleAlert, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import type { PanelVoiceUpdate } from '@/lib/port';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import { narratedKey, voiceErrorKey } from './voice-status';
 
 const CONFIRM_MS = 7000;
@@ -72,13 +73,17 @@ export default function VoiceToast({ update, confirmable, onOpenSettings }: Voic
         )}
       </div>
 
-      <button
-        onClick={() => setDismissed(signature)}
-        title={i18n.t('common.close')}
-        className="shrink-0 p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <X size={13} />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => setDismissed(signature)}
+            className="shrink-0 p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X size={13} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent align="end">{i18n.t('common.close')}</TooltipContent>
+      </Tooltip>
     </div>
   );
 }

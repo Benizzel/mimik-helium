@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import type { Screenshot, Step } from '@/core/guides/types';
 import { logger } from '@/lib/logger';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import ZoomScreenshot from './ZoomScreenshot';
 
 interface DragHandleProps {
@@ -104,29 +105,41 @@ export default function StepCard({
           <div className="flex items-center gap-0.5">
             {screenshot && (
               <>
-                <button
-                  onClick={() => onBlur?.(step.id)}
-                  className="p-1 rounded-md transition-colors text-border hover:text-accent"
-                  title={i18n.t('editor.blurSensitiveArea')}
-                >
-                  <EyeOff size={13} />
-                </button>
-                <button
-                  onClick={handleCopy}
-                  className={`p-1 rounded-md transition-colors ${copied ? 'text-success' : 'text-border hover:text-success'}`}
-                  title={i18n.t('editor.copyScreenshot')}
-                >
-                  {copied ? <Check size={13} /> : <Copy size={13} />}
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => onBlur?.(step.id)}
+                      className="p-1 rounded-md transition-colors text-border hover:text-accent"
+                    >
+                      <EyeOff size={13} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{i18n.t('editor.blurSensitiveArea')}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={handleCopy}
+                      className={`p-1 rounded-md transition-colors ${copied ? 'text-success' : 'text-border hover:text-success'}`}
+                    >
+                      {copied ? <Check size={13} /> : <Copy size={13} />}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{i18n.t('editor.copyScreenshot')}</TooltipContent>
+                </Tooltip>
               </>
             )}
-            <button
-              onClick={handleDelete}
-              className="p-1 rounded-md transition-colors text-border hover:text-destructive"
-              title={i18n.t('recording.deleteStep')}
-            >
-              <Trash2 size={13} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleDelete}
+                  className="p-1 rounded-md transition-colors text-border hover:text-destructive"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{i18n.t('recording.deleteStep')}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>

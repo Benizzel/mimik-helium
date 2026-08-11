@@ -19,6 +19,7 @@ import { getVoiceStatus } from '@/lib/offscreen';
 import { connectToBackground, type PanelVoiceUpdate } from '@/lib/port';
 import { Button } from '@/ui/components/ui/button';
 import { Input } from '@/ui/components/ui/input';
+import { TooltipProvider } from '@/ui/components/ui/tooltip';
 import SettingsView from '@/ui/shared/SettingsView';
 import GuideEditor from './GuideEditor';
 import GuideMeCompletion from './GuideMeCompletion';
@@ -299,11 +300,11 @@ export default function App() {
   }
 
   return (
-    <>
+    <TooltipProvider>
       {renderView()}
       {import.meta.env.BROWSER !== 'firefox' && view.name !== 'recording' && (
         <VoiceToast update={voice} confirmable={voiceStarted} onOpenSettings={() => setView({ name: 'settings' })} />
       )}
-    </>
+    </TooltipProvider>
   );
 }
