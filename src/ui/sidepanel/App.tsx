@@ -1,7 +1,8 @@
-import { Search, Settings, Video } from 'lucide-react';
+import { Globe, Search, Settings, Video } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { CaptureState } from '@/core/capture/machine';
+import { isRecordableUrl } from '@/core/capture/recordable-tabs';
 import { startInsertRecording } from '@/core/capture/start-insert-recording';
 import type { GuideMeSession } from '@/core/guideme/session';
 import { SESSION_KEY } from '@/core/guideme/session';
@@ -91,6 +92,7 @@ export default function App() {
   const [_isRecording, setIsRecording] = useState(false);
   const [view, setView] = useState<View>({ name: 'library' });
   const [search, setSearch] = useState('');
+  const [activeUrl, setActiveUrl] = useState<string>();
   const [voice, setVoice] = useState<PanelVoiceUpdate>({ type: 'VOICE_UPDATE', phase: 'idle' });
   const [voiceStarted, setVoiceStarted] = useState(false);
 
@@ -148,6 +150,17 @@ export default function App() {
     return () => browser.storage.local.onChanged.removeListener(handler);
   }, []);
 
+  useEffect(() => {
+    const refresh = () => getActiveTab().then((tab) => setActiveUrl(tab?.url || tab?.pendingUrl || ''));
+    refresh();
+    browser.tabs.onActivated.addListener(refresh);
+    browser.tabs.onUpdated.addListener(refresh);
+    return () => {
+      browser.tabs.onActivated.removeListener(refresh);
+      browser.tabs.onUpdated.removeListener(refresh);
+    };
+  }, []);
+
   const handleStartRecording = useCallback(async () => {
     const permissionsPromise = requestHostPermissions();
     const granted = await permissionsPromise;
@@ -156,7 +169,11 @@ export default function App() {
       return;
     }
     const tab = await getActiveTab();
-    const url = tab?.url || '';
+    const url = tab?.url || tab?.pendingUrl || '';
+    if (!isRecordableUrl(url)) {
+      logger.warn('Active tab can no longer be recorded');
+      return;
+    }
 
     try {
       const res = await sendMessage('startRecording', { url });
@@ -276,14 +293,21 @@ export default function App() {
             <p className="text-xs mt-1 text-violet-dark">{i18n.t('sidepanel.heroSubtitle')}</p>
           </div>
 
-          <Button
-            onClick={handleStartRecording}
-            disabled={!isAlive}
-            className="w-full py-3 px-4 h-auto rounded-lg font-semibold text-sm hover:-translate-y-px shadow-lg"
-          >
-            <Video size={18} />
-            {i18n.t('sidepanel.startCapture')}
-          </Button>
+          {isRecordableUrl(activeUrl) ? (
+            <Button
+              onClick={handleStartRecording}
+              disabled={!isAlive}
+              className="w-full py-3 px-4 h-auto rounded-lg font-semibold text-sm hover:-translate-y-px shadow-lg"
+            >
+              <Video size={18} />
+              {i18n.t('sidepanel.startCapture')}
+            </Button>
+          ) : (
+            <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-violet-dark">
+              <Globe size={14} className="shrink-0" />
+              {i18n.t('sidepanel.notRecordable')}
+            </p>
+          )}
         </div>
 
         {/* Body */}

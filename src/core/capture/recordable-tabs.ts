@@ -1,6 +1,6 @@
 import { queryTabs } from '@/lib/browser-api';
 
-const WEBSTORE_PREFIX = 'https://chrome.google.com/webstore';
+const WEBSTORE_PREFIXES = ['https://chrome.google.com/webstore', 'https://chromewebstore.google.com'];
 
 export interface RecordableTab {
   id: number;
@@ -10,7 +10,7 @@ export interface RecordableTab {
 }
 
 export function isRecordableUrl(url: string | undefined): boolean {
-  if (!url || url.startsWith(WEBSTORE_PREFIX)) return false;
+  if (!url || WEBSTORE_PREFIXES.some((prefix) => url.startsWith(prefix))) return false;
   return /^https?:/.test(url);
 }
 

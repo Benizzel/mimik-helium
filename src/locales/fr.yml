@@ -29,6 +29,7 @@ sidepanel:
   startCapture: Lancer la capture
   searchPlaceholder: "Rechercher des guides..."
   recentLabel: "Récents"
+  notRecordable: "Ouvrez un site web pour lancer la capture"
 
 library:
   noGuidesTitle: Pas encore de guide

@@ -29,6 +29,7 @@ sidepanel:
   startCapture: Empezar a capturar
   searchPlaceholder: Buscar guías...
   recentLabel: Recientes
+  notRecordable: Abre un sitio web para empezar a grabar
 
 library:
   noGuidesTitle: No hay guías todavía
