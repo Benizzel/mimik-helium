@@ -9,6 +9,26 @@ import { renderScreenshot } from '@/core/screenshot/render';
 const LOGO_MAX_WIDTH = 148;
 const LOGO_MAX_HEIGHT = 56;
 
+interface EmbeddedImage {
+  type: string;
+  b64: string;
+}
+
+const imageCache = new WeakMap<Screenshot, { edits: unknown; image: Promise<EmbeddedImage> }>();
+
+function embedScreenshot(screenshot: Screenshot): Promise<EmbeddedImage> {
+  const cached = imageCache.get(screenshot);
+  if (cached && cached.edits === screenshot.edits) return cached.image;
+
+  const image = renderScreenshot(screenshot).then(async (rendered) => ({
+    type: rendered.type,
+    b64: await blobToBase64(rendered),
+  }));
+  image.catch(() => imageCache.delete(screenshot));
+  imageCache.set(screenshot, { edits: screenshot.edits, image });
+  return image;
+}
+
 function blockSection(step: Step): string {
   if (step.blockType === 'heading') {
     return `
@@ -59,10 +79,9 @@ export async function exportGuideAsHTML(
     const screenshot = opts.screenshots ? screenshots.get(step.id) : undefined;
     let imgHtml = '';
     if (screenshot) {
-      const rendered = await renderScreenshot(screenshot);
-      const b64 = await blobToBase64(rendered);
+      const { type, b64 } = await embedScreenshot(screenshot);
       const altText = screenshot.edits?.alt || i18n.t('export.stepLabel', [String(number)]);
-      imgHtml = `<img src="data:${rendered.type};base64,${b64}" alt="${escapeHtml(altText)}" style="display:block;width:${imgWidthPct}%;margin-top:14px;border:1px solid #CBD5E1;" />`;
+      imgHtml = `<img src="data:${type};base64,${b64}" alt="${escapeHtml(altText)}" style="display:block;width:${imgWidthPct}%;margin-top:14px;border:1px solid #CBD5E1;" />`;
     }
 
     const stepNumber = String(number).padStart(2, '0');

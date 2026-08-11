@@ -1,5 +1,5 @@
 import { FileCode, FileDown, FileText, Loader2, Video } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import { downloadBlob, downloadText, safeFilename } from '@/core/export/download';
 import { exportGuideAsHTML } from '@/core/export/html-export';
@@ -12,12 +12,12 @@ import {
 } from '@/core/export/options';
 import { exportGuideAsPDF } from '@/core/export/pdf-export';
 import { paginatePreview, withPreviewStyles } from '@/core/export/preview';
-import { canExportVideo } from '@/core/export/video-support';
+import { canExportVideo, STEP_SECONDS } from '@/core/export/video-support';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { Button } from '@/ui/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/ui/dialog';
 
-const PREVIEW_STEP_LIMIT = 6;
+const VIDEO_AUTOPLAY_STEP_LIMIT = 25;
 const IMAGE_SCALES: ImageScale[] = ['small', 'medium', 'large'];
 
 interface ExportPreviewModalProps {
@@ -41,6 +41,7 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState(0);
+  const [videoRequested, setVideoRequested] = useState(false);
 
   useEffect(() => {
     if (open) loadExportOptions().then(setOptions);
@@ -56,15 +57,19 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
     };
   }, []);
 
-  const previewSteps = useMemo(() => steps.slice(0, PREVIEW_STEP_LIMIT), [steps]);
+  const videoPending = steps.length > VIDEO_AUTOPLAY_STEP_LIMIT && !videoRequested;
   const cover = options.cover;
+
+  useEffect(() => {
+    if (!open) setVideoRequested(false);
+  }, [open]);
 
   useEffect(() => {
     if (!open || mode !== 'document') return;
     let cancelled = false;
     setRendering(true);
     const timer = setTimeout(async () => {
-      const html = await exportGuideAsHTML(guide, previewSteps, screenshots, options);
+      const html = await exportGuideAsHTML(guide, steps, screenshots, options);
       if (cancelled) return;
       setPreview(withPreviewStyles(html));
       setRendering(false);
@@ -73,10 +78,10 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, mode, guide, previewSteps, screenshots, options]);
+  }, [open, mode, guide, steps, screenshots, options]);
 
   useEffect(() => {
-    if (!open || mode !== 'video') return;
+    if (!open || mode !== 'video' || videoPending) return;
     const controller = new AbortController();
     let url: string | null = null;
     setVideoError(null);
@@ -86,7 +91,7 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
         const { exportGuideAsVideo } = await import('@/core/export/video-export');
         const { blob } = await exportGuideAsVideo(
           guide,
-          previewSteps,
+          steps,
           screenshots,
           { cover },
           {
@@ -110,7 +115,7 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
       if (url) URL.revokeObjectURL(url);
       setVideoUrl(null);
     };
-  }, [open, mode, guide, previewSteps, screenshots, cover]);
+  }, [open, mode, guide, steps, screenshots, cover, videoPending]);
 
   const update = (patch: Partial<ExportOptions>) => {
     const next = { ...options, ...patch };
@@ -277,12 +282,24 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
                   />
                 </>
               ) : (
-                <div
-                  className={`absolute inset-x-0 top-0 flex items-center justify-center ${
-                    steps.length > PREVIEW_STEP_LIMIT ? 'bottom-7' : 'bottom-0'
-                  }`}
-                >
-                  {videoError ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {videoPending ? (
+                    <div className="max-w-[340px] flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-5 py-4 text-center">
+                      <Video size={20} className="text-accent" />
+                      <div className="text-[12px] font-semibold text-foreground">
+                        {i18n.t('exportPreview.videoReady', [
+                          String(steps.length),
+                          String(Math.round((steps.length * STEP_SECONDS) / 60)),
+                        ])}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground leading-snug">
+                        {i18n.t('exportPreview.videoReadyHint')}
+                      </div>
+                      <Button size="sm" className="mt-1" onClick={() => setVideoRequested(true)}>
+                        {i18n.t('exportPreview.videoGenerate')}
+                      </Button>
+                    </div>
+                  ) : videoError ? (
                     <div className="max-w-[320px] rounded-xl border border-border bg-card px-4 py-3 text-center">
                       <div className="text-[12px] font-semibold text-foreground">
                         {i18n.t('exportPreview.videoFailed')}
@@ -313,11 +330,6 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
                       </div>
                     </div>
                   )}
-                </div>
-              )}
-              {steps.length > PREVIEW_STEP_LIMIT && (
-                <div className="absolute bottom-0 left-0 right-0 text-center text-[10px] text-muted-foreground bg-card/95 border-t border-border py-1.5">
-                  {i18n.t('exportPreview.truncated', [String(PREVIEW_STEP_LIMIT), String(steps.length)])}
                 </div>
               )}
             </div>
