@@ -20,6 +20,8 @@ const navItems = [
   { key: 'trash' as const, labelKey: 'fullview_trash' as const, icon: Trash2 },
 ];
 
+const NAV_CONTROL = 'h-8 rounded-lg border border-border bg-card text-foreground hover:bg-secondary hover:text-accent';
+
 export default function TopNav({ route }: TopNavProps) {
   const {
     counts,
@@ -60,7 +62,7 @@ export default function TopNav({ route }: TopNavProps) {
   };
 
   return (
-    <header className="flex items-center gap-5 px-7 h-16 shrink-0 bg-gradient-to-br from-violet to-violet-light">
+    <header className="flex items-center gap-5 px-7 h-16 shrink-0 bg-card border-b border-border">
       {/* Brand */}
       <button
         onClick={() => navigate({ page: 'library', category: 'all' })}
@@ -99,12 +101,14 @@ export default function TopNav({ route }: TopNavProps) {
                 key={item.key}
                 onClick={() => navigate({ page: 'library', category: item.key })}
                 className={`flex items-center gap-1.5 text-[13px] h-8 px-3 rounded-md transition-all
-                ${active ? 'bg-primary text-primary-foreground font-semibold' : 'text-deep font-medium hover:bg-foreground/10'}`}
+                ${active ? 'bg-primary text-primary-foreground font-semibold' : 'text-foreground font-medium hover:bg-secondary'}`}
               >
                 <item.icon size={13.5} />
                 {i18n.t(item.labelKey)}
                 {count > 0 && (
-                  <span className={`text-[11px] ml-0.5 ${active ? 'text-primary-foreground/70' : 'text-violet-dark'}`}>
+                  <span
+                    className={`text-[11px] ml-0.5 ${active ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}
+                  >
                     {count}
                   </span>
                 )}
@@ -115,26 +119,29 @@ export default function TopNav({ route }: TopNavProps) {
       {/* Right side */}
       <div className="ml-auto flex items-center gap-3">
         <Button
+          size="sm"
           variant="ghost"
           onClick={() => setSearchOpen(true)}
-          className="flex items-center gap-2 px-3 h-8 rounded-lg w-52 cursor-pointer bg-white/40 border-0 hover:bg-white/60"
+          className={`w-52 justify-start ${NAV_CONTROL}`}
         >
-          <Search size={14} className="shrink-0 text-violet-dark" />
-          <span className="text-[12px] flex-1 text-left text-violet-dark">{i18n.t('fullview_searchPlaceholder')}</span>
-          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-foreground/10 text-violet-dark">⌘K</span>
+          <Search size={14} className="shrink-0 text-muted-foreground" />
+          <span className="flex-1 text-left text-muted-foreground">{i18n.t('fullview_searchPlaceholder')}</span>
+          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-secondary text-muted-foreground">
+            ⌘K
+          </span>
         </Button>
         {route.page === 'guide' && exportData && (
           <>
-            <Button size="sm" variant="secondary" onClick={() => toggleEditing(exportData.guideId)}>
+            <Button size="sm" variant="ghost" onClick={() => toggleEditing(exportData.guideId)} className={NAV_CONTROL}>
               {editing ? <Check size={14} /> : <Pencil size={14} />}
               {editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setHistoryOpen(!historyOpen)}>
+            <Button size="sm" variant="ghost" onClick={() => setHistoryOpen(!historyOpen)} className={NAV_CONTROL}>
               <History size={14} />
               {i18n.t('editor.versionHistory')}
             </Button>
             {!editing && (
-              <Button size="sm" onClick={() => setExportOpen(true)}>
+              <Button size="sm" onClick={() => setExportOpen(true)} className="h-8 rounded-lg">
                 <Download size={14} />
                 {i18n.t('common.export')}
               </Button>

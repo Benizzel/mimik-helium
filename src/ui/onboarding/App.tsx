@@ -86,7 +86,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           </p>
           <button
             onClick={onNext}
-            className="inline-flex items-center gap-2 px-7 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+            className="inline-flex items-center gap-2 px-7 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
           >
             {i18n.t('onboarding.getStarted')}
             <svg
@@ -230,7 +230,7 @@ function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             </button>
             <button
               onClick={handleContinue}
-              className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+              className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
             >
               {i18n.t('common.continue')}
             </button>
@@ -271,7 +271,7 @@ function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
               {i18n.t('onboarding.aiGeneratedDescription')}
             </p>
             <div className="flex gap-3 mb-5">
-              <div className="w-7 h-7 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
                 3
               </div>
               <div>
@@ -290,7 +290,7 @@ function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             </div>
             <div className="border-t border-border my-4" />
             <div className="flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
                 4
               </div>
               <div>
@@ -402,7 +402,7 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             </button>
             <button
               onClick={handleContinue}
-              className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+              className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
             >
               {i18n.t('common.continue')}
             </button>
@@ -456,7 +456,7 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             <div className="border-t border-border my-4" />
 
             <div className="flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
                 3
               </div>
               <div>
@@ -546,7 +546,7 @@ function SmartBlurStep({ onNext, onBack, index, total }: StepProps) {
             </button>
             <button
               onClick={onNext}
-              className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+              className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
             >
               {i18n.t('common.continue')}
             </button>
@@ -667,7 +667,7 @@ function PinExtensionStep({ onNext, onBack, index, total }: StepProps) {
             </button>
             <button
               onClick={onNext}
-              className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+              className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
             >
               {i18n.t('common.continue')}
             </button>
@@ -741,7 +741,7 @@ function GitHubStarStep({ onSkip, onBack, index, total }: StepProps) {
             </button>
             <button
               onClick={handleStar}
-              className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+              className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
             >
               {i18n.t('onboarding.starAction')}
             </button>
@@ -867,7 +867,7 @@ function DoneStep() {
 
         <button
           onClick={handleOpen}
-          className="inline-flex items-center gap-2 px-7 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
+          className="inline-flex items-center gap-2 px-7 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
         >
           {i18n.t('onboarding.openMimik')}
           <svg

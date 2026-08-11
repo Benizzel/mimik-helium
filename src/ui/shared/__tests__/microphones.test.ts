@@ -5,6 +5,7 @@ import {
   isMicrophoneMissing,
   type MicrophoneOption,
   microphoneListState,
+  microphoneStatus,
   nextMicLevel,
   SPEAKING_LEVEL,
   SYSTEM_DEFAULT_VALUE,
@@ -13,7 +14,7 @@ import {
   toStoredMicrophoneId,
 } from '../microphones';
 
-const LOCALES = ['en', 'es', 'fr', 'pt-BR'];
+const LOCALES = ['en', 'de', 'es', 'fr', 'pt-BR'];
 
 const MICROPHONE_KEYS = [
   'settings.microphone',
@@ -25,8 +26,13 @@ const MICROPHONE_KEYS = [
   'settings.microphoneMissing',
   'settings.microphoneTest',
   'settings.microphoneTestStop',
-  'settings.microphoneTestHint',
   'settings.microphoneTestFailed',
+  'settings.microphoneUnblockHow',
+  'settings.microphoneStatusAllowed',
+  'settings.microphoneStatusBlocked',
+  'settings.microphoneStatusPending',
+  'settings.microphoneBlocked',
+  'micPermission.retry',
   'voice.micHearing',
   'voice.micQuiet',
 ];
@@ -116,6 +122,26 @@ describe('microphoneListState', () => {
     expect(microphoneListState([device('audioinput', 'mic-1', 'Headset'), device('audiooutput', '', '')])).toBe(
       'ready',
     );
+  });
+});
+
+describe('microphoneStatus', () => {
+  it('separates a blocked microphone from one that was never asked for', () => {
+    expect(microphoneStatus('denied', 'unlabelled')).toBe('blocked');
+    expect(microphoneStatus('prompt', 'unlabelled')).toBe('pending');
+  });
+
+  it('reports blocked even when no device is plugged in', () => {
+    expect(microphoneStatus('denied', 'no-devices')).toBe('blocked');
+  });
+
+  it('reports allowed once the browser grants access', () => {
+    expect(microphoneStatus('granted', 'unlabelled')).toBe('allowed');
+  });
+
+  it('falls back to the device labels when permissions cannot be queried', () => {
+    expect(microphoneStatus('unknown', 'ready')).toBe('allowed');
+    expect(microphoneStatus('unknown', 'unlabelled')).toBe('pending');
   });
 });
 

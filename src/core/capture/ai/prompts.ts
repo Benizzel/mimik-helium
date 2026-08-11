@@ -30,6 +30,10 @@ Examples of good descriptions:
 - "Reset a locked-out user's password from the Okta admin panel. For IT support staff."
 - "Configure which Slack channels send desktop notifications, and set a do-not-disturb schedule."`;
 
+export const GUIDE_META_JSON_SUFFIX = `
+
+Reply with nothing but a JSON object shaped {"title": string, "description": string}. No code fence, no commentary.`;
+
 export const REWRITE_PROMPT = `You are editing one span of text inside a browser workflow guide. The text describes a step a reader must perform, or summarises what the workflow accomplishes.
 
 Selected text:

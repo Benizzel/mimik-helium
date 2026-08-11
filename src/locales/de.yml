@@ -83,7 +83,6 @@ settings:
   targetColorHint: "Klick-Hervorhebungen und Export-Akzente"
   branding: "Export-Branding"
   brandLogo: "Logo"
-  brandLogoHint: "Erscheint auf dem Deckblatt jedes Exports. Transparentes PNG empfohlen."
   uploadLogo: "Logo hochladen"
   replaceLogo: "Ersetzen"
   removeLogo: "Logo entfernen"
@@ -92,34 +91,36 @@ settings:
   footerPresetConfidential: "Vertraulich — nur intern"
   footerPresetNoDistribute: "Nicht weitergeben"
   attribution: '"Made with Mimik" anzeigen'
-  attributionHint: "In der Fußzeile jedes Exports"
   targetColor: "Markenfarbe"
   title: Einstellungen
   aiDescriptions: KI-Beschreibungen
+  modelCustom: Eigenes Modell
   provider: Anbieter
   model: Modell
   apiKey: API-Schlüssel
   aiLanguage: Sprache der Beschreibungen
   voiceNarration: Sprachkommentar
-  voiceDescription: Sprich beim Aufnehmen laut mit — deine Worte werden zu den Schrittbeschreibungen.
   voiceUsingAiKey: "Es ist kein Sprach-Schlüssel gesetzt, daher nutzt Mimik den OpenAI-Schlüssel aus den KI-Beschreibungen oben."
-  voiceNoKey: "Der Sprachkommentar ist aktiv, aber es ist kein API-Schlüssel gesetzt — deine Aufnahmen werden nicht kommentiert."
-  voiceDataNotice: Dein aufgenommenes Audio wird mit deinem eigenen API-Schlüssel an den oben gewählten Anbieter gesendet. Das ist der einzige Teil von Mimik, der überhaupt etwas aus deinem Browser sendet.
+  voiceNoKey: "Es ist kein API-Schlüssel gesetzt, daher werden deine Aufnahmen nicht vertont."
   microphone: Mikrofon
   microphoneDefault: Systemstandard
   microphoneNeedsAccess: Erlaube den Mikrofonzugriff, um deine Gerätenamen zu sehen.
   microphoneGrantAccess: Mikrofonzugriff erlauben
   microphoneNone: Kein Mikrofon gefunden. Schließe eines an, dann erscheint es hier.
   microphoneUnavailable: Nicht verfügbares Mikrofon
+  microphoneStatusAllowed: Erlaubt
+  microphoneStatusBlocked: Blockiert
+  microphoneStatusPending: Noch nicht erlaubt
+  microphoneBlocked: Dein Browser blockiert das Mikrofon für Mimik. Öffne die Website-Einstellungen über das Symbol links in der Adressleiste und setze Mikrofon auf Zulassen.
+  microphoneUnblockHow: Wie hebe ich die Blockierung auf?
   microphoneMissing: Das gewählte Mikrofon ist gerade nicht verfügbar, daher nutzt Mimik den Systemstandard.
   microphoneTest: Mikrofon testen
   microphoneTestStop: Test beenden
-  microphoneTestHint: "Probleme mit dem Mikrofon? Starte einen Test und sag etwas, um zu prüfen, ob es funktioniert."
   microphoneTestFailed: Dieses Mikrofon konnte nicht geöffnet werden. Wähle ein anderes und versuche es erneut.
   saveSettings: Einstellungen speichern
   saved: Gespeichert
   smartBlur: Smart Blur
-  privacyNotice: Dein API-Schlüssel wird lokal gespeichert und nur an den ausgewählten KI-Anbieter gesendet. Ansonsten verlassen keine Daten deinen Browser.
+  privacyNotice: "Deine Schlüssel und Audiodaten gehen nur an den Anbieter, den du wählst. Sonst verlässt nichts deinen Browser."
   bugReport: "Fehler gefunden? Melde ihn auf GitHub"
   starCtaTitle: "Gefällt dir, was du siehst?"
   starCtaMessage: Ein Stern auf GitHub hilft anderen, Mimik zu finden, und hält uns motiviert!
@@ -127,6 +128,8 @@ settings:
   validatingKey: "Schlüssel wird geprüft…"
   keyValid: API-Schlüssel bestätigt.
   keyInvalid: Dieser API-Schlüssel wurde abgelehnt. Prüfe ihn und versuche es erneut.
+  checkKey: Schlüssel prüfen
+  keyUnreachable: Der Anbieter war nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.
 
 blurPresets:
   email: E-Mail
@@ -175,6 +178,8 @@ confirmDelete:
 
 editor:
   backToLibrary: Zurück zur Bibliothek
+  openInDashboard: Öffnen
+  openInDashboardHint: Im Dashboard öffnen, um zu bearbeiten oder zu exportieren
   guideMe: Anleiten
   guideMeUnavailable: Keine abspielbaren Schritte in dieser Anleitung
   deleteThisStep: "Diesen Schritt löschen?"

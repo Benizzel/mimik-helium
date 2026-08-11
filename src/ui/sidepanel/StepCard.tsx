@@ -16,8 +16,8 @@ interface StepCardProps {
   step: Step;
   number: number;
   screenshot: Screenshot | undefined;
-  onDescriptionChange: (stepId: string, description: string) => void;
-  onDelete: (stepId: string) => void;
+  onDescriptionChange?: (stepId: string, description: string) => void;
+  onDelete?: (stepId: string) => void;
   dragHandleProps?: DragHandleProps;
   onOpenEditor?: (stepId: string, tool: 'annotate' | 'redact' | 'crop' | 'target') => void;
   onCopy?: (stepId: string) => void;
@@ -53,21 +53,21 @@ export default function StepCard({
   }, [step.description]);
 
   const handleDescriptionBlur = () => {
-    if (description !== step.description) onDescriptionChange(step.id, description);
+    if (description !== step.description) onDescriptionChange?.(step.id, description);
   };
 
   const askAi = useAskAi(
     description,
     (next) => {
       setDescription(next);
-      onDescriptionChange(step.id, next);
+      onDescriptionChange?.(step.id, next);
     },
     !readOnly && !step.aiPending && Boolean(hasApiKey),
   );
 
   const handleDelete = () => {
     setConfirmDelete(false);
-    onDelete(step.id);
+    onDelete?.(step.id);
   };
 
   const handleCopy = async () => {

@@ -10,8 +10,8 @@ import { DragGrip, type DragHandleProps, useCardDrag } from '@/ui/shared/card-dr
 
 interface BlockCardProps {
   step: Step;
-  onDescriptionChange: (stepId: string, description: string) => void;
-  onDelete: (stepId: string) => void;
+  onDescriptionChange?: (stepId: string, description: string) => void;
+  onDelete?: (stepId: string) => void;
   onChanged?: () => void;
   dragHandleProps?: DragHandleProps;
   readOnly?: boolean;
@@ -84,7 +84,7 @@ export default function BlockCard({
               e.target.style.height = `${e.target.scrollHeight}px`;
             }}
             onBlur={() => {
-              if (description !== step.description) onDescriptionChange(step.id, description);
+              if (description !== step.description) onDescriptionChange?.(step.id, description);
             }}
             placeholder={isHeading ? i18n.t('blocks.headingPlaceholder') : i18n.t('blocks.calloutPlaceholder')}
           />
@@ -151,7 +151,7 @@ export default function BlockCard({
         destructive
         onConfirm={() => {
           setConfirmDelete(false);
-          onDelete(step.id);
+          onDelete?.(step.id);
         }}
         onCancel={() => setConfirmDelete(false)}
       />

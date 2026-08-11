@@ -84,13 +84,12 @@ settings:
   aiDescriptions: AI Descriptions
   provider: Provider
   model: Model
+  modelCustom: Custom model
   apiKey: API Key
   aiLanguage: Description Language
   voiceNarration: Voice Narration
-  voiceDescription: Narrate out loud while you record and your words become the step descriptions.
   voiceUsingAiKey: "No voice key is set, so Mimik uses the OpenAI key from AI Descriptions above."
-  voiceNoKey: "Voice narration is on but no API key is set, so your recordings will not be narrated."
-  voiceDataNotice: Your recorded audio is sent to the provider you choose above, using your own API key. This is the one part of Mimik that sends anything out of your browser.
+  voiceNoKey: "No API key is set, so your recordings will not be narrated."
   microphone: Microphone
   microphoneDefault: System default
   microphoneNeedsAccess: Allow microphone access to see your device names.
@@ -99,14 +98,17 @@ settings:
   microphoneUnavailable: Unavailable microphone
   microphoneMissing: The microphone you picked is not available right now, so Mimik will use the system default.
   microphoneTest: Test microphone
+  microphoneStatusAllowed: Allowed
+  microphoneStatusBlocked: Blocked
+  microphoneStatusPending: Not allowed yet
+  microphoneBlocked: Your browser is blocking the microphone for Mimik. Open the site settings from the icon at the left of the address bar and set Microphone to Allow.
+  microphoneUnblockHow: How do I unblock it?
   microphoneTestStop: Stop test
-  microphoneTestHint: "Having mic issues? Start a test and say something to check that your microphone is working."
   microphoneTestFailed: That microphone could not be opened. Pick another one and try again.
   targetColor: "Brand colour"
   targetColorHint: "Click highlights and export accents"
   branding: "Export Branding"
   brandLogo: "Logo"
-  brandLogoHint: "Shown on the cover of every export. Transparent PNG recommended."
   uploadLogo: "Upload logo"
   replaceLogo: "Replace"
   removeLogo: "Remove logo"
@@ -115,14 +117,15 @@ settings:
   footerPresetConfidential: "Confidential — internal use only"
   footerPresetNoDistribute: "Do not distribute"
   attribution: 'Show "Made with Mimik"'
-  attributionHint: "In the footer of every export"
   saveSettings: Save Settings
   saved: Saved
   validatingKey: "Checking key\u2026"
   keyValid: API key verified.
   keyInvalid: That API key was rejected. Check it and try again.
+  checkKey: Check key
+  keyUnreachable: Could not reach the provider. Check your connection and try again.
   smartBlur: Smart Blur
-  privacyNotice: Your API key is stored locally and only sent to the selected AI provider. No data leaves your browser otherwise.
+  privacyNotice: "Your keys and audio go only to the provider you pick. Nothing else leaves your browser."
   bugReport: "Found a bug? Report it on GitHub"
   starCtaTitle: "Like what you see?"
   starCtaMessage: A GitHub star helps others find Mimik and keeps us motivated!
@@ -175,6 +178,8 @@ confirmDelete:
 
 editor:
   backToLibrary: Back to library
+  openInDashboard: Open
+  openInDashboardHint: Open in the dashboard to edit or export
   guideMe: Guide Me
   guideMeUnavailable: No replayable steps in this guide
   deleteThisStep: "Delete this step?"

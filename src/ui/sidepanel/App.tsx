@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { CaptureState } from '@/core/capture/machine';
 import { isRecordableUrl } from '@/core/capture/recordable-tabs';
-import { startInsertRecording } from '@/core/capture/start-insert-recording';
 import type { GuideMeSession } from '@/core/guideme/session';
 import { SESSION_KEY } from '@/core/guideme/session';
 import {
@@ -186,14 +185,6 @@ export default function App() {
     }
   }, []);
 
-  const handleInsertRecording = useCallback(async (guideId: string, insertAtIndex: number, tabId: number) => {
-    const started = await startInsertRecording(guideId, insertAtIndex, tabId);
-    if (started) {
-      setIsRecording(true);
-      setView({ name: 'recording', guideId: started });
-    }
-  }, []);
-
   const handleStopRecording = useCallback(async () => {
     try {
       const res = await sendMessage('stopRecording', undefined);
@@ -253,7 +244,6 @@ export default function App() {
           guideId={view.guideId}
           onBack={() => setView({ name: 'library' })}
           onGuideMe={(id) => setView({ name: 'guideme', guideId: id })}
-          onInsertRecording={handleInsertRecording}
         />
       );
     }
@@ -265,46 +255,46 @@ export default function App() {
     return (
       <div className="min-h-screen bg-card flex flex-col">
         {/* Header */}
-        <div className="relative overflow-hidden px-6 pt-6 pb-7 bg-gradient-to-br from-violet to-violet-light">
-          <div className="absolute -top-12 -right-8 w-44 h-44 rounded-full opacity-15 blur-[40px] bg-gradient-to-br from-lavender to-white" />
-
-          <div className="relative flex items-center justify-between mb-6">
+        <div className="px-6 pt-6 pb-7 border-b border-border">
+          <div className="flex items-center justify-between mb-5">
             <span className="text-[17px] font-bold tracking-tight text-foreground">{i18n.t('app.name')}</span>
             <div className="flex items-center gap-2">
-              <span
-                className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full ${isAlive ? 'text-foreground bg-white/30' : 'text-deep/50 bg-white/15'}`}
-              >
+              <span className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${isAlive ? 'bg-success' : 'bg-muted-foreground/40'}`}
+                  aria-hidden="true"
+                />
                 {isAlive ? i18n.t('sidepanel.connected') : i18n.t('sidepanel.connecting')}
               </span>
               <button
                 onClick={() => setView({ name: 'settings' })}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-white/20 transition-colors"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-accent hover:bg-secondary transition-colors"
               >
                 <Settings size={15} />
               </button>
             </div>
           </div>
 
-          <div className="relative text-center mb-5">
+          <div className="text-center mb-5">
             <div className="flex justify-center mb-2">
               <MascotIcon size={44} />
             </div>
             <h3 className="text-base font-medium text-foreground">{i18n.t('sidepanel.heroTitle')}</h3>
-            <p className="text-xs mt-1 text-violet-dark">{i18n.t('sidepanel.heroSubtitle')}</p>
+            <p className="text-xs mt-1 text-muted-foreground">{i18n.t('sidepanel.heroSubtitle')}</p>
           </div>
 
           {isRecordableUrl(activeUrl) ? (
             <Button
               onClick={handleStartRecording}
               disabled={!isAlive}
-              className="w-full py-3 px-4 h-auto rounded-lg font-semibold text-sm hover:-translate-y-px shadow-lg"
+              className="w-full py-3 px-4 h-auto rounded-lg font-semibold text-sm hover:-translate-y-px shadow-sm"
             >
               <Video size={18} />
               {i18n.t('sidepanel.startCapture')}
             </Button>
           ) : (
-            <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-violet-dark">
-              <Globe size={14} className="shrink-0" />
+            <p className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2.5 text-xs font-medium text-muted-foreground">
+              <Globe size={14} className="shrink-0 text-accent" />
               {i18n.t('sidepanel.notRecordable')}
             </p>
           )}

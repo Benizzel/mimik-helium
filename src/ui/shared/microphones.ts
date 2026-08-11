@@ -34,6 +34,16 @@ export function microphoneListState(devices: readonly MicrophoneDevice[]): Micro
   return withheld ? 'unlabelled' : 'ready';
 }
 
+export type MicrophonePermission = PermissionState | 'unknown';
+
+export type MicrophoneStatus = 'allowed' | 'blocked' | 'pending';
+
+export function microphoneStatus(permission: MicrophonePermission, list: MicrophoneListState): MicrophoneStatus {
+  if (permission === 'denied') return 'blocked';
+  if (permission === 'granted' || list === 'ready') return 'allowed';
+  return 'pending';
+}
+
 export function toSelectValue(storedId: string): string {
   return storedId.trim() || SYSTEM_DEFAULT_VALUE;
 }

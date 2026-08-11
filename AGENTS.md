@@ -224,8 +224,8 @@ All colors are defined as CSS variables in `src/ui/global.css` and used via Tail
 | `--color-muted-foreground` | `#6B7280` | Secondary text |
 | `--color-border` | `#C7D2FE` | Borders, dividers (lavender) |
 | `--color-secondary` | `#EEF2FF` | Light wash backgrounds |
-| `--color-accent` | `#4F46E5` | Accent / interactive (indigo) |
-| `--color-primary` | `#1E1B4B` | Dark backgrounds, badges |
+| `--color-accent` | `#4F46E5` | Icons, links, focus rings, toggles, meters (indigo) — never a button fill |
+| `--color-primary` | `#1E1B4B` | Primary buttons, badges, dark backgrounds |
 | `--color-primary-foreground` | `#C7D2FE` | Text on dark backgrounds |
 | `--color-lavender` | `#C7D2FE` | Soft accent |
 | `--color-purple` | `#4F46E5` | Primary indigo |

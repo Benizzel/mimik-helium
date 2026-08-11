@@ -84,13 +84,12 @@ settings:
   aiDescriptions: Descriptions IA
   provider: Fournisseur
   model: "Modèle"
+  modelCustom: Modèle personnalisé
   apiKey: "Clé API"
   aiLanguage: Langue des descriptions
   voiceNarration: "Narration vocale"
-  voiceDescription: "Commentez à voix haute pendant l'enregistrement : vos mots deviennent les descriptions des étapes."
   voiceUsingAiKey: "Aucune clé vocale n'est définie : Mimik utilise la clé OpenAI des descriptions IA ci-dessus."
-  voiceNoKey: "La narration vocale est activée mais aucune clé API n'est définie : vos enregistrements ne seront pas narrés."
-  voiceDataNotice: "L'audio enregistré est envoyé au fournisseur choisi ci-dessus, avec votre propre clé API. C'est la seule partie de Mimik qui fait sortir quelque chose de votre navigateur."
+  voiceNoKey: "Aucune clé API n'est définie, vos enregistrements ne seront donc pas narrés."
   microphone: Microphone
   microphoneDefault: "Micro par défaut du système"
   microphoneNeedsAccess: "Autorisez l'accès au micro pour voir le nom de vos appareils."
@@ -99,14 +98,17 @@ settings:
   microphoneUnavailable: "Micro indisponible"
   microphoneMissing: "Le micro que vous avez choisi n'est pas disponible pour le moment : Mimik utilisera celui par défaut du système."
   microphoneTest: "Tester le micro"
+  microphoneStatusAllowed: Autorisé
+  microphoneStatusBlocked: Bloqué
+  microphoneStatusPending: Pas encore autorisé
+  microphoneBlocked: Votre navigateur bloque le micro pour Mimik. Ouvrez les paramètres du site depuis l'icône à gauche de la barre d'adresse et réglez Microphone sur Autoriser.
+  microphoneUnblockHow: Comment le débloquer ?
   microphoneTestStop: "Arrêter le test"
-  microphoneTestHint: "Un souci de micro ? Lancez un test et dites quelque chose pour vérifier qu'il fonctionne."
   microphoneTestFailed: "Ce micro n'a pas pu être ouvert. Choisissez-en un autre et réessayez."
   targetColor: "Couleur de marque"
   targetColorHint: "Surbrillance des clics et accents des exports"
   branding: "Image de marque des exports"
   brandLogo: "Logo"
-  brandLogoHint: "Affiché sur la couverture de chaque export. PNG transparent recommandé."
   uploadLogo: "Téléverser un logo"
   replaceLogo: "Remplacer"
   removeLogo: "Supprimer le logo"
@@ -115,14 +117,15 @@ settings:
   footerPresetConfidential: "Confidentiel — usage interne"
   footerPresetNoDistribute: "Ne pas diffuser"
   attribution: 'Afficher « Made with Mimik »'
-  attributionHint: "Dans le pied de chaque export"
   saveSettings: "Enregistrer"
   saved: "Enregistré"
   validatingKey: "V\xE9rification de la cl\xE9\u2026"
   keyValid: "Cl\xE9 API v\xE9rifi\xE9e."
   keyInvalid: "Cette cl\xE9 API a \xE9t\xE9 refus\xE9e. V\xE9rifiez-la et r\xE9essayez."
+  checkKey: Vérifier la clé
+  keyUnreachable: Le fournisseur est injoignable. Vérifiez votre connexion et réessayez.
   smartBlur: Flou intelligent
-  privacyNotice: "Votre clé API reste dans votre navigateur et n'est envoyée qu'au fournisseur IA choisi. Rien d'autre ne sort d'ici."
+  privacyNotice: "Vos clés et votre audio ne vont qu'au fournisseur que vous choisissez. Rien d'autre ne quitte votre navigateur."
   bugReport: "Un bug ? Signalez-le sur GitHub"
   starCtaTitle: "Vous aimez Mimik ?"
   starCtaMessage: "Une étoile sur GitHub nous aide beaucoup et permet à d'autres de découvrir Mimik !"
@@ -175,6 +178,8 @@ confirmDelete:
 
 editor:
   backToLibrary: "Retour à la bibliothèque"
+  openInDashboard: Ouvrir
+  openInDashboardHint: Ouvrir dans le tableau de bord pour modifier ou exporter
   guideMe: "Guidez-moi !"
   guideMeUnavailable: "Aucune étape rejouable dans ce guide"
   deleteThisStep: "Supprimer cette étape ?"
