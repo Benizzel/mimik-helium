@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { i18n } from '#imports';
 import { REWRITE_PRESETS, type RewritePreset } from '@/core/capture/ai/prompts';
 import { sendMessage } from '@/lib/messaging';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import { rewriteErrorMessage } from '@/ui/shared/rewrite-error';
 import Toast from '@/ui/shared/Toast';
 
@@ -105,6 +106,7 @@ export function useAskAi(value: string, onReplace: (next: string) => void, enabl
   }, []);
 
   const open = useCallback(() => {
+    if (!value.trim()) return;
     const target = span ?? readSpan(value, 0, value.length);
     if (!target) return;
     setResult(null);
@@ -224,17 +226,21 @@ export function useAskAi(value: string, onReplace: (next: string) => void, enabl
 
   const trigger = !enabled ? null : (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={open}
-        disabled={!value.trim()}
-        title={i18n.t('editor.rewriteAskAi')}
-        aria-label={i18n.t('editor.rewriteAskAi')}
-        className={`p-1 rounded-md transition-colors disabled:opacity-40 ${active ? 'text-accent' : 'text-border hover:text-accent'}`}
-      >
-        <Wand2 size={14} />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            ref={triggerRef}
+            type="button"
+            onClick={open}
+            aria-disabled={!value.trim()}
+            aria-label={i18n.t('editor.rewriteAskAi')}
+            className={`p-1 rounded-md transition-colors aria-disabled:opacity-40 aria-disabled:cursor-not-allowed ${active ? 'text-accent' : 'text-border hover:text-accent'}`}
+          >
+            <Wand2 size={14} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{i18n.t('editor.rewriteAskAi')}</TooltipContent>
+      </Tooltip>
       {panel}
       <Toast message={error} onDismiss={() => setError(null)} />
     </>

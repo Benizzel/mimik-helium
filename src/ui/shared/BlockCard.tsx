@@ -4,6 +4,7 @@ import { i18n } from '#imports';
 import { CALLOUT_VARIANTS, calloutAccent, DEFAULT_CALLOUT_COLOR, tint, variantLabel } from '@/core/guides/blocks';
 import { updateCallout } from '@/core/guides/service';
 import type { CalloutVariant, Step } from '@/core/guides/types';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
 
 interface DragHandleProps {
@@ -98,44 +99,59 @@ export default function BlockCard({
         <div className="flex items-center gap-1 mt-1">
           {!isHeading &&
             CALLOUT_VARIANTS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => pickVariant(option)}
-                title={variantLabel(option)}
-                aria-label={variantLabel(option)}
-                aria-pressed={variant === option}
-                className={`w-3.5 h-3.5 rounded-full border ${variant === option ? 'border-foreground' : 'border-border'}`}
-                style={{
-                  background:
-                    option === 'custom' && variant !== 'custom'
-                      ? 'linear-gradient(135deg,#DC2626,#4F46E5,#059669)'
-                      : calloutAccent({ ...step, calloutVariant: option }),
-                }}
-              />
+              <Tooltip key={option}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => pickVariant(option)}
+                    aria-label={variantLabel(option)}
+                    aria-pressed={variant === option}
+                    className={`w-3.5 h-3.5 rounded-full border ${variant === option ? 'border-foreground' : 'border-border'}`}
+                    style={{
+                      background:
+                        option === 'custom' && variant !== 'custom'
+                          ? 'linear-gradient(135deg,#DC2626,#4F46E5,#059669)'
+                          : calloutAccent({ ...step, calloutVariant: option }),
+                    }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>{variantLabel(option)}</TooltipContent>
+              </Tooltip>
             ))}
           {!isHeading && variant === 'custom' && (
-            <input
-              type="color"
-              value={accent}
-              onChange={(e) => pickColor(e.target.value)}
-              title={variantLabel('custom')}
-              className="w-5 h-4 bg-transparent border-0 p-0 cursor-pointer"
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <input
+                  type="color"
+                  value={accent}
+                  onChange={(e) => pickColor(e.target.value)}
+                  aria-label={variantLabel('custom')}
+                  className="w-5 h-4 bg-transparent border-0 p-0 cursor-pointer"
+                />
+              </TooltipTrigger>
+              <TooltipContent>{variantLabel('custom')}</TooltipContent>
+            </Tooltip>
           )}
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="ml-auto p-1 rounded-md transition-colors text-border hover:text-destructive"
-            title={isHeading ? i18n.t('blocks.deleteHeading') : i18n.t('blocks.deleteCallout')}
-          >
-            <Trash2 size={13} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                aria-label={isHeading ? i18n.t('blocks.deleteHeading') : i18n.t('blocks.deleteCallout')}
+                className="ml-auto p-1 rounded-md transition-colors text-border hover:text-destructive"
+              >
+                <Trash2 size={13} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isHeading ? i18n.t('blocks.deleteHeading') : i18n.t('blocks.deleteCallout')}
+            </TooltipContent>
+          </Tooltip>
         </div>
       )}
       <ConfirmDialog
         open={confirmDelete}
-        title={isHeading ? i18n.t('blocks.deleteHeading') : i18n.t('blocks.deleteCallout')}
+        heading={isHeading ? i18n.t('blocks.deleteHeading') : i18n.t('blocks.deleteCallout')}
         destructive
         onConfirm={() => {
           setConfirmDelete(false);

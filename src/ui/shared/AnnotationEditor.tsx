@@ -108,7 +108,7 @@ function clampNumber(raw: string | number, min: number, max: number): number {
 }
 
 interface StepperProps {
-  title: string;
+  label: string;
   value: number;
   min: number;
   max: number;
@@ -120,35 +120,38 @@ interface StepperProps {
   onChange: (value: number) => void;
 }
 
-function Stepper({ title, value, min, max, step, decimals = 0, width, prefix, suffix, onChange }: StepperProps) {
+function Stepper({ label, value, min, max, step, decimals = 0, width, prefix, suffix, onChange }: StepperProps) {
   const round = (n: number) => Number(n.toFixed(decimals));
   return (
-    <div className="flex items-center gap-0.5 rounded-md bg-primary-foreground/10 h-6 px-1" title={title}>
-      {prefix}
-      <button
-        type="button"
-        aria-label="-"
-        onClick={() => onChange(round(clampNumber(value - step, min, max)))}
-        className="w-4 h-5 rounded text-primary-foreground/70 hover:bg-primary-foreground/15 text-[13px] leading-none"
-      >
-        &minus;
-      </button>
-      <input
-        value={value}
-        inputMode="decimal"
-        onChange={(e) => onChange(round(clampNumber(e.target.value, min, max)))}
-        className={`${width} bg-transparent text-center text-[11px] tabular-nums text-primary-foreground outline-none`}
-      />
-      <button
-        type="button"
-        aria-label="+"
-        onClick={() => onChange(round(clampNumber(value + step, min, max)))}
-        className="w-4 h-5 rounded text-primary-foreground/70 hover:bg-primary-foreground/15 text-[13px] leading-none"
-      >
-        +
-      </button>
-      {suffix}
-    </div>
+    <Tip label={label}>
+      <div className="flex items-center gap-0.5 rounded-md bg-primary-foreground/10 h-6 px-1">
+        {prefix}
+        <button
+          type="button"
+          aria-label="-"
+          onClick={() => onChange(round(clampNumber(value - step, min, max)))}
+          className="w-4 h-5 rounded text-primary-foreground/70 hover:bg-primary-foreground/15 text-[13px] leading-none"
+        >
+          &minus;
+        </button>
+        <input
+          value={value}
+          inputMode="decimal"
+          aria-label={label}
+          onChange={(e) => onChange(round(clampNumber(e.target.value, min, max)))}
+          className={`${width} bg-transparent text-center text-[11px] tabular-nums text-primary-foreground outline-none`}
+        />
+        <button
+          type="button"
+          aria-label="+"
+          onClick={() => onChange(round(clampNumber(value + step, min, max)))}
+          className="w-4 h-5 rounded text-primary-foreground/70 hover:bg-primary-foreground/15 text-[13px] leading-none"
+        >
+          +
+        </button>
+        {suffix}
+      </div>
+    </Tip>
   );
 }
 
@@ -1117,7 +1120,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                     )}
                     {selected.type === 'box' && (
                       <Stepper
-                        title={i18n.t('annotationEditor.cornerRadius')}
+                        label={i18n.t('annotationEditor.cornerRadius')}
                         value={Math.round(selected.radius ?? 0)}
                         min={0}
                         max={60}
@@ -1144,17 +1147,22 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                     {selected.type === 'text' && (
                       <>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              title={i18n.t('annotationEditor.font')}
-                              className="flex items-center gap-1.5 h-6 rounded-md bg-primary-foreground/10 px-2 text-[11px] text-primary-foreground hover:bg-primary-foreground/20"
-                              style={{ fontFamily: FONT_FAMILIES[selected.fontFamily ?? 'sans-serif'] }}
-                            >
-                              <span className="text-[13px] leading-none">Ag</span>
-                              <ChevronDown size={10} className="opacity-60" />
-                            </button>
-                          </DropdownMenuTrigger>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={i18n.t('annotationEditor.font')}
+                                  className="flex items-center gap-1.5 h-6 rounded-md bg-primary-foreground/10 px-2 text-[11px] text-primary-foreground hover:bg-primary-foreground/20"
+                                  style={{ fontFamily: FONT_FAMILIES[selected.fontFamily ?? 'sans-serif'] }}
+                                >
+                                  <span className="text-[13px] leading-none">Ag</span>
+                                  <ChevronDown size={10} className="opacity-60" />
+                                </button>
+                              </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>{i18n.t('annotationEditor.font')}</TooltipContent>
+                          </Tooltip>
                           <DropdownMenuContent align="start" className="min-w-[150px]">
                             {FONT_FAMILY_ORDER.map((f) => (
                               <DropdownMenuItem
@@ -1189,7 +1197,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                           </Tip>
                         </div>
                         <Stepper
-                          title={i18n.t('annotationEditor.fontSize')}
+                          label={i18n.t('annotationEditor.fontSize')}
                           prefix={<span className="text-[9px] text-primary-foreground/60">A</span>}
                           suffix={<span className="text-[13px] text-primary-foreground/60">A</span>}
                           value={Math.round(selected.size)}
@@ -1200,7 +1208,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                           onChange={(v) => setTextProp({ size: v })}
                         />
                         <Stepper
-                          title={i18n.t('annotationEditor.lineHeight')}
+                          label={i18n.t('annotationEditor.lineHeight')}
                           prefix={<MoveVertical size={11} className="text-primary-foreground/60" />}
                           value={selected.lineHeight ?? DEFAULT_LINE_HEIGHT}
                           min={MIN_LINE_HEIGHT}

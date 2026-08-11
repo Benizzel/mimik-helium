@@ -200,7 +200,7 @@ export default function StepCard({
       </div>
       <ConfirmDialog
         open={confirmDelete}
-        title={i18n.t('editor.deleteThisStep')}
+        heading={i18n.t('editor.deleteThisStep')}
         destructive
         onConfirm={handleDelete}
         onCancel={() => setConfirmDelete(false)}

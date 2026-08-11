@@ -363,7 +363,6 @@ export default function GuideEditor({ guideId, onBack, onGuideMe, onInsertRecord
                 type="button"
                 onClick={handleGenerateDescription}
                 disabled={generating || metaGenerating}
-                title={description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')}
                 className="flex items-center gap-1 text-[11px] font-medium text-accent hover:text-deep disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {generating || metaGenerating ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
