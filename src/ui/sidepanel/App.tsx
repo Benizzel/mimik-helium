@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { CaptureState } from '@/core/capture/machine';
 import { isRecordableUrl } from '@/core/capture/recordable-tabs';
-import { startInsertRecording } from '@/core/capture/start-insert-recording';
 import type { GuideMeSession } from '@/core/guideme/session';
 import { SESSION_KEY } from '@/core/guideme/session';
 import {
@@ -186,14 +185,6 @@ export default function App() {
     }
   }, []);
 
-  const handleInsertRecording = useCallback(async (guideId: string, insertAtIndex: number, tabId: number) => {
-    const started = await startInsertRecording(guideId, insertAtIndex, tabId);
-    if (started) {
-      setIsRecording(true);
-      setView({ name: 'recording', guideId: started });
-    }
-  }, []);
-
   const handleStopRecording = useCallback(async () => {
     try {
       const res = await sendMessage('stopRecording', undefined);
@@ -253,7 +244,6 @@ export default function App() {
           guideId={view.guideId}
           onBack={() => setView({ name: 'library' })}
           onGuideMe={(id) => setView({ name: 'guideme', guideId: id })}
-          onInsertRecording={handleInsertRecording}
         />
       );
     }

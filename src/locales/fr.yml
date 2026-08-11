@@ -178,6 +178,8 @@ confirmDelete:
 
 editor:
   backToLibrary: "Retour à la bibliothèque"
+  openInDashboard: Ouvrir
+  openInDashboardHint: Ouvrir dans le tableau de bord pour modifier ou exporter
   guideMe: "Guidez-moi !"
   guideMeUnavailable: "Aucune étape rejouable dans ce guide"
   deleteThisStep: "Supprimer cette étape ?"

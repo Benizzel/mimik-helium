@@ -178,6 +178,8 @@ confirmDelete:
 
 editor:
   backToLibrary: Back to library
+  openInDashboard: Open
+  openInDashboardHint: Open in the dashboard to edit or export
   guideMe: Guide Me
   guideMeUnavailable: No replayable steps in this guide
   deleteThisStep: "Delete this step?"

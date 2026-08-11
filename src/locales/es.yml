@@ -178,6 +178,8 @@ confirmDelete:
 
 editor:
   backToLibrary: Volver a la biblioteca
+  openInDashboard: Abrir
+  openInDashboardHint: Ábrelo en el panel para editar o exportar
   guideMe: "¡Guíame!"
   guideMeUnavailable: Esta guía no tiene pasos que se puedan repetir
   deleteThisStep: "¿Eliminar este paso?"

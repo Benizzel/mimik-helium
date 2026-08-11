@@ -178,6 +178,8 @@ confirmDelete:
 
 editor:
   backToLibrary: Zurück zur Bibliothek
+  openInDashboard: Öffnen
+  openInDashboardHint: Im Dashboard öffnen, um zu bearbeiten oder zu exportieren
   guideMe: Anleiten
   guideMeUnavailable: Keine abspielbaren Schritte in dieser Anleitung
   deleteThisStep: "Diesen Schritt löschen?"
