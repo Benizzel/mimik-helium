@@ -15,16 +15,17 @@ import {
   Trash2,
   TriangleAlert,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
-import { AI_PROVIDERS, type AIProviderKey } from '@/core/capture/ai/models';
+import { AI_PROVIDERS, type AIProviderKey, CUSTOM_MODEL_VALUE, isCustomModel } from '@/core/capture/ai/models';
 import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
 import { resolveVoiceApiKey } from '@/core/capture/voice/api-key';
 import type { VoiceProvider } from '@/core/capture/voice/transcribe';
 import { type BrandLogo, defaultFooterLine, makeBrandLogo } from '@/core/export/branding';
 import { DEFAULT_TARGET_COLOR, TARGET_COLORS } from '@/core/screenshot/types';
 import { localStorage } from '@/lib/browser-api';
+import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { Button } from '@/ui/components/ui/button';
 import { Input } from '@/ui/components/ui/input';
@@ -32,10 +33,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popo
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
 import ColorPicker from '@/ui/shared/ColorPicker';
 import MicrophonePicker from '@/ui/shared/MicrophonePicker';
+import { changedSettings, type SettingsSnapshot } from '@/ui/shared/settings-autosave';
 
 interface SettingsViewProps {
   onBack?: () => void;
 }
+
+const SAVE_DEBOUNCE_MS = 400;
+const SAVED_BADGE_MS = 1600;
 
 const FOOTER_PRESETS = () => [
   defaultFooterLine(),
@@ -48,9 +53,14 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   const [model, setModel] = useState(AI_PROVIDERS.openai.defaultModel);
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
-  const [keyStatus, setKeyStatus] = useState<'checking' | 'valid' | 'rejected' | null>(null);
+  const [keyStatus, setKeyStatus] = useState<'checking' | 'valid' | 'rejected' | 'unreachable' | null>(null);
+  const [customModel, setCustomModel] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const validatedKey = useRef('');
+  const savedSnapshot = useRef<SettingsSnapshot | null>(null);
+  const pending = useRef<SettingsSnapshot>({});
+  const saveTimer = useRef<number | undefined>(undefined);
   const [aiLanguage, setAiLanguage] = useState<AILanguageCode>('en');
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('openai');
   const [voiceApiKey, setVoiceApiKey] = useState('');
   const [voiceMicrophoneId, setVoiceMicrophoneId] = useState('');
@@ -76,7 +86,6 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
         'aiModel',
         'aiLanguage',
         'blurPresets',
-        'voiceEnabled',
         'voiceProvider',
         'voiceApiKey',
         'voiceMicrophoneId',
@@ -92,7 +101,6 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
         if (result.aiApiKey) setApiKey(result.aiApiKey as string);
         if (result.aiLanguage) setAiLanguage(result.aiLanguage as AILanguageCode);
         if (result.blurPresets) setBlurPresets(result.blurPresets as Record<PresetKey, boolean>);
-        setVoiceEnabled(result.voiceEnabled === true);
         setVoiceProvider((result.voiceProvider as VoiceProvider) || 'openai');
         if (result.voiceApiKey) setVoiceApiKey(result.voiceApiKey as string);
         if (result.voiceMicrophoneId) setVoiceMicrophoneId(result.voiceMicrophoneId as string);
@@ -100,8 +108,68 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
         if (result.brandLogo) setBrandLogo(result.brandLogo as BrandLogo);
         setBrandFooter(typeof result.brandFooter === 'string' ? result.brandFooter : defaultFooterLine());
         if (result.brandAttribution === false) setBrandAttribution(false);
+        setLoaded(true);
       });
   }, []);
+
+  const stored = {
+    aiApiKey: apiKey,
+    aiProvider: provider,
+    aiModel: model,
+    aiLanguage,
+    blurPresets,
+    voiceProvider,
+    voiceApiKey,
+    voiceMicrophoneId,
+    targetColor,
+    brandLogo,
+    brandFooter,
+    brandAttribution,
+  };
+
+  const flush = useCallback(async () => {
+    const patch = pending.current;
+    pending.current = {};
+    if (Object.keys(patch).length === 0) return;
+    try {
+      await localStorage.set(patch);
+      setSaved(true);
+    } catch (err) {
+      logger.error('Settings autosave failed', err);
+      setSaved(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    const snapshot = savedSnapshot.current;
+    if (!snapshot) {
+      savedSnapshot.current = stored;
+      return;
+    }
+
+    const patch = changedSettings(stored, snapshot);
+    if (!patch) return;
+
+    savedSnapshot.current = stored;
+    Object.assign(pending.current, patch);
+    window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => void flush(), SAVE_DEBOUNCE_MS);
+  });
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(saveTimer.current);
+      void flush();
+    },
+    [flush],
+  );
+
+  useEffect(() => {
+    if (!saved) return;
+    const timer = window.setTimeout(() => setSaved(false), SAVED_BADGE_MS);
+    return () => window.clearTimeout(timer);
+  }, [saved]);
 
   const handleLogoPick = async (file: File | undefined) => {
     if (!file) return;
@@ -110,42 +178,34 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
 
   const handleProviderChange = (newProvider: AIProviderKey) => {
     setProvider(newProvider);
+    setCustomModel(false);
     setModel(AI_PROVIDERS[newProvider].defaultModel);
   };
 
-  const handleSave = async () => {
-    if (apiKey) {
-      setKeyStatus('checking');
-      const result = await sendMessage('validateApiKey', { provider, apiKey }).catch(() => null);
-      if (result && !result.valid && result.reason === 'rejected') {
-        setKeyStatus('rejected');
-        return;
-      }
-      setKeyStatus(result?.valid ? 'valid' : null);
-    } else {
-      setKeyStatus(null);
+  const handleModelChange = (value: string) => {
+    if (value === CUSTOM_MODEL_VALUE) {
+      setCustomModel(true);
+      setModel('');
+      return;
     }
+    setCustomModel(false);
+    setModel(value);
+  };
 
-    await localStorage.set({
-      aiApiKey: apiKey,
-      aiProvider: provider,
-      aiModel: model,
-      aiLanguage,
-      blurPresets,
-      voiceEnabled,
-      voiceProvider,
-      voiceApiKey,
-      voiceMicrophoneId,
-      targetColor,
-      brandLogo,
-      brandFooter,
-      brandAttribution,
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleCheckKey = async () => {
+    const fingerprint = `${provider}:${apiKey}`;
+    if (validatedKey.current === fingerprint) {
+      setKeyStatus('valid');
+      return;
+    }
+    setKeyStatus('checking');
+    const result = await sendMessage('validateApiKey', { provider, apiKey }).catch(() => null);
+    if (result?.valid) validatedKey.current = fingerprint;
+    setKeyStatus(result?.valid ? 'valid' : result?.reason === 'rejected' ? 'rejected' : 'unreachable');
   };
 
   const providerConfig = AI_PROVIDERS[provider];
+  const usingCustomModel = customModel || isCustomModel(model, providerConfig);
   const voiceKey = resolveVoiceApiKey({ voiceProvider, voiceApiKey, aiProvider: provider, aiApiKey: apiKey });
 
   const BLUR_PRESET_I18N: Record<PresetKey, string> = {
@@ -169,6 +229,16 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
           </button>
         )}
         <h1 className="text-[15px] font-bold text-foreground">{i18n.t('settings.title')}</h1>
+        <span
+          aria-live="polite"
+          className={`ml-auto flex items-center gap-1 text-[11px] font-semibold transition-opacity duration-300 ${
+            saved ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{ color: 'var(--color-success)' }}
+        >
+          <Check size={12} />
+          {i18n.t('settings.saved')}
+        </span>
       </div>
 
       <div className="flex-1 px-3 py-4 space-y-3">
@@ -200,7 +270,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
 
           <div>
             <label className="block text-[11px] font-semibold text-foreground mb-1">{i18n.t('settings.model')}</label>
-            <Select value={model} onValueChange={(v) => setModel(v)}>
+            <Select value={usingCustomModel ? CUSTOM_MODEL_VALUE : model} onValueChange={handleModelChange}>
               <SelectTrigger className="w-full rounded-lg px-3 py-2 text-[13px]">
                 <SelectValue />
               </SelectTrigger>
@@ -210,19 +280,43 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
                     {m.label}
                   </SelectItem>
                 ))}
+                <SelectItem value={CUSTOM_MODEL_VALUE}>{i18n.t('settings.modelCustom')}</SelectItem>
               </SelectContent>
             </Select>
+            {usingCustomModel && (
+              <Input
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder={providerConfig.defaultModel}
+                aria-label={i18n.t('settings.modelCustom')}
+                className="mt-1.5 h-8 text-[12px] rounded-lg border-border"
+              />
+            )}
           </div>
 
           <div>
             <label className="block text-[11px] font-semibold text-foreground mb-1">{i18n.t('settings.apiKey')}</label>
-            <Input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-..."
-              className="h-8 text-[12px] rounded-lg border-border"
-            />
+            <div className="flex items-center gap-1.5">
+              <Input
+                type="password"
+                value={apiKey}
+                onChange={(e) => {
+                  setApiKey(e.target.value);
+                  setKeyStatus(null);
+                }}
+                placeholder="sk-..."
+                className="h-8 text-[12px] rounded-lg border-border"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!apiKey || keyStatus === 'checking'}
+                onClick={() => void handleCheckKey()}
+                className="h-8 shrink-0 rounded-lg bg-card text-[11px] font-semibold"
+              >
+                {i18n.t('settings.checkKey')}
+              </Button>
+            </div>
             {keyStatus === 'checking' && (
               <p className="mt-1 text-[11px] text-muted-foreground">{i18n.t('settings.validatingKey')}</p>
             )}
@@ -234,6 +328,9 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
             )}
             {keyStatus === 'rejected' && (
               <p className="mt-1 text-[11px] text-destructive">{i18n.t('settings.keyInvalid')}</p>
+            )}
+            {keyStatus === 'unreachable' && (
+              <p className="mt-1 text-[11px] text-muted-foreground">{i18n.t('settings.keyUnreachable')}</p>
             )}
           </div>
 
@@ -299,7 +396,6 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
             <label className="block text-[11px] font-semibold text-foreground mb-1">
               {i18n.t('settings.brandLogo')}
             </label>
-            <p className="text-[10px] text-muted-foreground mb-2">{i18n.t('settings.brandLogoHint')}</p>
             <input
               ref={logoInputRef}
               type="file"
@@ -363,10 +459,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
           </div>
 
           <div className="flex items-center justify-between gap-3 pt-1">
-            <div>
-              <div className="text-[11px] font-semibold text-foreground">{i18n.t('settings.attribution')}</div>
-              <div className="text-[10px] text-muted-foreground">{i18n.t('settings.attributionHint')}</div>
-            </div>
+            <div className="text-[11px] font-semibold text-foreground">{i18n.t('settings.attribution')}</div>
             <button
               onClick={() => setBrandAttribution((prev) => !prev)}
               className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${
@@ -383,28 +476,12 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
         </div>
 
         <div className="border border-border rounded-[10px] p-3.5 space-y-3">
-          <div className="flex items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
-                <Mic size={14} className="text-accent" />
-              </div>
-              <span className="text-xs font-bold text-foreground">{i18n.t('settings.voiceNarration')}</span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+              <Mic size={14} className="text-accent" />
             </div>
-            <button
-              onClick={() => setVoiceEnabled((prev) => !prev)}
-              className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${
-                voiceEnabled ? 'bg-accent' : 'bg-border'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
-                  voiceEnabled ? 'translate-x-4' : 'translate-x-0'
-                }`}
-              />
-            </button>
+            <span className="text-xs font-bold text-foreground">{i18n.t('settings.voiceNarration')}</span>
           </div>
-
-          <p className="text-[10px] text-muted-foreground leading-relaxed">{i18n.t('settings.voiceDescription')}</p>
 
           <div>
             <label className="block text-[11px] font-semibold text-foreground mb-1">
@@ -434,7 +511,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
                 <span>{i18n.t('settings.voiceUsingAiKey')}</span>
               </p>
             )}
-            {voiceEnabled && voiceKey.source === 'none' && (
+            {voiceKey.source === 'none' && (
               <p className="mt-1.5 flex items-start gap-1.5 text-[10px] text-destructive leading-relaxed" role="alert">
                 <TriangleAlert size={11} className="shrink-0 mt-0.5" />
                 <span>{i18n.t('settings.voiceNoKey')}</span>
@@ -445,11 +522,6 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
           {import.meta.env.BROWSER !== 'firefox' && (
             <MicrophonePicker value={voiceMicrophoneId} onChange={setVoiceMicrophoneId} />
           )}
-
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-secondary text-[10px] text-muted-foreground leading-relaxed">
-            <Shield size={12} className="shrink-0 mt-0.5 text-accent" />
-            <span>{i18n.t('settings.voiceDataNotice')}</span>
-          </div>
         </div>
 
         <div className="border border-border rounded-[10px] p-3.5 space-y-1">
@@ -487,20 +559,6 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
             </div>
           ))}
         </div>
-
-        <Button
-          onClick={handleSave}
-          disabled={saved || keyStatus === 'checking'}
-          className="w-full transition-all duration-300"
-          style={saved ? { backgroundColor: 'var(--color-success)', color: '#fff', opacity: 0.9 } : undefined}
-        >
-          {saved && <Check size={16} />}
-          {saved
-            ? i18n.t('settings.saved')
-            : keyStatus === 'checking'
-              ? i18n.t('settings.validatingKey')
-              : i18n.t('settings.saveSettings')}
-        </Button>
 
         <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-secondary text-[10px] text-muted-foreground leading-relaxed">
           <Shield size={12} className="shrink-0 mt-0.5 text-accent" />
