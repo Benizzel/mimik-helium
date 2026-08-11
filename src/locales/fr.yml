@@ -86,6 +86,17 @@ settings:
   voiceNarration: "Narration vocale"
   voiceDescription: "Commentez à voix haute pendant l'enregistrement : vos mots deviennent les descriptions des étapes."
   voiceDataNotice: "L'audio enregistré est envoyé au fournisseur choisi ci-dessus, avec votre propre clé API. C'est la seule partie de Mimik qui fait sortir quelque chose de votre navigateur."
+  microphone: Microphone
+  microphoneDefault: "Micro par défaut du système"
+  microphoneNeedsAccess: "Autorisez l'accès au micro pour voir le nom de vos appareils."
+  microphoneGrantAccess: "Autoriser l'accès au micro"
+  microphoneNone: "Aucun micro n'a été trouvé. Branchez-en un et il apparaîtra ici."
+  microphoneUnavailable: "Micro indisponible"
+  microphoneMissing: "Le micro que vous avez choisi n'est pas disponible pour le moment : Mimik utilisera celui par défaut du système."
+  microphoneTest: "Tester le micro"
+  microphoneTestStop: "Arrêter le test"
+  microphoneTestHint: "Un souci de micro ? Lancez un test et dites quelque chose pour vérifier qu'il fonctionne."
+  microphoneTestFailed: "Ce micro n'a pas pu être ouvert. Choisissez-en un autre et réessayez."
   saveSettings: "Enregistrer"
   saved: "Enregistré"
   smartBlur: Flou intelligent

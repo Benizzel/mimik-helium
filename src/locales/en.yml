@@ -86,6 +86,17 @@ settings:
   voiceNarration: Voice Narration
   voiceDescription: Narrate out loud while you record and your words become the step descriptions.
   voiceDataNotice: Your recorded audio is sent to the provider you choose above, using your own API key. This is the one part of Mimik that sends anything out of your browser.
+  microphone: Microphone
+  microphoneDefault: System default
+  microphoneNeedsAccess: Allow microphone access to see your device names.
+  microphoneGrantAccess: Allow microphone access
+  microphoneNone: No microphone was found. Plug one in and it will show up here.
+  microphoneUnavailable: Unavailable microphone
+  microphoneMissing: The microphone you picked is not available right now, so Mimik will use the system default.
+  microphoneTest: Test microphone
+  microphoneTestStop: Stop test
+  microphoneTestHint: "Having mic issues? Start a test and say something to check that your microphone is working."
+  microphoneTestFailed: That microphone could not be opened. Pick another one and try again.
   saveSettings: Save Settings
   saved: Saved
   smartBlur: Smart Blur

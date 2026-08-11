@@ -8,6 +8,7 @@ import type { VoiceProvider } from '@/core/capture/voice/transcribe';
 import { localStorage } from '@/lib/browser-api';
 import { Button } from '@/ui/components/ui/button';
 import { Input } from '@/ui/components/ui/input';
+import MicrophonePicker from '@/ui/shared/MicrophonePicker';
 
 interface SettingsViewProps {
   onBack?: () => void;
@@ -217,6 +218,10 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
               placeholder={voiceProvider === 'groq' ? 'gsk_...' : 'sk-...'}
             />
           </div>
+
+          {import.meta.env.BROWSER !== 'firefox' && (
+            <MicrophonePicker value={voiceMicrophoneId} onChange={setVoiceMicrophoneId} />
+          )}
 
           <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-secondary text-[10px] text-muted-foreground leading-relaxed">
             <Shield size={12} className="shrink-0 mt-0.5 text-accent" />

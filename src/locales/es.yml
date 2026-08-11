@@ -86,6 +86,17 @@ settings:
   voiceNarration: "Narración por voz"
   voiceDescription: "Narra en voz alta mientras grabas y tus palabras se convierten en las descripciones de los pasos."
   voiceDataNotice: "El audio que grabes se envía al proveedor que elijas arriba, usando tu propia clave API. Es la única parte de Mimik que saca algo de tu navegador."
+  microphone: "Micrófono"
+  microphoneDefault: Predeterminado del sistema
+  microphoneNeedsAccess: "Permite el acceso al micrófono para ver los nombres de tus dispositivos."
+  microphoneGrantAccess: "Permitir acceso al micrófono"
+  microphoneNone: "No se encontró ningún micrófono. Conecta uno y aparecerá aquí."
+  microphoneUnavailable: "Micrófono no disponible"
+  microphoneMissing: "El micrófono que elegiste no está disponible ahora mismo, así que Mimik usará el predeterminado del sistema."
+  microphoneTest: "Probar micrófono"
+  microphoneTestStop: Detener prueba
+  microphoneTestHint: "¿Problemas con el micro? Empieza una prueba y di algo para comprobar que funciona."
+  microphoneTestFailed: "No se pudo abrir ese micrófono. Elige otro e inténtalo de nuevo."
   saveSettings: Guardar ajustes
   saved: Guardado
   smartBlur: Desenfoque inteligente
