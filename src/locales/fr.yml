@@ -85,6 +85,8 @@ settings:
   aiLanguage: Langue des descriptions
   voiceNarration: "Narration vocale"
   voiceDescription: "Commentez à voix haute pendant l'enregistrement : vos mots deviennent les descriptions des étapes."
+  voiceUsingAiKey: "Aucune clé vocale n'est définie : Mimik utilise la clé OpenAI des descriptions IA ci-dessus."
+  voiceNoKey: "La narration vocale est activée mais aucune clé API n'est définie : vos enregistrements ne seront pas narrés."
   voiceDataNotice: "L'audio enregistré est envoyé au fournisseur choisi ci-dessus, avec votre propre clé API. C'est la seule partie de Mimik qui fait sortir quelque chose de votre navigateur."
   microphone: Microphone
   microphoneDefault: "Micro par défaut du système"
@@ -258,6 +260,7 @@ background:
 voice:
   turnOn: "Activer la narration vocale"
   turnOff: "Désactiver la narration vocale"
+  needsApiKey: "Ajoutez une clé API de transcription dans les paramètres pour commenter"
   micStarting: "Démarrage du micro..."
   micHearing: Nous vous entendons
   micQuiet: Aucun son

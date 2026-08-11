@@ -1,9 +1,22 @@
-import { ArrowLeft, Bug, Check, ChevronRight, EyeOff, Globe, Mic, Shield, Sparkles, Star } from 'lucide-react';
+import {
+  ArrowLeft,
+  Bug,
+  Check,
+  ChevronRight,
+  EyeOff,
+  Globe,
+  Mic,
+  Shield,
+  Sparkles,
+  Star,
+  TriangleAlert,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
 import { AI_PROVIDERS, type AIProviderKey } from '@/core/capture/ai/models';
 import { AI_LANGUAGES, type AILanguageCode } from '@/core/capture/ai/prompts';
+import { resolveVoiceApiKey } from '@/core/capture/voice/api-key';
 import type { VoiceProvider } from '@/core/capture/voice/transcribe';
 import { localStorage } from '@/lib/browser-api';
 import { Button } from '@/ui/components/ui/button';
@@ -82,6 +95,7 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
   };
 
   const providerConfig = AI_PROVIDERS[provider];
+  const voiceKey = resolveVoiceApiKey({ voiceProvider, voiceApiKey, aiProvider: provider, aiApiKey: apiKey });
 
   const BLUR_PRESET_I18N: Record<PresetKey, string> = {
     email: 'blurPresets.email',
@@ -217,6 +231,18 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
               onChange={(e) => setVoiceApiKey(e.target.value)}
               placeholder={voiceProvider === 'groq' ? 'gsk_...' : 'sk-...'}
             />
+            {voiceKey.source === 'ai' && (
+              <p className="mt-1.5 flex items-start gap-1.5 text-[10px] text-muted-foreground leading-relaxed">
+                <Sparkles size={11} className="shrink-0 mt-0.5 text-accent" />
+                <span>{i18n.t('settings.voiceUsingAiKey')}</span>
+              </p>
+            )}
+            {voiceEnabled && voiceKey.source === 'none' && (
+              <p className="mt-1.5 flex items-start gap-1.5 text-[10px] text-destructive leading-relaxed" role="alert">
+                <TriangleAlert size={11} className="shrink-0 mt-0.5" />
+                <span>{i18n.t('settings.voiceNoKey')}</span>
+              </p>
+            )}
           </div>
 
           {import.meta.env.BROWSER !== 'firefox' && (

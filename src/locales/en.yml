@@ -85,6 +85,8 @@ settings:
   aiLanguage: Description Language
   voiceNarration: Voice Narration
   voiceDescription: Narrate out loud while you record and your words become the step descriptions.
+  voiceUsingAiKey: "No voice key is set, so Mimik uses the OpenAI key from AI Descriptions above."
+  voiceNoKey: "Voice narration is on but no API key is set, so your recordings will not be narrated."
   voiceDataNotice: Your recorded audio is sent to the provider you choose above, using your own API key. This is the one part of Mimik that sends anything out of your browser.
   microphone: Microphone
   microphoneDefault: System default
@@ -258,6 +260,7 @@ background:
 voice:
   turnOn: Turn on voice narration
   turnOff: Turn off voice narration
+  needsApiKey: Add a transcription API key in Settings to narrate
   micStarting: Starting microphone...
   micHearing: Hearing you
   micQuiet: No sound
