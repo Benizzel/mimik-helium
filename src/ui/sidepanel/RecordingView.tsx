@@ -3,15 +3,20 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { deleteStep, getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
 import type { Screenshot, Step } from '@/core/guides/types';
-import { getActiveTab } from '@/lib/browser-api';
+import { getActiveTab, localStorage } from '@/lib/browser-api';
 import { sendMessage } from '@/lib/messaging';
+import type { PanelVoiceUpdate } from '@/lib/port';
 import { extractDomain } from '@/lib/utils';
 import { Button } from '@/ui/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import ScreenshotView from '@/ui/shared/ScreenshotView';
+import MicToggle from './MicToggle';
+import VoiceStatus from './VoiceStatus';
 
 interface RecordingViewProps {
   guideId: string;
   onStop: () => void;
+  voice: PanelVoiceUpdate;
 }
 
 function timeAgo(createdAt: number): string {
@@ -26,10 +31,11 @@ interface LiveStep {
   screenshot?: Screenshot;
 }
 
-export default function RecordingView({ guideId, onStop }: RecordingViewProps) {
+export default function RecordingView({ guideId, onStop, voice }: RecordingViewProps) {
   const [steps, setSteps] = useState<LiveStep[]>([]);
   const [siteUrl, setSiteUrl] = useState('');
   const [isBlurring, setIsBlurring] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [, setTick] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +79,11 @@ export default function RecordingView({ guideId, onStop }: RecordingViewProps) {
     getActiveTab().then((tab) => {
       if (tab?.url) setSiteUrl(tab.url);
     });
+  }, []);
+
+  useEffect(() => {
+    if (import.meta.env.BROWSER === 'firefox') return;
+    localStorage.get(['voiceEnabled']).then((stored) => setVoiceEnabled(stored.voiceEnabled === true));
   }, []);
 
   const handleBlur = useCallback(async () => {
@@ -172,13 +183,17 @@ export default function RecordingView({ guideId, onStop }: RecordingViewProps) {
                         {timeAgo(liveStep.step.timestamp)} · {extractDomain(liveStep.step.url || siteUrl)}
                       </span>
                     </div>
-                    <button
-                      onClick={() => handleDeleteStep(liveStep.step.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-border hover:text-destructive"
-                      title={i18n.t('recording.deleteStep')}
-                    >
-                      <X size={13} />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleDeleteStep(liveStep.step.id)}
+                          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity motion-reduce:transition-none p-1 rounded text-border hover:text-destructive"
+                        >
+                          <X size={13} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent align="end">{i18n.t('recording.deleteStep')}</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
                 {idx < steps.length - 1 && <div className="mx-4 mb-4 h-px bg-border" />}
@@ -190,26 +205,42 @@ export default function RecordingView({ guideId, onStop }: RecordingViewProps) {
       </div>
 
       {/* Bottom bar */}
-      <div className="shrink-0 border-t border-border px-4 py-2.5 flex items-center gap-2">
-        <Button onClick={onStop} className="flex-1 h-10 rounded-full font-semibold text-[13px]">
-          <Check size={16} strokeWidth={3} />
-          {i18n.t('recording.finishRecording')}
-        </Button>
-        <button
-          onClick={handleBlur}
-          disabled={isBlurring}
-          className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors text-muted-foreground hover:border-accent hover:text-accent disabled:opacity-50 disabled:cursor-not-allowed"
-          title={i18n.t('recording.smartBlur')}
-        >
-          <EyeOff size={16} />
-        </button>
-        <button
-          onClick={onStop}
-          className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors text-purple hover:border-destructive/30 hover:text-destructive"
-          title={i18n.t('recording.discard')}
-        >
-          <X size={16} />
-        </button>
+      <div className="shrink-0 border-t border-border">
+        {import.meta.env.BROWSER !== 'firefox' && <VoiceStatus update={voice} enabled={voiceEnabled} />}
+        <div className="px-4 py-2.5 flex items-center gap-2">
+          <Button onClick={onStop} className="flex-1 h-10 rounded-full font-semibold text-[13px]">
+            <Check size={16} strokeWidth={3} />
+            {i18n.t('recording.finishRecording')}
+          </Button>
+          {import.meta.env.BROWSER !== 'firefox' && (
+            <MicToggle enabled={voiceEnabled} live={voice.phase === 'recording'} onChange={setVoiceEnabled} />
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="shrink-0">
+                <button
+                  onClick={handleBlur}
+                  disabled={isBlurring}
+                  className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors text-muted-foreground hover:border-accent hover:text-accent disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <EyeOff size={16} />
+                </button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{i18n.t('recording.smartBlur')}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onStop}
+                className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors text-purple hover:border-destructive/30 hover:text-destructive"
+              >
+                <X size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent align="end">{i18n.t('recording.discard')}</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );

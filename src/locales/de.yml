@@ -99,6 +99,22 @@ settings:
   model: Modell
   apiKey: API-Schlüssel
   aiLanguage: Sprache der Beschreibungen
+  voiceNarration: Sprachkommentar
+  voiceDescription: Sprich beim Aufnehmen laut mit — deine Worte werden zu den Schrittbeschreibungen.
+  voiceUsingAiKey: "Es ist kein Sprach-Schlüssel gesetzt, daher nutzt Mimik den OpenAI-Schlüssel aus den KI-Beschreibungen oben."
+  voiceNoKey: "Der Sprachkommentar ist aktiv, aber es ist kein API-Schlüssel gesetzt — deine Aufnahmen werden nicht kommentiert."
+  voiceDataNotice: Dein aufgenommenes Audio wird mit deinem eigenen API-Schlüssel an den oben gewählten Anbieter gesendet. Das ist der einzige Teil von Mimik, der überhaupt etwas aus deinem Browser sendet.
+  microphone: Mikrofon
+  microphoneDefault: Systemstandard
+  microphoneNeedsAccess: Erlaube den Mikrofonzugriff, um deine Gerätenamen zu sehen.
+  microphoneGrantAccess: Mikrofonzugriff erlauben
+  microphoneNone: Kein Mikrofon gefunden. Schließe eines an, dann erscheint es hier.
+  microphoneUnavailable: Nicht verfügbares Mikrofon
+  microphoneMissing: Das gewählte Mikrofon ist gerade nicht verfügbar, daher nutzt Mimik den Systemstandard.
+  microphoneTest: Mikrofon testen
+  microphoneTestStop: Test beenden
+  microphoneTestHint: "Probleme mit dem Mikrofon? Starte einen Test und sag etwas, um zu prüfen, ob es funktioniert."
+  microphoneTestFailed: Dieses Mikrofon konnte nicht geöffnet werden. Wähle ein anderes und versuche es erneut.
   saveSettings: Einstellungen speichern
   saved: Gespeichert
   smartBlur: Smart Blur
@@ -159,6 +175,7 @@ confirmDelete:
 editor:
   backToLibrary: Zurück zur Bibliothek
   guideMe: Anleiten
+  guideMeUnavailable: Keine abspielbaren Schritte in dieser Anleitung
   deleteThisStep: "Diesen Schritt löschen?"
   copyScreenshot: Screenshot kopieren
   noScreenshot: Kein Screenshot
@@ -290,18 +307,30 @@ onboarding:
   welcomeTitle: "Du hast Mimik erfolgreich installiert!"
   welcomeMessage: "Mit nur wenigen Schritten bist du bereit, Browser-Workflows automatisch aufzunehmen und Schritt-für-Schritt-Anleitungen zu erstellen. Kein Konto nötig — alles bleibt in deinem Browser."
   getStarted: Loslegen
-  aiStepLabel: Schritt 1 von 3
+  stepOf: "Schritt $1 von $2"
   aiTitle: KI-Beschreibungen
   aiMessage: Verbinde deinen eigenen API-Schlüssel, um KI-generierte Schrittbeschreibungen zu erhalten. Das ist optional und kann später in den Einstellungen geändert werden.
   aiGenerated: KI-generiert
   aiGeneratedDescription: KI-generierte Beschreibung
-  blurStepLabel: Schritt 2 von 3
+  voiceTitle: Sprich, dann handle
+  voiceMessage: Sag, was du als Nächstes tun wirst, und tu es dann. Mimik ordnet deinen Kommentar der Aktion zu, die darauf folgt — die Reihenfolge ist deshalb das Wichtigste.
+  voiceDoTitle: Erst sprechen, dann klicken
+  voiceDoSub: Deine Worte werden der nächsten Aktion zugeordnet, damit die Beschreibung beim gemeinten Schritt landet.
+  voiceDontTitle: Nicht erst nach dem Klick sprechen
+  voiceDontSub: Alles, was du nach einer Aktion sagst, wird dem folgenden Schritt zugeordnet — dadurch rutscht jede Beschreibung auf den falschen Schritt.
+  voiceEnableLabel: Beim Aufnehmen mitsprechen
+  voiceDataNotice: Dein Audio wird mit deinem eigenen API-Schlüssel an den hier gewählten Anbieter gesendet. Sonst verlässt nichts in Mimik deinen Browser.
+  voiceDemoLabel: So landet dein Kommentar
+  voiceDemoSay: Du sagst
+  voiceDemoQuote: "Jetzt öffne ich die Zahlungseinstellungen"
+  voiceDemoAct: Dann klickst du
+  voiceDemoAction: 'Tab "Zahlungen" anklicken'
+  voiceDemoBadge: Aus deiner Stimme
   blurTitle: Smart Blur
   blurMessage: Mache sensible Informationen in Screenshots automatisch unkenntlich. Wähle, welche Muster erkannt werden sollen.
   screenshotPreview: Screenshot-Vorschau
   notEnabled: Nicht aktiviert
   categoriesProtected: "$1 Kategorien geschützt"
-  pinStepLabel: Schritt 3 von 3
   pinTitle: Mimik anpinnen
   pinMessage: Pinne die Erweiterung an deine Symbolleiste für schnellen Zugriff. Klicke auf das Puzzle-Symbol in Chrome und pinne dann Mimik an.
   pinStep1Title: Klicke auf das Puzzle-Symbol
@@ -421,3 +450,39 @@ screenshotView:
   altButton: "ALT"
   altLabel: "Alternativtext"
   altPlaceholder: "Beschreibe dieses Bild für Screenreader"
+
+voice:
+  turnOn: Sprachkommentar einschalten
+  turnOff: Sprachkommentar ausschalten
+  needsApiKey: Füge in den Einstellungen einen Transkriptions-API-Schlüssel hinzu, um zu kommentieren
+  micStarting: "Mikrofon wird gestartet…"
+  micHearing: Ich höre dich
+  micQuiet: Kein Ton
+  nextRecording: Der Sprachkommentar ist aktiv und startet mit deiner nächsten Aufnahme.
+  transcribing: "Dein Kommentar wird transkribiert…"
+  transcribingHint: Die Schrittbeschreibungen aktualisieren sich von selbst, sobald das fertig ist.
+  narrated: "Kommentar zu $1 Schritt hinzugefügt."
+  narratedPlural: "Kommentar zu $1 Schritten hinzugefügt."
+  narratedNone: Kein Kommentar passte zu deinen Schritten, daher bleiben die Beschreibungen unverändert.
+  guideSafe: Deine Anleitung und die Screenshots sind in Ordnung. Nur der Kommentar ist verloren.
+  openSettings: Einstellungen öffnen
+  errorPermissionDenied: Der Mikrofonzugriff wurde blockiert, daher wurde nichts kommentiert.
+  errorNoDevice: Kein Mikrofon gefunden, daher wurde nichts kommentiert.
+  errorNoAudio: Das Mikrofon hat keinen Ton aufgenommen, daher gab es nichts zu transkribieren.
+  errorMissingApiKey: Der Sprachkommentar braucht einen Transkriptionsanbieter und einen API-Schlüssel.
+  errorStreamEnded: Das Mikrofon hat mittendrin gestoppt, daher endete der Kommentar früher.
+  errorNotRecording: Der Sprachkommentar lief nicht, daher gab es nichts zu transkribieren.
+  errorAlreadyRecording: Der Sprachkommentar lief bereits, daher wurde diese Aufnahme nicht kommentiert.
+  errorUnsupported: Dieser Browser kann keinen Sprachkommentar aufnehmen.
+  errorUnknown: Der Sprachkommentar wurde unerwartet beendet.
+
+micPermission:
+  title: Mikrofonzugriff erlauben
+  checkingMessage: "Es wird geprüft, ob Mimik schon Mikrofonzugriff hat…"
+  promptingMessage: Dein Browser fragt nach der Berechtigung. Wähle Zulassen, damit Mimik deinen Kommentar aufnehmen kann, während du eine Anleitung aufzeichnest. Dieser Tab schließt sich von selbst.
+  grantedTitle: Mikrofon bereit
+  grantedMessage: Es geht zurück zu dem, was du gerade gemacht hast.
+  deniedTitle: Der Mikrofonzugriff ist blockiert
+  deniedMessage: Dein Browser blockiert das Mikrofon für Mimik, daher kann der Sprachkommentar nicht aufnehmen. Öffne die Website-Einstellungen über das Symbol links in der Adressleiste, setze Mikrofon auf Zulassen und versuche es dann erneut. Anleitungen aufzeichnen funktioniert auch ohne.
+  retry: Erneut versuchen
+  privacy: Audio bleibt nur während der Aufnahme im Speicher und wird an den von dir konfigurierten Transkriptionsanbieter gesendet. Mimik speichert es nie.

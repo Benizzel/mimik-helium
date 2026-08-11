@@ -5,6 +5,7 @@ import { replaceScreenshot } from '@/core/guides/service';
 import type { Screenshot, Step } from '@/core/guides/types';
 import { imageDimensions, renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import { useAskAi } from '@/ui/shared/AskAi';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
 import ImagePlaceholder from '@/ui/shared/ImagePlaceholder';
@@ -169,29 +170,37 @@ export default function StepCard({
           <div className="flex items-center gap-0.5">
             {askAi.trigger}
             {screenshot && (
-              <button
-                onClick={handleCopy}
-                className={`p-1 rounded-md transition-colors ${copied ? 'text-success' : 'text-border hover:text-success'}`}
-                title={i18n.t('editor.copyScreenshot')}
-              >
-                {copied ? <Check size={13} /> : <Copy size={13} />}
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleCopy}
+                    className={`p-1 rounded-md transition-colors ${copied ? 'text-success' : 'text-border hover:text-success'}`}
+                  >
+                    {copied ? <Check size={13} /> : <Copy size={13} />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{i18n.t('editor.copyScreenshot')}</TooltipContent>
+              </Tooltip>
             )}
             {!readOnly && (
-              <button
-                onClick={() => setConfirmDelete(true)}
-                className="p-1 rounded-md transition-colors text-border hover:text-destructive"
-                title={i18n.t('recording.deleteStep')}
-              >
-                <Trash2 size={13} />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="p-1 rounded-md transition-colors text-border hover:text-destructive"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{i18n.t('recording.deleteStep')}</TooltipContent>
+              </Tooltip>
             )}
           </div>
         </div>
       </div>
       <ConfirmDialog
         open={confirmDelete}
-        title={i18n.t('editor.deleteThisStep')}
+        heading={i18n.t('editor.deleteThisStep')}
         destructive
         onConfirm={handleDelete}
         onCancel={() => setConfirmDelete(false)}

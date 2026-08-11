@@ -15,6 +15,7 @@ import {
 } from '@/core/guides/service';
 import type { Guide, Screenshot } from '@/core/guides/types';
 import { useFullview } from '@/stores/fullview';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 import GuideGridView from './components/GuideGridView';
 import GuideListView from './components/GuideListView';
@@ -314,13 +315,19 @@ export default function LibraryContent({ category }: LibraryContentProps) {
             </div>
           )}
         </div>
-        <button
-          onClick={toggleDisplay}
-          className="flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-card text-muted-foreground hover:border-violet hover:text-purple transition-colors"
-          title={display === 'list' ? i18n.t('sort_gridView') : i18n.t('sort_listView')}
-        >
-          {display === 'list' ? <LayoutGrid size={15} /> : <LayoutList size={15} />}
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={toggleDisplay}
+              className="flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-card text-muted-foreground hover:border-violet hover:text-purple transition-colors"
+            >
+              {display === 'list' ? <LayoutGrid size={15} /> : <LayoutList size={15} />}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent align="end">
+            {display === 'list' ? i18n.t('sort_gridView') : i18n.t('sort_listView')}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {loading ? (

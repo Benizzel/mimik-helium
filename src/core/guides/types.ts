@@ -1,3 +1,4 @@
+import type { VoiceProvider } from '@/core/capture/voice/transcribe';
 import type { ScreenshotEdits } from '@/core/screenshot/types';
 
 export interface Guide {
@@ -11,6 +12,8 @@ export interface Guide {
   deletedAt: number | null;
   staging?: boolean;
 }
+
+export type DescriptionSource = 'narration' | 'ai' | 'heuristic';
 
 export type BlockType = 'heading' | 'callout';
 
@@ -27,6 +30,7 @@ export interface Step {
   screenshotId?: string;
   elementMeta?: ElementMeta;
   inputValue?: string;
+  descriptionSource?: DescriptionSource;
   aiPending?: boolean;
   blockType?: BlockType;
   calloutVariant?: CalloutVariant;
@@ -57,6 +61,10 @@ export interface Settings {
   aiApiKey: string;
   aiProvider: 'openai' | 'anthropic';
   aiModel: string;
+  voiceEnabled: boolean;
+  voiceProvider: VoiceProvider;
+  voiceApiKey: string;
+  voiceMicrophoneId: string;
 }
 
 export interface ElementMeta {

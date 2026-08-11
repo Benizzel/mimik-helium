@@ -19,6 +19,7 @@ import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { getMostCommonDomain } from '@/lib/utils';
 import { Input } from '@/ui/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import { useAskAi } from '@/ui/shared/AskAi';
 import BlockCard from '@/ui/shared/BlockCard';
 import CaptureTabDialog from '@/ui/shared/CaptureTabDialog';
@@ -254,13 +255,14 @@ export default function GuideEditor({ guideId, onBack, onGuideMe, onInsertRecord
     <div className="min-h-screen bg-card flex flex-col">
       <div className="px-4 pt-3 pb-2">
         <div className="flex items-center gap-2">
-          <button
-            onClick={onBack}
-            className="shrink-0 p-1 rounded text-purple hover:text-foreground"
-            title={i18n.t('editor.backToLibrary')}
-          >
-            <ArrowLeft size={18} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={onBack} className="shrink-0 p-1 rounded text-purple hover:text-foreground">
+                <ArrowLeft size={18} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent align="start">{i18n.t('editor.backToLibrary')}</TooltipContent>
+          </Tooltip>
           {editing ? (
             <Input
               value={title}
@@ -269,39 +271,62 @@ export default function GuideEditor({ guideId, onBack, onGuideMe, onInsertRecord
               className="text-lg font-bold bg-transparent border-0 border-b border-transparent hover:border-border focus-visible:ring-0 focus-visible:border-accent shadow-none p-0 h-auto text-foreground"
             />
           ) : (
-            <h2 className="flex-1 min-w-0 text-lg font-bold truncate text-foreground" title={title}>
-              {title}
-            </h2>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h2 className="flex-1 min-w-0 text-lg font-bold truncate text-foreground">{title}</h2>
+              </TooltipTrigger>
+              <TooltipContent align="start">{title}</TooltipContent>
+            </Tooltip>
           )}
-          <button
-            onClick={() => openInFullView(guideId)}
-            className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
-            title={i18n.t('library.openInFullView')}
-          >
-            <Maximize2 size={15} />
-          </button>
-          {!editing && data.steps.length > 0 && (
-            <button
-              onClick={async () => {
-                await sendMessage('startGuideMe', { guideId });
-                onGuideMe?.(guideId);
-              }}
-              disabled={!data.steps.some((s) => s.elementMeta)}
-              className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-              title={i18n.t('editor.guideMe')}
-            >
-              <Play size={15} />
-            </button>
-          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => openInFullView(guideId)}
+                className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
+              >
+                <Maximize2 size={15} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{i18n.t('library.openInFullView')}</TooltipContent>
+          </Tooltip>
+          {!editing &&
+            data.steps.length > 0 &&
+            (() => {
+              const replayable = data.steps.some((s) => s.elementMeta);
+              const label = i18n.t(replayable ? 'editor.guideMe' : 'editor.guideMeUnavailable');
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={async () => {
+                        if (!replayable) return;
+                        await sendMessage('startGuideMe', { guideId });
+                        onGuideMe?.(guideId);
+                      }}
+                      aria-disabled={!replayable}
+                      aria-label={label}
+                      className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary aria-disabled:opacity-30 aria-disabled:cursor-not-allowed aria-disabled:hover:text-purple aria-disabled:hover:bg-transparent"
+                    >
+                      <Play size={15} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{label}</TooltipContent>
+                </Tooltip>
+              );
+            })()}
           <div className="ml-auto shrink-0 flex items-center gap-1">
-            <button
-              onClick={toggleEditing}
-              className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
-              title={editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
-              aria-label={editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
-            >
-              {editing ? <Check size={15} /> : <Pencil size={15} />}
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={toggleEditing}
+                  aria-label={editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
+                  className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
+                >
+                  {editing ? <Check size={15} /> : <Pencil size={15} />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent align="end">{editing ? i18n.t('editor.done') : i18n.t('editor.edit')}</TooltipContent>
+            </Tooltip>
             {!editing && (
               <ExportMenu guideId={guideId} guide={data.guide} steps={data.steps} screenshots={data.screenshots} />
             )}
@@ -338,7 +363,6 @@ export default function GuideEditor({ guideId, onBack, onGuideMe, onInsertRecord
                 type="button"
                 onClick={handleGenerateDescription}
                 disabled={generating || metaGenerating}
-                title={description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')}
                 className="flex items-center gap-1 text-[11px] font-medium text-accent hover:text-deep disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {generating || metaGenerating ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}

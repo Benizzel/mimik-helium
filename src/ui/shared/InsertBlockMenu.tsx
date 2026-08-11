@@ -2,6 +2,7 @@ import { Circle, Heading, Plus, StickyNote } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import type { BlockType } from '@/core/guides/types';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 
 interface InsertBlockMenuProps {
   onInsert: (blockType: BlockType) => void;
@@ -38,17 +39,21 @@ export default function InsertBlockMenu({ onInsert, onRecord }: InsertBlockMenuP
       className="group relative flex items-center justify-center gap-1 h-6 my-1"
     >
       <span aria-hidden="true" className="absolute inset-x-0 top-1/2 border-t border-dashed border-border" />
-      <button
-        type="button"
-        ref={triggerRef}
-        onClick={() => setOpen((prev) => !prev)}
-        title={i18n.t('blocks.add')}
-        aria-label={i18n.t('blocks.add')}
-        aria-expanded={open}
-        className={`relative flex items-center justify-center w-5 h-5 rounded-full border border-border bg-card transition-colors hover:text-accent hover:border-accent ${open ? 'text-accent border-accent' : 'text-purple'}`}
-      >
-        <Plus size={13} />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            ref={triggerRef}
+            onClick={() => setOpen((prev) => !prev)}
+            aria-label={i18n.t('blocks.add')}
+            aria-expanded={open}
+            className={`relative flex items-center justify-center w-5 h-5 rounded-full border border-border bg-card transition-colors hover:text-accent hover:border-accent ${open ? 'text-accent border-accent' : 'text-purple'}`}
+          >
+            <Plus size={13} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{i18n.t('blocks.add')}</TooltipContent>
+      </Tooltip>
       {open &&
         choices.map((choice) => (
           <button

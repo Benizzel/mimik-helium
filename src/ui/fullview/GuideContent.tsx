@@ -21,6 +21,7 @@ import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { formatDate, getMostCommonDomain } from '@/lib/utils';
 import { useFullview } from '@/stores/fullview';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import AnnotationEditor from '@/ui/shared/AnnotationEditor';
 import { useAskAi } from '@/ui/shared/AskAi';
 import FaviconImg from '@/ui/shared/FaviconImg';
@@ -402,23 +403,36 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
                     className="flex-1 resize-none overflow-hidden bg-transparent p-0 text-[15px] leading-relaxed text-muted-foreground placeholder:text-muted-foreground/60 border-b-2 border-transparent hover:border-border focus:outline-none focus:border-accent"
                   />
                   {hasApiKey && <span className="shrink-0 mt-0.5">{askAi.trigger}</span>}
-                  {hasApiKey && (
-                    <button
-                      type="button"
-                      onClick={handleGenerateDescription}
-                      disabled={generating || metaGenerating}
-                      title={
-                        description ? i18n.t('editor.regenerateDescription') : i18n.t('editor.generateDescription')
-                      }
-                      className="shrink-0 mt-0.5 p-1 rounded-md text-muted-foreground hover:text-accent hover:bg-secondary transition-colors disabled:cursor-not-allowed"
-                    >
-                      {generating || metaGenerating ? (
-                        <Loader2 size={15} className="animate-spin text-accent" />
-                      ) : (
-                        <Sparkles size={15} />
-                      )}
-                    </button>
-                  )}
+                  {hasApiKey &&
+                    (() => {
+                      const busy = generating || metaGenerating;
+                      const label = description
+                        ? i18n.t('editor.regenerateDescription')
+                        : i18n.t('editor.generateDescription');
+                      return (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (busy) return;
+                                void handleGenerateDescription();
+                              }}
+                              aria-disabled={busy}
+                              aria-label={label}
+                              className="shrink-0 mt-0.5 p-1 rounded-md text-muted-foreground hover:text-accent hover:bg-secondary transition-colors aria-disabled:cursor-not-allowed aria-disabled:hover:text-muted-foreground aria-disabled:hover:bg-transparent"
+                            >
+                              {busy ? (
+                                <Loader2 size={15} className="animate-spin text-accent" />
+                              ) : (
+                                <Sparkles size={15} />
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>{label}</TooltipContent>
+                        </Tooltip>
+                      );
+                    })()}
                   <Toast message={descriptionError} onDismiss={() => setDescriptionError(null)} />
                 </div>
               ) : (

@@ -129,12 +129,7 @@ export default function TopNav({ route }: TopNavProps) {
               {editing ? <Check size={14} /> : <Pencil size={14} />}
               {editing ? i18n.t('editor.done') : i18n.t('editor.edit')}
             </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setHistoryOpen(!historyOpen)}
-              title={i18n.t('editor.versionHistory')}
-            >
+            <Button size="sm" variant="secondary" onClick={() => setHistoryOpen(!historyOpen)}>
               <History size={14} />
               {i18n.t('editor.versionHistory')}
             </Button>

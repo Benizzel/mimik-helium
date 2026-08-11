@@ -11,7 +11,7 @@ import {
 
 interface ConfirmDialogProps {
   open: boolean;
-  title: string;
+  heading: string;
   description?: string;
   confirmLabel?: string;
   destructive?: boolean;
@@ -21,7 +21,7 @@ interface ConfirmDialogProps {
 
 export default function ConfirmDialog({
   open,
-  title,
+  heading,
   description,
   confirmLabel,
   destructive = false,
@@ -32,7 +32,7 @@ export default function ConfirmDialog({
     <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
       <DialogContent className="sm:max-w-[360px]">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{heading}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
         <DialogFooter>

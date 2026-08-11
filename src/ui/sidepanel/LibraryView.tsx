@@ -11,6 +11,7 @@ import {
 } from '@/core/guides/service';
 import type { Guide } from '@/core/guides/types';
 import { formatRelativeTime } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import FaviconImg from '@/ui/shared/FaviconImg';
 
 interface LibraryViewProps {
@@ -173,20 +174,28 @@ export default function LibraryView({ onOpen, searchQuery = '' }: LibraryViewPro
             </div>
 
             <div className="flex items-center gap-0.5 shrink-0">
-              <button
-                onClick={(e) => handleStar(e, guide.id)}
-                className={`p-1.5 rounded-lg transition-all hover:text-accent ${guide.starred ? 'text-accent' : 'text-border'}`}
-                title={guide.starred ? i18n.t('common.unstar') : i18n.t('common.star')}
-              >
-                <Star size={13} fill={guide.starred ? 'currentColor' : 'none'} />
-              </button>
-              <button
-                onClick={(e) => handleDelete(e, guide.id)}
-                className="p-1.5 rounded-lg transition-all text-border hover:text-destructive"
-                title={i18n.t('library.moveToTrash')}
-              >
-                <Trash2 size={13} />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={(e) => handleStar(e, guide.id)}
+                    className={`p-1.5 rounded-lg transition-all hover:text-accent ${guide.starred ? 'text-accent' : 'text-border'}`}
+                  >
+                    <Star size={13} fill={guide.starred ? 'currentColor' : 'none'} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{guide.starred ? i18n.t('common.unstar') : i18n.t('common.star')}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={(e) => handleDelete(e, guide.id)}
+                    className="p-1.5 rounded-lg transition-all text-border hover:text-destructive"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{i18n.t('library.moveToTrash')}</TooltipContent>
+              </Tooltip>
             </div>
           </div>
         );

@@ -2,6 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Step } from '@/core/guides/types';
+import { TooltipProvider } from '@/ui/components/ui/tooltip';
 
 vi.mock('@/core/guides/service', () => ({ replaceScreenshot: vi.fn() }));
 vi.mock('@/core/screenshot/render', () => ({ imageDimensions: vi.fn(), renderScreenshot: vi.fn() }));
@@ -20,15 +21,17 @@ const step: Step = {
 
 function renderCard(readOnly: boolean) {
   return render(
-    <StepCard
-      step={step}
-      number={1}
-      screenshot={undefined}
-      readOnly={readOnly}
-      onDescriptionChange={vi.fn()}
-      onDelete={vi.fn()}
-      onChanged={vi.fn()}
-    />,
+    <TooltipProvider>
+      <StepCard
+        step={step}
+        number={1}
+        screenshot={undefined}
+        readOnly={readOnly}
+        onDescriptionChange={vi.fn()}
+        onDelete={vi.fn()}
+        onChanged={vi.fn()}
+      />
+    </TooltipProvider>,
   );
 }
 

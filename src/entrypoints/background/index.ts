@@ -21,6 +21,7 @@ import { generateDescriptionOnDemand, generateGuideMetaOnStop } from './guide-me
 import { registerNavigationListeners } from './navigation';
 import { handleCaptureStep, handleFinalizeInputStep, handleUpdateInputStep } from './step-pipeline';
 import { broadcastStartCapture, broadcastStopCapture, showNotificationOnTab } from './tab-manager';
+import { getVoiceUpdate, registerVoiceListeners, startVoiceNarration, stopVoiceNarration } from './voice';
 
 async function resolveManual(step: Step): Promise<boolean> {
   if (!step.screenshotId) return stepRequiresManual(step, null);
@@ -61,12 +62,14 @@ export default defineBackground(() => {
   initActor().catch(initActorFallback);
   cancelSession();
   registerNavigationListeners();
+  registerVoiceListeners();
 
   setupPortListener((port) => {
     logger.debug('Panel connected via port');
     waitUntilReady().then(() => {
       try {
         port.postMessage(getStateUpdate());
+        port.postMessage(getVoiceUpdate());
       } catch {}
     });
 
@@ -105,6 +108,8 @@ export default defineBackground(() => {
     const activeTab = await getActiveTab();
     if (activeTab?.id) await showNotificationOnTab(activeTab.id);
 
+    await startVoiceNarration(activeTab?.id);
+
     await broadcastStartCapture(guideId);
     return { guideId };
   });
@@ -115,6 +120,8 @@ export default defineBackground(() => {
     const { currentGuideId: guideId, insertTargetGuideId, insertAtIndex } = actor.getSnapshot().context;
     await broadcastStopCapture();
     actor.send({ type: 'STOP_RECORDING' });
+
+    if (guideId) void stopVoiceNarration(guideId);
 
     if (guideId && insertTargetGuideId !== null && insertAtIndex !== null) {
       await createSnapshot(insertTargetGuideId);

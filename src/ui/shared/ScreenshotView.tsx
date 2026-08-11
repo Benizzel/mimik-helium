@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
 import ImagePlaceholder from '@/ui/shared/ImagePlaceholder';
 import ReplaceImageDialog from '@/ui/shared/ReplaceImageDialog';
@@ -363,16 +364,20 @@ export default function ScreenshotView({
       {showTopControls && (
         <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
           <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                onClick={(e) => e.stopPropagation()}
-                className="flex items-center justify-center h-7 px-2 rounded-md border border-border bg-card/90 text-foreground backdrop-blur-sm text-[10px] font-semibold tracking-wide transition-colors hover:bg-secondary hover:text-accent"
-                title={i18n.t('screenshotView.altLabel')}
-              >
-                {i18n.t('screenshotView.altButton')}
-              </button>
-            </PopoverTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center justify-center h-7 px-2 rounded-md border border-border bg-card/90 text-foreground backdrop-blur-sm text-[10px] font-semibold tracking-wide transition-colors hover:bg-secondary hover:text-accent"
+                  >
+                    {i18n.t('screenshotView.altButton')}
+                  </button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent>{i18n.t('screenshotView.altLabel')}</TooltipContent>
+            </Tooltip>
             <PopoverContent align="end" onClick={(e) => e.stopPropagation()}>
               <p className="text-xs font-semibold text-foreground mb-2">{i18n.t('screenshotView.altLabel')}</p>
               <textarea
@@ -385,16 +390,21 @@ export default function ScreenshotView({
             </PopoverContent>
           </Popover>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                onClick={(e) => e.stopPropagation()}
-                className="flex items-center justify-center w-7 h-7 rounded-md border border-border bg-card/90 text-foreground backdrop-blur-sm transition-colors hover:bg-secondary hover:text-accent"
-                title={i18n.t('screenshotView.editMenu')}
-              >
-                <Pencil size={14} />
-              </button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={i18n.t('screenshotView.editMenu')}
+                    className="flex items-center justify-center w-7 h-7 rounded-md border border-border bg-card/90 text-foreground backdrop-blur-sm transition-colors hover:bg-secondary hover:text-accent"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>{i18n.t('screenshotView.editMenu')}</TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
               <DropdownMenuItem onSelect={() => onOpenEditor?.('annotate')}>
                 <Pencil size={14} />
@@ -429,7 +439,7 @@ export default function ScreenshotView({
           <ReplaceImageDialog open={replaceOpen} onSelect={handleReplaceFile} onCancel={() => setReplaceOpen(false)} />
           <ConfirmDialog
             open={confirmDelete}
-            title={i18n.t('screenshotView.deleteImage')}
+            heading={i18n.t('screenshotView.deleteImage')}
             description={i18n.t('screenshotView.deleteConfirm')}
             destructive
             onConfirm={handleDeleteImage}
@@ -445,28 +455,38 @@ export default function ScreenshotView({
       <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1">
         {showZoomControls && (
           <>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleZoom(ZOOM_IN_FACTOR);
-              }}
-              className="flex items-center justify-center w-7 h-7 rounded-md border border-border bg-card/90 text-foreground backdrop-blur-sm transition-colors hover:bg-secondary hover:text-accent"
-              title={i18n.t('screenshotView.zoomIn')}
-            >
-              <ZoomIn size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleZoom(ZOOM_OUT_FACTOR);
-              }}
-              className="flex items-center justify-center w-7 h-7 rounded-md border border-border bg-card/90 text-foreground backdrop-blur-sm transition-colors hover:bg-secondary hover:text-accent"
-              title={i18n.t('screenshotView.zoomOut')}
-            >
-              <ZoomOut size={14} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleZoom(ZOOM_IN_FACTOR);
+                  }}
+                  aria-label={i18n.t('screenshotView.zoomIn')}
+                  className="flex items-center justify-center w-7 h-7 rounded-md border border-border bg-card/90 text-foreground backdrop-blur-sm transition-colors hover:bg-secondary hover:text-accent"
+                >
+                  <ZoomIn size={14} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{i18n.t('screenshotView.zoomIn')}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleZoom(ZOOM_OUT_FACTOR);
+                  }}
+                  aria-label={i18n.t('screenshotView.zoomOut')}
+                  className="flex items-center justify-center w-7 h-7 rounded-md border border-border bg-card/90 text-foreground backdrop-blur-sm transition-colors hover:bg-secondary hover:text-accent"
+                >
+                  <ZoomOut size={14} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{i18n.t('screenshotView.zoomOut')}</TooltipContent>
+            </Tooltip>
           </>
         )}
       </div>
