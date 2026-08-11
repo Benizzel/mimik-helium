@@ -1,4 +1,4 @@
-import { ArrowLeft, Mic, MousePointerClick, Shield, TriangleAlert } from 'lucide-react';
+import { Mic, MousePointerClick, Shield, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { PRESET_LABELS, type PresetKey } from '@/core/blur/regexes';
@@ -221,6 +221,12 @@ function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={onBack}
+              className="px-8 py-3 bg-card text-foreground border border-border rounded-xl font-semibold text-sm hover:border-accent hover:text-accent transition-colors"
+            >
+              {i18n.t('common.back')}
+            </button>
+            <button
               onClick={handleContinue}
               className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
             >
@@ -228,16 +234,9 @@ function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             </button>
             <button
               onClick={onSkip}
-              className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
             >
               {i18n.t('common.skip')}
-            </button>
-            <button
-              onClick={onBack}
-              className="inline-flex items-center gap-1.5 px-4 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
-            >
-              <ArrowLeft size={15} />
-              {i18n.t('common.back')}
             </button>
           </div>
 
@@ -419,6 +418,12 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={onBack}
+              className="px-8 py-3 bg-card text-foreground border border-border rounded-xl font-semibold text-sm hover:border-accent hover:text-accent transition-colors"
+            >
+              {i18n.t('common.back')}
+            </button>
+            <button
               onClick={handleContinue}
               className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
             >
@@ -426,16 +431,9 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             </button>
             <button
               onClick={onSkip}
-              className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
             >
               {i18n.t('common.skip')}
-            </button>
-            <button
-              onClick={onBack}
-              className="inline-flex items-center gap-1.5 px-4 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
-            >
-              <ArrowLeft size={15} />
-              {i18n.t('common.back')}
             </button>
           </div>
 
@@ -564,6 +562,12 @@ function SmartBlurStep({ onNext, onSkip, onBack, index, total }: StepProps) {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={onBack}
+              className="px-8 py-3 bg-card text-foreground border border-border rounded-xl font-semibold text-sm hover:border-accent hover:text-accent transition-colors"
+            >
+              {i18n.t('common.back')}
+            </button>
+            <button
               onClick={onNext}
               className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
             >
@@ -571,16 +575,9 @@ function SmartBlurStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             </button>
             <button
               onClick={onSkip}
-              className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
             >
               {i18n.t('common.skip')}
-            </button>
-            <button
-              onClick={onBack}
-              className="inline-flex items-center gap-1.5 px-4 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
-            >
-              <ArrowLeft size={15} />
-              {i18n.t('common.back')}
             </button>
           </div>
 
@@ -692,6 +689,12 @@ function PinExtensionStep({ onNext, onSkip, onBack, index, total }: StepProps) {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={onBack}
+              className="px-8 py-3 bg-card text-foreground border border-border rounded-xl font-semibold text-sm hover:border-accent hover:text-accent transition-colors"
+            >
+              {i18n.t('common.back')}
+            </button>
+            <button
               onClick={onNext}
               className="px-8 py-3 bg-accent text-white rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
             >
@@ -699,16 +702,9 @@ function PinExtensionStep({ onNext, onSkip, onBack, index, total }: StepProps) {
             </button>
             <button
               onClick={onSkip}
-              className="px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
+              className="ml-2 px-6 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
             >
               {i18n.t('common.skip')}
-            </button>
-            <button
-              onClick={onBack}
-              className="inline-flex items-center gap-1.5 px-4 py-3 text-muted-foreground rounded-xl font-semibold text-sm hover:text-foreground transition-colors"
-            >
-              <ArrowLeft size={15} />
-              {i18n.t('common.back')}
             </button>
           </div>
 
