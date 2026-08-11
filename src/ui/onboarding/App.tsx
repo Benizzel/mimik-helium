@@ -8,6 +8,7 @@ import type { VoiceProvider } from '@/core/capture/voice/transcribe';
 import { localStorage, requestHostPermissions } from '@/lib/browser-api';
 import { Input } from '@/ui/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
+import MicrophonePicker from '@/ui/shared/MicrophonePicker';
 
 interface StepProps {
   onNext: () => void;
@@ -296,12 +297,14 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
   const [enabled, setEnabled] = useState(false);
   const [provider, setProvider] = useState<VoiceProvider>('openai');
   const [apiKey, setApiKey] = useState('');
+  const [microphoneId, setMicrophoneId] = useState('');
 
   const handleContinue = async () => {
     await localStorage.set({
       voiceEnabled: enabled,
       voiceProvider: provider,
       ...(apiKey ? { voiceApiKey: apiKey } : {}),
+      ...(microphoneId ? { voiceMicrophoneId: microphoneId } : {}),
     });
     onNext();
   };
@@ -388,6 +391,8 @@ function VoiceStep({ onNext, onSkip, index, total }: StepProps) {
                 />
               </div>
             </div>
+
+            {enabled && <MicrophonePicker value={microphoneId} onChange={setMicrophoneId} />}
 
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-secondary text-[11px] text-muted-foreground leading-relaxed">
               <Shield size={12} className="shrink-0 mt-0.5 text-accent" />
