@@ -4,6 +4,7 @@ import { i18n } from '#imports';
 import { isBlock, stepNumbers } from '@/core/guides/blocks';
 import { createSnapshot, deleteSteps, insertBlock, reorderSteps } from '@/core/guides/service';
 import type { BlockType, Screenshot, Step } from '@/core/guides/types';
+import { dominantRatio } from '@/core/screenshot/geometry';
 import { logger } from '@/lib/logger';
 import { useFullview } from '@/stores/fullview';
 import { Button } from '@/ui/components/ui/button';
@@ -11,7 +12,6 @@ import BlockCard from '@/ui/shared/BlockCard';
 import CaptureTabDialog from '@/ui/shared/CaptureTabDialog';
 import ConfirmDialog from '@/ui/shared/ConfirmDialog';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
-import { dominantRatio } from '@/ui/shared/ImagePlaceholder';
 import InsertBlockMenu from '@/ui/shared/InsertBlockMenu';
 import StepCard from '@/ui/sidepanel/StepCard';
 

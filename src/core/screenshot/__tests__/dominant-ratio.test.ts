@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Screenshot } from '@/core/guides/types';
-import { dominantRatio } from '@/ui/shared/ImagePlaceholder';
+import { dominantRatio } from '@/core/screenshot/geometry';
 
 function makeScreenshot(id: string, overrides: Partial<Screenshot> = {}): Screenshot {
   return {

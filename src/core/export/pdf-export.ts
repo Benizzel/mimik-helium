@@ -2,11 +2,26 @@ import { jsPDF } from 'jspdf';
 import { i18n } from '#imports';
 import { fitLogo, loadBranding } from '@/core/export/branding';
 import { type ExportOptions, IMAGE_SCALE_FACTORS, loadExportOptions } from '@/core/export/options';
-import { blobToDataUrl, extractDomain, fitImage, formatDate } from '@/core/export/utils';
+import { CONTENT_BOTTOM_MM, HEAD_BAND_MM, PAGE_MARGIN_MM, STEP_TOP_MM } from '@/core/export/page';
+import {
+  blobToDataUrl,
+  clampLines,
+  containFit,
+  extractDomain,
+  fitImage,
+  formatDate,
+  LEAD_FONT_PX,
+  LEAD_LINE_RATIO,
+  LEAD_MARGIN_PX,
+  MAX_DESC_LINES,
+  MAX_LEAD_LINES,
+  MAX_TITLE_LINES,
+  pxToMm,
+} from '@/core/export/utils';
 import { actionSteps, calloutAccent, isBlock, stepNumbers, tint } from '@/core/guides/blocks';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { hexToRgb } from '@/core/screenshot/color';
-import { resolveViewport } from '@/core/screenshot/geometry';
+import { dominantRatio, resolveViewport } from '@/core/screenshot/geometry';
 import { renderScreenshot } from '@/core/screenshot/render';
 import { logger } from '@/lib/logger';
 
@@ -14,7 +29,7 @@ const JPEG_QUALITY = 0.85;
 
 const PAGE_W = 210;
 const PAGE_H = 297;
-const MARGIN = 18.5;
+const MARGIN = PAGE_MARGIN_MM;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 const NUM_COL = 22;
 const COL_GAP = 8;
@@ -22,15 +37,26 @@ const TEXT_COL = CONTENT_W - NUM_COL - COL_GAP;
 const TEXT_X = MARGIN + NUM_COL + COL_GAP;
 const RIGHT = PAGE_W - MARGIN;
 const FOOTER_Y = PAGE_H - 24;
-const HEAD_BOTTOM = MARGIN + 6;
-const STEP_TOP = MARGIN + 20;
+const HEAD_BOTTOM = MARGIN + HEAD_BAND_MM;
+const STEP_TOP = STEP_TOP_MM;
 const STEP_GAP = 13;
 const LOGO_MAX_W = 34;
 const LOGO_MAX_H = 15;
 const HEAD_LOGO_W = 18;
-const HEAD_LOGO_H = 7;
+const HEAD_LOGO_H = 5;
+const COVER_RULE_GAP = 8;
+const TITLE_LINE_H = 11;
+const TEXT_LINE_H = 5;
+const LEAD_SIZE = (LEAD_FONT_PX * 72) / 96;
+const LEAD_LINE_H = pxToMm(LEAD_FONT_PX * LEAD_LINE_RATIO);
+const LEAD_BASELINE = 4;
+const LEAD_GAP = pxToMm(LEAD_MARGIN_PX) + LEAD_LINE_H - LEAD_BASELINE;
 const META_COL_W = 43;
 const META_DROP = 9;
+const META_NUM_SIZE = 30;
+const META_VALUE_SIZE = 11;
+const META_CAP_RATIO = 0.7;
+const META_VALUE_LIFT = (((META_NUM_SIZE - META_VALUE_SIZE) * META_CAP_RATIO) / 72) * 25.4 * 0.5;
 const BLOCK_GAP = 9;
 const HEADING_SIZE = 14;
 const HEADING_LINE_H = 6.5;
@@ -66,15 +92,8 @@ export async function exportGuideAsPDF(
   const headLogo = !opts.cover && brand.logo ? fitLogo(brand.logo, HEAD_LOGO_W, HEAD_LOGO_H) : null;
   const headRight = headLogo ? RIGHT - headLogo.width - 4 : RIGHT;
   const imgWidth = TEXT_COL * IMAGE_SCALE_FACTORS[opts.imageScale];
+  const frameRatio = dominantRatio(screenshots);
   if (opts.cover) {
-    if (brand.logo && logo) {
-      try {
-        doc.addImage(brand.logo.dataUrl, 'PNG', RIGHT - logo.width, MARGIN, logo.width, logo.height);
-      } catch (err) {
-        logger.warn('PDF: failed to draw brand logo', err);
-      }
-    }
-
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...MUTED);
@@ -82,18 +101,28 @@ export async function exportGuideAsPDF(
 
     doc.setFontSize(30);
     doc.setTextColor(...INK);
-    const titleLines = doc.splitTextToSize(guide.title, CONTENT_W * 0.82);
+    const titleLines = clampLines(doc.splitTextToSize(guide.title, CONTENT_W * 0.82), MAX_TITLE_LINES);
     doc.text(titleLines, MARGIN, MARGIN + 26);
 
-    let y = MARGIN + 26 + (titleLines.length - 1) * 11 + 8;
+    const titleBottom = MARGIN + 26 + (titleLines.length - 1) * TITLE_LINE_H;
+    if (brand.logo && logo) {
+      try {
+        doc.addImage(brand.logo.dataUrl, 'PNG', RIGHT - logo.width, titleBottom - logo.height, logo.width, logo.height);
+      } catch (err) {
+        logger.warn('PDF: failed to draw brand logo', err);
+      }
+    }
+
+    let y = titleBottom + COVER_RULE_GAP;
     if (guide.description) {
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...MUTED);
-      const descLines = doc.splitTextToSize(guide.description, CONTENT_W * 0.7);
+      const descLines = clampLines(doc.splitTextToSize(guide.description, CONTENT_W * 0.7), MAX_DESC_LINES);
       doc.text(descLines, MARGIN, y + 4);
-      y += 4 + (descLines.length - 1) * 5 + 8;
+      y += 4 + (descLines.length - 1) * 5 + COVER_RULE_GAP;
     }
+
     doc.setDrawColor(...INK);
     doc.setLineWidth(0.4);
     doc.line(MARGIN, y, RIGHT, y);
@@ -107,25 +136,27 @@ export async function exportGuideAsPDF(
       doc.text(text, x, yLabel, { charSpace: 0.4 });
     };
 
+    const yText = yValue - META_VALUE_LIFT;
+
     drawLabel(i18n.t('export.steps').toUpperCase(), MARGIN);
-    doc.setFontSize(30);
+    doc.setFontSize(META_NUM_SIZE);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...accent);
     doc.text(String(actions.length).padStart(2, '0'), MARGIN, yValue);
 
     drawLabel(i18n.t('export.created').toUpperCase(), MARGIN + META_COL_W);
-    doc.setFontSize(11);
+    doc.setFontSize(META_VALUE_SIZE);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...INK);
-    doc.text(formatDate(guide.createdAt), MARGIN + META_COL_W, yValue);
+    doc.text(formatDate(guide.createdAt), MARGIN + META_COL_W, yText);
 
     if (domain) {
       const x = MARGIN + META_COL_W * 2;
       drawLabel(i18n.t('export.source').toUpperCase(), x);
-      doc.setFontSize(11);
+      doc.setFontSize(META_VALUE_SIZE);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...accent);
-      doc.textWithLink(domain, x, yValue, { url: `https://${domain}` });
+      doc.textWithLink(domain, x, yText, { url: `https://${domain}` });
     }
   }
   const pageSteps: number[][] = [];
@@ -144,7 +175,7 @@ export async function exportGuideAsPDF(
           brand.logo.dataUrl,
           'PNG',
           RIGHT - headLogo.width,
-          HEAD_BOTTOM - 1.5 - headLogo.height,
+          MARGIN + (HEAD_BOTTOM - MARGIN - headLogo.height) / 2,
           headLogo.width,
           headLogo.height,
         );
@@ -160,6 +191,15 @@ export async function exportGuideAsPDF(
 
   let sy = startStepPage();
 
+  if (!opts.cover && guide.description) {
+    doc.setFontSize(LEAD_SIZE);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...MUTED);
+    const leadLines = clampLines(doc.splitTextToSize(guide.description, CONTENT_W * 0.8), MAX_LEAD_LINES);
+    doc.text(leadLines, MARGIN, sy + LEAD_BASELINE);
+    sy += LEAD_BASELINE + (leadLines.length - 1) * LEAD_LINE_H + LEAD_GAP;
+  }
+
   for (const step of steps) {
     if (isBlock(step)) {
       sy = drawBlock(doc, step, sy, startStepPage);
@@ -173,28 +213,24 @@ export async function exportGuideAsPDF(
 
     const screenshot = opts.screenshots ? screenshots.get(step.id) : undefined;
     let imgDataUrl: string | null = null;
-    let imgHeight = 0;
-    let stepImgWidth = imgWidth;
-    const textOverhead = 6 + descLines.length * 5 + 4;
+    let frame = { width: imgWidth, height: 0 };
+    let img = { width: 0, height: 0, x: 0, y: 0 };
+    const textOverhead = 6 + descLines.length * TEXT_LINE_H + 4;
     if (screenshot) {
       try {
         const rendered = await renderScreenshot(screenshot, { format: 'image/jpeg', quality: JPEG_QUALITY });
         imgDataUrl = await blobToDataUrl(rendered);
         const viewport = resolveViewport(screenshot);
-        const fitted = fitImage(
-          imgWidth,
-          (viewport.height / viewport.width) * imgWidth,
-          FOOTER_Y - 8 - STEP_TOP - textOverhead,
-        );
-        stepImgWidth = fitted.width;
-        imgHeight = fitted.height;
+        const ratio = frameRatio ?? viewport.width / viewport.height;
+        frame = fitImage(imgWidth, imgWidth / ratio, CONTENT_BOTTOM_MM - STEP_TOP - textOverhead);
+        img = containFit(viewport.width, viewport.height, frame.width, frame.height);
       } catch (err) {
         logger.warn('PDF: failed to load screenshot for step', step.index, err);
       }
     }
 
-    const blockH = textOverhead + imgHeight;
-    if (sy + blockH > FOOTER_Y - 8 && sy > STEP_TOP) {
+    const blockH = textOverhead - TEXT_LINE_H + frame.height;
+    if (sy + blockH > CONTENT_BOTTOM_MM && sy > STEP_TOP) {
       sy = startStepPage();
     }
     pageSteps[pageSteps.length - 1].push(numbers.get(step.id) ?? 0);
@@ -240,10 +276,10 @@ export async function exportGuideAsPDF(
 
     let iy = uy + 4;
     if (imgDataUrl) {
-      doc.addImage(imgDataUrl, 'JPEG', TEXT_X, iy, stepImgWidth, imgHeight);
+      doc.addImage(imgDataUrl, 'JPEG', TEXT_X + img.x, iy + img.y, img.width, img.height);
       const altText = screenshot?.edits?.alt || i18n.t('export.stepLabel', [stepNum]);
-      doc.text(doc.splitTextToSize(altText, stepImgWidth), TEXT_X, iy + 4, { renderingMode: 'invisible' });
-      iy += imgHeight;
+      doc.text(doc.splitTextToSize(altText, frame.width), TEXT_X, iy + 4, { renderingMode: 'invisible' });
+      iy += frame.height;
     }
     sy = iy + STEP_GAP;
   }
@@ -283,7 +319,7 @@ function drawBlock(doc: jsPDF, step: Step, y: number, nextPage: () => number): n
     const lines = doc.splitTextToSize(step.description, CONTENT_W);
     const blockH = HEADING_BASELINE + (lines.length - 1) * HEADING_LINE_H + HEADING_RULE_GAP;
     let sy = y;
-    if (sy + blockH > FOOTER_Y - 8 && sy > STEP_TOP) sy = nextPage();
+    if (sy + blockH > CONTENT_BOTTOM_MM && sy > STEP_TOP) sy = nextPage();
     doc.setTextColor(...INK);
     doc.text(lines, MARGIN, sy + HEADING_BASELINE);
     const ruleY = sy + blockH;
@@ -302,7 +338,7 @@ function drawBlock(doc: jsPDF, step: Step, y: number, nextPage: () => number): n
   const lines = doc.splitTextToSize(step.description, RIGHT - CALLOUT_PAD_X - textX);
   const boxH = CALLOUT_PAD_Y * 2 + lines.length * CALLOUT_LINE_H;
   let sy = y;
-  if (sy + boxH > FOOTER_Y - 8 && sy > STEP_TOP) sy = nextPage();
+  if (sy + boxH > CONTENT_BOTTOM_MM && sy > STEP_TOP) sy = nextPage();
   doc.setFillColor(...fill);
   doc.roundedRect(MARGIN, sy, CONTENT_W, boxH, CALLOUT_RADIUS, CALLOUT_RADIUS, 'F');
   doc.setFillColor(...bar);

@@ -1,6 +1,14 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { blobToBase64, blobToDataUrl, escapeHtml, extractDomain, fitImage, formatDate } from '@/core/export/utils';
+import {
+  blobToBase64,
+  blobToDataUrl,
+  containFit,
+  escapeHtml,
+  extractDomain,
+  fitImage,
+  formatDate,
+} from '@/core/export/utils';
 import type { Step } from '@/core/guides/types';
 
 function makeStep(overrides: Partial<Step> = {}): Step {
@@ -147,5 +155,39 @@ describe('fitImage', () => {
 
   it('leaves an image exactly at the cap untouched', () => {
     expect(fitImage(143, 211.5, 211.5)).toEqual({ width: 143, height: 211.5 });
+  });
+});
+
+describe('containFit', () => {
+  it('fills the box exactly when the ratios match', () => {
+    const fit = containFit(1600, 900, 143, 80.4375);
+    expect(fit.width).toBeCloseTo(143, 4);
+    expect(fit.height).toBeCloseTo(80.4375, 4);
+    expect(fit.x).toBeCloseTo(0, 4);
+    expect(fit.y).toBeCloseTo(0, 4);
+  });
+
+  it('pillarboxes a square inside a wide frame without exceeding it', () => {
+    const fit = containFit(1000, 1000, 143, 80.4375);
+    expect(fit.width).toBeCloseTo(80.4375, 4);
+    expect(fit.height).toBeCloseTo(80.4375, 4);
+    expect(fit.x).toBeCloseTo((143 - 80.4375) / 2, 4);
+    expect(fit.y).toBeCloseTo(0, 4);
+  });
+
+  it('letterboxes a wide image inside a tall frame', () => {
+    const fit = containFit(2000, 500, 100, 100);
+    expect(fit.width).toBeCloseTo(100, 4);
+    expect(fit.height).toBeCloseTo(25, 4);
+    expect(fit.y).toBeCloseTo(37.5, 4);
+  });
+
+  it('preserves the source aspect ratio', () => {
+    const fit = containFit(1366, 768, 143, 80.4375);
+    expect(fit.width / fit.height).toBeCloseTo(1366 / 768, 6);
+  });
+
+  it('falls back to the box for a degenerate source', () => {
+    expect(containFit(0, 0, 143, 80)).toEqual({ width: 143, height: 80, x: 0, y: 0 });
   });
 });

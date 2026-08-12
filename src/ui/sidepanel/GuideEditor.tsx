@@ -4,6 +4,7 @@ import { i18n } from '#imports';
 import { actionSteps, isBlock, stepNumbers } from '@/core/guides/blocks';
 import { getGuide, onGuidesChanged } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
+import { dominantRatio } from '@/core/screenshot/geometry';
 import { createTab, focusWindow, getExtensionURL, queryTabs, updateTab } from '@/lib/browser-api';
 import { sendMessage } from '@/lib/messaging';
 import { getMostCommonDomain } from '@/lib/utils';
@@ -11,7 +12,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tool
 import BlockCard from '@/ui/shared/BlockCard';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
-import { dominantRatio } from '@/ui/shared/ImagePlaceholder';
 import StepCard from './StepCard';
 
 interface GuideEditorProps {

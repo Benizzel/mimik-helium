@@ -1,3 +1,5 @@
+import { CONTENT_BOTTOM_MM, HEAD_BAND_MM, PAGE_MARGIN_MM, STEP_TOP_MM } from '@/core/export/page';
+
 const PREVIEW_CSS = `
   html { background: #3F3F46; }
   body {
@@ -17,14 +19,39 @@ const PREVIEW_CSS = `
     flex-shrink: 0;
   }
   .mimik-sheet-body {
-    padding: 18.5mm 18.5mm 0;
-    height: calc(297mm - 34mm);
+    padding: ${STEP_TOP_MM}mm ${PAGE_MARGIN_MM}mm 0;
+    height: ${CONTENT_BOTTOM_MM}mm;
     overflow: hidden;
+  }
+  .mimik-sheet-body.mimik-sheet-cover { padding-top: ${PAGE_MARGIN_MM}mm; }
+  .mimik-sheet-head {
+    position: absolute;
+    left: ${PAGE_MARGIN_MM}mm;
+    right: ${PAGE_MARGIN_MM}mm;
+    top: ${PAGE_MARGIN_MM}mm;
+    height: ${HEAD_BAND_MM}mm;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1E1B4B;
+    border-bottom: 1px solid #E5E7EB;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .mimik-sheet-head .mimik-head-title { overflow: hidden; text-overflow: ellipsis; }
+  .mimik-sheet-head img {
+    width: 18mm;
+    height: 5mm;
+    object-fit: contain;
+    object-position: right center;
+    margin-left: auto;
   }
   .mimik-sheet-foot {
     position: absolute;
-    left: 18.5mm;
-    right: 18.5mm;
+    left: ${PAGE_MARGIN_MM}mm;
+    right: ${PAGE_MARGIN_MM}mm;
     bottom: 11mm;
     display: flex;
     align-items: center;
@@ -36,7 +63,6 @@ const PREVIEW_CSS = `
   }
   .mimik-sheet-foot .mimik-page { margin-left: auto; }
   .mimik-sheet-body > *:last-child { margin-bottom: 0 !important; }
-  .mimik-sheet-body section { margin-bottom: 34px !important; }
   .mimik-sheet-body header { margin-bottom: 34px !important; }
 `;
 
@@ -50,16 +76,22 @@ export function paginatePreview(doc: Document): number {
 
   const blocks: HTMLElement[] = [];
   let footer: HTMLElement | null = null;
+  let header: HTMLElement | null = null;
 
   for (const node of Array.from(body.children)) {
     if (!(node instanceof doc.defaultView!.HTMLElement)) continue;
     if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') continue;
     if (node.hasAttribute('data-doc-footer')) footer = node;
+    else if (node.hasAttribute('data-doc-header')) header = node;
     else blocks.push(node);
   }
 
   for (const node of blocks) node.remove();
   footer?.remove();
+  header?.remove();
+
+  const headTitle = header?.querySelector('h1')?.textContent ?? doc.title;
+  const headLogo = header?.querySelector('img') ?? null;
 
   const stack = doc.createElement('div');
   stack.className = 'mimik-sheets';
@@ -80,6 +112,7 @@ export function paginatePreview(doc: Document): number {
   let current = addSheet();
   for (const block of blocks) {
     if (block.hasAttribute('data-cover')) {
+      current.classList.add('mimik-sheet-cover');
       current.appendChild(block);
       current = addSheet();
       continue;
@@ -98,6 +131,17 @@ export function paginatePreview(doc: Document): number {
   }
 
   bodies.forEach((inner, index) => {
+    if (!inner.classList.contains('mimik-sheet-cover')) {
+      const head = doc.createElement('div');
+      head.className = 'mimik-sheet-head';
+      const title = doc.createElement('span');
+      title.className = 'mimik-head-title';
+      title.textContent = headTitle;
+      head.appendChild(title);
+      if (headLogo) head.appendChild(headLogo.cloneNode(true));
+      inner.parentElement?.appendChild(head);
+    }
+
     const foot = doc.createElement('div');
     foot.className = 'mimik-sheet-foot';
     if (footer) {

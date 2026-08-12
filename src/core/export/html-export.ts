@@ -1,9 +1,21 @@
 import { i18n } from '#imports';
 import { fitLogo, loadBranding } from '@/core/export/branding';
 import { type ExportOptions, IMAGE_SCALE_FACTORS, loadExportOptions } from '@/core/export/options';
-import { blobToBase64, escapeHtml, extractDomain, formatDate } from '@/core/export/utils';
+import {
+  blobToBase64,
+  escapeHtml,
+  extractDomain,
+  formatDate,
+  LEAD_FONT_PX,
+  LEAD_LINE_RATIO,
+  LEAD_MARGIN_PX,
+  MAX_DESC_LINES,
+  MAX_LEAD_LINES,
+  MAX_TITLE_LINES,
+} from '@/core/export/utils';
 import { actionSteps, calloutAccent, isBlock, stepNumbers, tint, variantLabel } from '@/core/guides/blocks';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
+import { dominantRatio, resolveViewport } from '@/core/screenshot/geometry';
 import { renderScreenshot } from '@/core/screenshot/render';
 
 const LOGO_MAX_WIDTH = 148;
@@ -65,6 +77,7 @@ export async function exportGuideAsHTML(
   const brand = await loadBranding();
   const accent = brand.accent;
   const imgWidthPct = Math.round(IMAGE_SCALE_FACTORS[opts.imageScale] * 100);
+  const frameRatio = dominantRatio(screenshots);
   const domain = extractDomain(steps);
   const numbers = stepNumbers(steps);
   const stepSections: string[] = [];
@@ -81,7 +94,9 @@ export async function exportGuideAsHTML(
     if (screenshot) {
       const { type, b64 } = await embedScreenshot(screenshot);
       const altText = screenshot.edits?.alt || i18n.t('export.stepLabel', [String(number)]);
-      imgHtml = `<img src="data:${type};base64,${b64}" alt="${escapeHtml(altText)}" style="display:block;width:${imgWidthPct}%;margin-top:14px;border:1px solid #CBD5E1;" />`;
+      const viewport = resolveViewport(screenshot);
+      const ratio = frameRatio ?? viewport.width / viewport.height;
+      imgHtml = `<div style="width:${imgWidthPct}%;aspect-ratio:${ratio};margin-top:6px;border:1px solid #CBD5E1;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="data:${type};base64,${b64}" alt="${escapeHtml(altText)}" style="display:block;max-width:100%;max-height:100%;" /></div>`;
     }
 
     const stepNumber = String(number).padStart(2, '0');
@@ -91,10 +106,10 @@ export async function exportGuideAsHTML(
         : '';
 
     stepSections.push(`
-      <section data-step="${number}" style="display:flex;gap:26px;margin-bottom:52px;">
-        <div style="flex:0 0 76px;font-size:34px;font-weight:700;color:${accent};line-height:.9;">${stepNumber}</div>
-        <div style="flex:1;min-width:0;border-top:1px solid #1E1B4B;padding-top:12px;">
-          <p style="margin:0;font-size:17px;font-weight:700;line-height:1.45;color:#1E1B4B;">${escapeHtml(step.description)}${
+      <section data-step="${number}" style="display:flex;gap:8mm;margin-bottom:13mm;">
+        <div style="flex:0 0 22mm;font-size:34px;font-weight:700;color:${accent};line-height:.9;">${stepNumber}</div>
+        <div style="flex:1;min-width:0;border-top:1px solid #1E1B4B;padding-top:6px;">
+          <p style="margin:0;font-size:17px;font-weight:700;line-height:1.45;color:#1E1B4B;overflow-wrap:anywhere;">${escapeHtml(step.description)}${
             urlHtml ? `<span style="color:#6B7280;font-weight:400;"> &nbsp;·&nbsp; </span>${urlHtml}` : ''
           }</p>
           ${imgHtml}
@@ -117,26 +132,37 @@ export async function exportGuideAsHTML(
   </footer>`
     : '';
 
+  const clamp = (n: number) =>
+    `display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${n};line-clamp:${n};overflow:hidden;`;
+
+  const metaValue = 'height:38px;display:flex;align-items:center;margin-top:2px;';
   const metaCell = (label: string, value: string) => `
         <div style="flex:0 0 190px;">
           <div style="font-size:11px;font-weight:700;color:#6B7280;letter-spacing:0.06em;">${label}</div>
-          <div style="font-size:17px;color:#1E1B4B;margin-top:4px;">${value}</div>
+          <div style="font-size:17px;color:#1E1B4B;${metaValue}">${value}</div>
         </div>`;
+
+  const leadHtml =
+    !opts.cover && guide.description
+      ? `<p data-lead="true" style="font-size:${LEAD_FONT_PX}px;color:#6B7280;line-height:${LEAD_LINE_RATIO};margin-bottom:${LEAD_MARGIN_PX}px;max-width:60ch;overflow-wrap:anywhere;${clamp(MAX_LEAD_LINES)}">${escapeHtml(guide.description)}</p>`
+      : '';
 
   const headerHtml = opts.cover
     ? `<header data-cover="true" style="margin-bottom:56px;">
-    <div style="display:flex;align-items:flex-start;gap:24px;margin-bottom:26px;">
-      <div style="flex:1;">
-        <div style="font-size:11px;font-weight:700;color:#6B7280;letter-spacing:0.08em;">${i18n.t('export.guideLabel')}</div>
-        <h1 style="font-size:38px;font-weight:700;line-height:1.15;margin-top:18px;">${escapeHtml(guide.title)}</h1>
-        ${guide.description ? `<p style="font-size:16px;color:#6B7280;line-height:1.6;margin-top:14px;max-width:60ch;">${escapeHtml(guide.description)}</p>` : ''}
+    <div style="margin-bottom:26px;">
+      <div style="display:flex;align-items:flex-end;gap:24px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;font-weight:700;color:#6B7280;letter-spacing:0.08em;">${i18n.t('export.guideLabel')}</div>
+          <h1 style="font-size:38px;font-weight:700;line-height:1.15;margin-top:18px;overflow-wrap:anywhere;${clamp(MAX_TITLE_LINES)}">${escapeHtml(guide.title)}</h1>
+        </div>
+        ${logoHtml}
       </div>
-      ${logoHtml}
+      ${guide.description ? `<p style="font-size:16px;color:#6B7280;line-height:1.6;margin-top:14px;max-width:60ch;overflow-wrap:anywhere;${clamp(MAX_DESC_LINES)}">${escapeHtml(guide.description)}</p>` : ''}
     </div>
     <div style="border-top:2px solid #1E1B4B;padding-top:18px;display:flex;align-items:baseline;">
       <div style="flex:0 0 190px;">
         <div style="font-size:11px;font-weight:700;color:#6B7280;letter-spacing:0.06em;">${i18n.t('export.steps').toUpperCase()}</div>
-        <div style="font-size:38px;font-weight:700;color:${accent};line-height:1;margin-top:2px;">${String(actionSteps(steps).length).padStart(2, '0')}</div>
+        <div style="font-size:38px;font-weight:700;color:${accent};line-height:1;${metaValue}">${String(actionSteps(steps).length).padStart(2, '0')}</div>
       </div>
       ${metaCell(i18n.t('export.created').toUpperCase(), formatDate(guide.createdAt))}
       ${
@@ -149,8 +175,8 @@ export async function exportGuideAsHTML(
       }
     </div>
   </header>`
-    : `<header style="display:flex;align-items:center;gap:16px;margin-bottom:40px;padding-bottom:14px;border-bottom:1px solid #E5E7EB;">
-    <h1 style="flex:1;font-size:20px;font-weight:700;line-height:1.2;">${escapeHtml(guide.title)}</h1>
+    : `<header data-doc-header="true" style="display:flex;align-items:center;gap:16px;margin-bottom:40px;padding-bottom:14px;border-bottom:1px solid #E5E7EB;">
+    <h1 style="flex:1;min-width:0;font-size:20px;font-weight:700;line-height:1.2;overflow-wrap:anywhere;${clamp(1)}">${escapeHtml(guide.title)}</h1>
     ${logoHtml}
   </header>`;
 
@@ -172,6 +198,7 @@ export async function exportGuideAsHTML(
 </head>
 <body>
   ${headerHtml}
+  ${leadHtml}
 
   ${stepSections.join('\n')}
   ${footerHtml}

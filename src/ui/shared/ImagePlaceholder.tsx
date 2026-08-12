@@ -1,8 +1,6 @@
 import { ImageUp } from 'lucide-react';
 import { useState } from 'react';
 import { i18n } from '#imports';
-import type { Screenshot } from '@/core/guides/types';
-import { resolveViewport } from '@/core/screenshot/geometry';
 import MascotIcon from '@/ui/shared/MascotIcon';
 import ReplaceImageDialog from '@/ui/shared/ReplaceImageDialog';
 
@@ -52,26 +50,4 @@ export default function ImagePlaceholder({
       )}
     </div>
   );
-}
-
-const RATIO_BUCKET_PRECISION = 100;
-
-export function dominantRatio(screenshots: Map<string, Screenshot>): number | undefined {
-  const buckets = new Map<number, { ratio: number; count: number }>();
-
-  for (const screenshot of screenshots.values()) {
-    const viewport = resolveViewport(screenshot);
-    if (!viewport.width || !viewport.height) continue;
-    const ratio = viewport.width / viewport.height;
-    const key = Math.round(ratio * RATIO_BUCKET_PRECISION) / RATIO_BUCKET_PRECISION;
-    const bucket = buckets.get(key);
-    if (bucket) bucket.count += 1;
-    else buckets.set(key, { ratio, count: 1 });
-  }
-
-  let winner: { ratio: number; count: number } | undefined;
-  for (const bucket of buckets.values()) {
-    if (!winner || bucket.count > winner.count) winner = bucket;
-  }
-  return winner?.ratio;
 }
