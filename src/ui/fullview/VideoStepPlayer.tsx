@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, Maximize, Minimize, Pause, Play } from 'luci
 import { useEffect, useRef } from 'react';
 import { i18n } from '#imports';
 import type { StepKind, VideoChapter } from '@/core/export/video-export';
+import { FRAME_FILL } from '@/core/export/video-support';
 
 const RATES = [1, 1.25, 1.5, 2];
 
@@ -54,7 +55,7 @@ function StepList({
   }, [index]);
 
   return (
-    <aside ref={list} className="w-[228px] shrink-0 overflow-y-auto border-l border-white/10 bg-[#141232]">
+    <aside ref={list} className="w-[228px] shrink-0 overflow-y-auto border-l border-white/10 bg-deep">
       <div className="px-3 pb-2 pt-3 font-mono text-[9px] uppercase tracking-[0.1em] text-white/45">
         {i18n.t('videoPlayer.stepCount', [String(chapters.length)])}
       </div>
@@ -153,7 +154,8 @@ export default function VideoStepPlayer({ src, chapters }: VideoStepPlayerProps)
       load="eager"
       viewType="video"
       streamType="on-demand"
-      className="flex size-full bg-[#0E0C28]"
+      className="flex size-full"
+      style={{ backgroundColor: FRAME_FILL }}
     >
       <PlayerBody chapters={chapters} />
     </MediaPlayer>

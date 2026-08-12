@@ -6,6 +6,7 @@ import { loadExportOptions } from '@/core/export/options';
 import { extractDomain, formatDate } from '@/core/export/utils';
 import {
   FPS,
+  FRAME_FILL,
   FRAME_HEIGHT,
   FRAME_WIDTH,
   pickContainer,
@@ -813,7 +814,7 @@ export async function exportGuideAsVideo(
       releaseBefore(outgoing >= 0 ? outgoing : index);
 
       ctx.globalAlpha = 1;
-      ctx.fillStyle = BACKDROP;
+      ctx.fillStyle = FRAME_FILL;
       ctx.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 
       if (previous) {
