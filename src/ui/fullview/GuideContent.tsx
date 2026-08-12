@@ -122,15 +122,18 @@ export default function GuideContent({ guideId, initialStepId, initialTool }: Gu
       document.title = `${newTitle} — ${i18n.t('app_name')}`;
       setGuideTitle(newTitle);
       setGuideStepCount(actionSteps(result.steps).length);
-      setGuideExportData({ guideId, ...result });
     }
     setLoading(false);
-  }, [guideId, setGuideTitle, setGuideStepCount, setGuideExportData]);
+  }, [guideId, setGuideTitle, setGuideStepCount]);
 
   useEffect(() => {
     loadGuide();
     return onGuidesChanged(() => loadGuide());
   }, [loadGuide]);
+
+  useEffect(() => {
+    if (data) setGuideExportData({ guideId, ...data });
+  }, [data, guideId, setGuideExportData]);
 
   useEffect(() => {
     localStorage.get(['aiApiKey']).then((s) => setHasApiKey(Boolean(s.aiApiKey)));
