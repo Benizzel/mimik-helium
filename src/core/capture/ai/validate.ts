@@ -15,10 +15,18 @@ const ENDPOINTS: Record<string, { url: string; headers: (key: string) => Record<
       'anthropic-dangerous-direct-browser-access': 'true',
     }),
   },
+  groq: {
+    url: 'https://api.groq.com/openai/v1/models',
+    headers: (key) => ({ Authorization: `Bearer ${key}` }),
+  },
 };
 
 export async function validateApiKey(provider: string, apiKey: string): Promise<KeyValidation> {
-  const endpoint = ENDPOINTS[provider] ?? ENDPOINTS.openai;
+  const endpoint = ENDPOINTS[provider];
+  if (!endpoint) {
+    logger.error('No API key validation endpoint for provider', provider);
+    return { valid: false, reason: 'network' };
+  }
   try {
     const res = await fetch(endpoint.url, { headers: endpoint.headers(apiKey) });
     if (res.ok) return { valid: true };
