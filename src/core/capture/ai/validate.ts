@@ -2,6 +2,8 @@ import { logger } from '@/lib/logger';
 
 export type KeyValidation = { valid: true } | { valid: false; reason: 'rejected' | 'network' };
 
+const REQUEST_TIMEOUT_MS = 10_000;
+
 const ENDPOINTS: Record<string, { url: string; headers: (key: string) => Record<string, string> }> = {
   openai: {
     url: 'https://api.openai.com/v1/models',
@@ -28,7 +30,10 @@ export async function validateApiKey(provider: string, apiKey: string): Promise<
     return { valid: false, reason: 'network' };
   }
   try {
-    const res = await fetch(endpoint.url, { headers: endpoint.headers(apiKey) });
+    const res = await fetch(endpoint.url, {
+      headers: endpoint.headers(apiKey),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
     if (res.ok) return { valid: true };
     if (res.status === 401 || res.status === 403) return { valid: false, reason: 'rejected' };
     return { valid: false, reason: 'network' };

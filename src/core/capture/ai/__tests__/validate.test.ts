@@ -59,6 +59,13 @@ describe('validateApiKey', () => {
     expect(init.headers.Authorization).toBe('Bearer gsk-key');
   });
 
+  it('gives up rather than spinning forever when a host never answers', async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    await validateApiKey('openai', 'sk-key');
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
   it('never sends a key to an unknown provider, and does not call it rejected', async () => {
     expect(await validateApiKey('mystery', 'secret')).toEqual({ valid: false, reason: 'network' });
     expect(fetchMock).not.toHaveBeenCalled();
