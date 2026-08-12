@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  clearStepAiPendingMock,
   generateGuideMetaMock,
   getGuideDomainMock,
   getStepsForGuideMock,
@@ -8,6 +9,7 @@ const {
   updateGuideDescriptionMock,
   updateGuideTitleMock,
 } = vi.hoisted(() => ({
+  clearStepAiPendingMock: vi.fn(),
   generateGuideMetaMock: vi.fn(),
   getGuideDomainMock: vi.fn(),
   getStepsForGuideMock: vi.fn(),
@@ -19,6 +21,7 @@ const {
 vi.mock('@/core/capture/ai/meta', () => ({ generateGuideMeta: generateGuideMetaMock }));
 
 vi.mock('@/core/guides/service', () => ({
+  clearStepAiPending: clearStepAiPendingMock,
   getGuideDomain: getGuideDomainMock,
   getStepsForGuide: getStepsForGuideMock,
   updateGuideDescription: updateGuideDescriptionMock,
