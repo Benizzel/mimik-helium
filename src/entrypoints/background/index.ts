@@ -17,7 +17,7 @@ import { logger } from '@/lib/logger';
 import { onMessage } from '@/lib/messaging';
 import { broadcastStateToPanel, setupPortListener } from '@/lib/port';
 import { getActor, getStateUpdate, initActor, initActorFallback, waitUntilReady } from './actor';
-import { generateDescriptionOnDemand, generateGuideMetaOnStop } from './guide-meta';
+import { generateDescriptionOnDemand, generateGuideMetaOnStop, settlePendingDescriptions } from './guide-meta';
 import { registerNavigationListeners } from './navigation';
 import { handleCaptureStep, handleFinalizeInputStep, handleUpdateInputStep } from './step-pipeline';
 import { broadcastStartCapture, broadcastStopCapture, showNotificationOnTab } from './tab-manager';
@@ -124,6 +124,7 @@ export default defineBackground(() => {
     if (guideId) void stopVoiceNarration(guideId);
 
     if (guideId && insertTargetGuideId !== null && insertAtIndex !== null) {
+      await settlePendingDescriptions(guideId);
       await createSnapshot(insertTargetGuideId);
       await mergeGuideInto(guideId, insertTargetGuideId, insertAtIndex);
       return { success: true, guideId: insertTargetGuideId, inserted: true };

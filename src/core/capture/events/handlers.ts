@@ -1,14 +1,30 @@
 import PQueue from 'p-queue';
+import { DEFAULT_TARGET_COLOR } from '@/core/screenshot/types';
+import { localStorage } from '@/lib/browser-api';
+import { HoverRing } from '@/lib/hover-ring';
 import { sendMessage } from '@/lib/messaging';
 import { extractDOMContext } from '../dom/context';
 import { extractElementMeta } from '../dom/element-meta';
-import { findFocusableAncestor, isMimikElement, isNavigatingClick, isTextField } from '../dom/element-utils';
+import {
+  findFocusableAncestor,
+  isMimikElement,
+  isNavigatingClick,
+  isTextField,
+  isTooLarge,
+} from '../dom/element-utils';
 import { InputSession } from './input-session';
 
 const DEDUP_MS = 300;
 const DRAG_MIN_PX = 30;
 const INTERCEPT_DELAY_MS = 100;
 const PAINT_FRAMES = 3;
+const EMBED_TAGS = new Set(['IFRAME', 'EMBED', 'OBJECT']);
+const EMBED_SELECTOR = 'iframe, embed, object';
+
+function focusInEmbed(): boolean {
+  const active = document.activeElement;
+  return !!active && EMBED_TAGS.has(active.tagName);
+}
 
 function waitForPaint(): Promise<void> {
   return new Promise((resolve) => {
@@ -38,6 +54,9 @@ class CaptureController {
   private dragStartX: number | null = null;
   private dragStartY: number | null = null;
   private dragStartElement: Element | null = null;
+  private ring = new HoverRing(DEFAULT_TARGET_COLOR);
+  private hovered: HTMLElement | null = null;
+  private busy = false;
 
   constructor(
     private guideId: string,
@@ -59,7 +78,15 @@ class CaptureController {
         ['pointerdown', this.onPointerDown.bind(this), PASSIVE_CAPTURE],
         ['pointerup', this.onPointerUp.bind(this), PASSIVE_CAPTURE],
         ['dragend', this.onDragEnd.bind(this), PASSIVE_CAPTURE],
+        ['mouseover', this.onMouseOver.bind(this), PASSIVE_CAPTURE],
+        ['mouseout', this.onMouseOut.bind(this), PASSIVE_CAPTURE],
       );
+      localStorage
+        .get(['targetColor'])
+        .then(({ targetColor }) => {
+          if (typeof targetColor === 'string' && targetColor) this.ring.setColor(targetColor);
+        })
+        .catch(() => {});
     }
     for (const [event, handler, opts] of this.listeners) {
       window.addEventListener(event, handler, opts);
@@ -67,7 +94,6 @@ class CaptureController {
   }
 
   private async captureAction(action: string, target: HTMLElement, point?: { x: number; y: number }) {
-    await waitForPaint();
     const elementMeta = extractElementMeta(target);
     await sendMessage('captureStep', {
       guideId: this.guideId,
@@ -75,6 +101,44 @@ class CaptureController {
       elementMeta: point ? { ...elementMeta, clickPoint: point } : elementMeta,
       domContext: extractDOMContext(target, action),
     });
+  }
+
+  private enqueue(task: () => Promise<unknown>) {
+    this.busy = true;
+    this.ring.hide();
+    this.queue.add(async () => {
+      await waitForPaint();
+      await task();
+    });
+    this.queue.onIdle().then(() => {
+      this.busy = false;
+      if (this.hovered?.isConnected && !focusInEmbed()) this.ring.show(this.hovered);
+    });
+  }
+
+  private hoverTarget(raw: EventTarget | null): HTMLElement | null {
+    if (!(raw instanceof Element) || isMimikElement(raw)) return null;
+    const target = findFocusableAncestor(raw);
+    if (target === document.body || target === document.documentElement) return null;
+    if (EMBED_TAGS.has(target.tagName) || isTooLarge(target)) return null;
+    if (target.querySelector(EMBED_SELECTOR)) return null;
+    return target;
+  }
+
+  private onMouseOver(e: Event) {
+    const target = this.hoverTarget((e as MouseEvent).target);
+    if (target === this.hovered) return;
+    this.hovered = target;
+    if (this.busy) return;
+    if (target && !focusInEmbed()) this.ring.show(target);
+    else this.ring.hide();
+  }
+
+  private onMouseOut(e: Event) {
+    const related = (e as MouseEvent).relatedTarget;
+    if (related instanceof Element && this.hovered?.contains(related)) return;
+    this.hovered = null;
+    this.ring.hide();
   }
 
   private onClick(e: Event) {
@@ -90,7 +154,7 @@ class CaptureController {
     lastClickTime = now;
 
     if (isTextField(target)) {
-      this.queue.add(async () => {
+      this.enqueue(async () => {
         if (this.input.active && this.input.target !== target) await this.input.finalize();
         if (!this.input.active) await this.input.start(target);
       });
@@ -100,7 +164,7 @@ class CaptureController {
     if (isNavigatingClick(target)) {
       me.preventDefault();
       me.stopImmediatePropagation();
-      this.queue.add(() => this.captureAction('click', target, { x: me.clientX, y: me.clientY }));
+      this.enqueue(() => this.captureAction('click', target, { x: me.clientX, y: me.clientY }));
       const anchor = target.closest('a[href]') as HTMLAnchorElement;
       if (anchor) {
         const href = anchor.href;
@@ -113,7 +177,7 @@ class CaptureController {
       return;
     }
 
-    this.queue.add(() => this.captureAction('click', target, { x: me.clientX, y: me.clientY }));
+    this.enqueue(() => this.captureAction('click', target, { x: me.clientX, y: me.clientY }));
   }
 
   private onAuxClick(e: Event) {
@@ -121,7 +185,7 @@ class CaptureController {
     if (!raw || !(raw instanceof Element)) return;
     const target = findFocusableAncestor(raw);
     if (isMimikElement(target)) return;
-    this.queue.add(() =>
+    this.enqueue(() =>
       this.captureAction('auxclick', target, { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY }),
     );
   }
@@ -132,12 +196,12 @@ class CaptureController {
     if (!target || !(target instanceof HTMLElement) || isMimikElement(target)) return;
 
     if (this.input.active && (ke.key === 'Enter' || ke.key === 'Escape')) {
-      this.queue.add(() => this.input.finalize());
+      this.enqueue(() => this.input.finalize());
       return;
     }
 
     if (isTextField(target)) return;
-    this.queue.add(() => this.captureAction(`keydown:${ke.key}`, target));
+    this.enqueue(() => this.captureAction(`keydown:${ke.key}`, target));
   }
 
   private onInput(e: Event) {
@@ -154,18 +218,18 @@ class CaptureController {
       return;
 
     if (target instanceof HTMLSelectElement) {
-      this.queue.add(() => this.captureAction('input', target));
+      this.enqueue(() => this.captureAction('input', target));
       return;
     }
 
     if (target instanceof HTMLInputElement && (target.type === 'checkbox' || target.type === 'radio')) return;
 
     if (this.input.active && this.input.target !== target) {
-      this.queue.add(() => this.input.finalize());
+      this.enqueue(() => this.input.finalize());
     }
 
     if (!this.input.active) {
-      this.queue.add(() => this.input.start(target));
+      this.enqueue(() => this.input.start(target));
     } else {
       this.input.update(target);
     }
@@ -175,7 +239,7 @@ class CaptureController {
     if (!this.input.active) return;
     const related = (e as FocusEvent).relatedTarget;
     if (related instanceof Element && related === this.input.target) return;
-    this.queue.add(() => this.input.finalize());
+    this.enqueue(() => this.input.finalize());
   }
 
   private onClipboard(e: Event) {
@@ -184,10 +248,11 @@ class CaptureController {
         ? ((e as ClipboardEvent).target as HTMLElement)
         : document.activeElement;
     if (!target || !(target instanceof HTMLElement) || isMimikElement(target)) return;
-    this.queue.add(() => this.captureAction(e.type, target));
+    this.enqueue(() => this.captureAction(e.type, target));
   }
 
   private onPointerDown(e: Event) {
+    this.ring.hide();
     const pe = e as PointerEvent;
     this.dragStartX = pe.pageX;
     this.dragStartY = pe.pageY;
@@ -207,7 +272,7 @@ class CaptureController {
 
     if (dx >= DRAG_MIN_PX || dy >= DRAG_MIN_PX) {
       const target = findFocusableAncestor(this.dragStartElement);
-      if (!isMimikElement(target)) this.queue.add(() => this.captureAction('drag', target));
+      if (!isMimikElement(target)) this.enqueue(() => this.captureAction('drag', target));
     }
 
     this.dragStartX = this.dragStartY = null;
@@ -216,13 +281,15 @@ class CaptureController {
 
   private onDragEnd(e: Event) {
     if (!e.target || !(e.target instanceof Element) || isMimikElement(e.target)) return;
-    this.queue.add(() => this.captureAction('drag', findFocusableAncestor(e.target as Element)));
+    this.enqueue(() => this.captureAction('drag', findFocusableAncestor(e.target as Element)));
   }
 
   stop() {
     for (const [event, handler, opts] of this.listeners) {
       window.removeEventListener(event, handler, opts);
     }
+    this.hovered = null;
+    this.ring.dispose();
     this.queue.add(() => this.input.finalize());
   }
 }
