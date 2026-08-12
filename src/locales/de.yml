@@ -101,6 +101,7 @@ settings:
   aiLanguage: Sprache der Beschreibungen
   voiceNarration: Sprachkommentar
   voiceUsingAiKey: "Es ist kein Sprach-Schlüssel gesetzt, daher nutzt Mimik den OpenAI-Schlüssel aus den KI-Beschreibungen oben."
+  aiNoKey: "Kein API-Schlüssel gesetzt, daher verwenden Schritte einfache regelbasierte Beschreibungen."
   voiceNoKey: "Es ist kein API-Schlüssel gesetzt, daher werden deine Aufnahmen nicht vertont."
   microphone: Mikrofon
   microphoneDefault: Systemstandard

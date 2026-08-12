@@ -89,6 +89,7 @@ settings:
   aiLanguage: Idioma de descripciones
   voiceNarration: "Narración por voz"
   voiceUsingAiKey: "No hay clave de voz, así que Mimik usa la clave de OpenAI de Descripciones con IA de arriba."
+  aiNoKey: "No hay clave de API, así que los pasos usarán descripciones básicas por reglas."
   voiceNoKey: "No hay ninguna clave de API configurada, así que tus grabaciones no se narrarán."
   microphone: "Micrófono"
   microphoneDefault: Predeterminado del sistema

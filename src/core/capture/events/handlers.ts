@@ -2,6 +2,7 @@ import PQueue from 'p-queue';
 import { DEFAULT_TARGET_COLOR } from '@/core/screenshot/types';
 import { localStorage } from '@/lib/browser-api';
 import { HoverRing } from '@/lib/hover-ring';
+import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { extractDOMContext } from '../dom/context';
 import { extractElementMeta, freezeRect } from '../dom/element-meta';
@@ -12,18 +13,24 @@ import {
   isTextField,
   isTooLarge,
 } from '../dom/element-utils';
+import { isReplayedClick, replayClick, replayInit, shouldInterceptClick } from './click-intercept';
 import { InputSession } from './input-session';
 
 const DEDUP_MS = 300;
 const DRAG_MIN_PX = 30;
 const INTERCEPT_DELAY_MS = 100;
 const PAINT_FRAMES = 3;
+const CAPTURE_BUDGET_MS = 2500;
 const EMBED_TAGS = new Set(['IFRAME', 'EMBED', 'OBJECT']);
 const EMBED_SELECTOR = 'iframe, embed, object';
 
 function focusInEmbed(): boolean {
   const active = document.activeElement;
   return !!active && EMBED_TAGS.has(active.tagName);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function waitForPaint(): Promise<void> {
@@ -147,7 +154,7 @@ class CaptureController {
   private onClick(e: Event) {
     const me = e as MouseEvent;
     const raw = me.target;
-    if (!raw || !(raw instanceof Element)) return;
+    if (!raw || !(raw instanceof Element) || isReplayedClick(me) || me.shiftKey) return;
     const target = findFocusableAncestor(raw);
     if (isMimikElement(target)) return;
 
@@ -181,7 +188,25 @@ class CaptureController {
       return;
     }
 
-    this.enqueue(this.capture('click', target, { x: me.clientX, y: me.clientY }));
+    const task = this.capture('click', target, { x: me.clientX, y: me.clientY });
+
+    if (!shouldInterceptClick(target, me)) {
+      this.enqueue(task);
+      return;
+    }
+
+    me.preventDefault();
+    me.stopImmediatePropagation();
+    const init = replayInit(me);
+    this.enqueue(async () => {
+      try {
+        await Promise.race([task(), sleep(CAPTURE_BUDGET_MS)]);
+      } catch (err) {
+        logger.warn('Capture failed, replaying the click anyway', err);
+      } finally {
+        replayClick(target, init);
+      }
+    });
   }
 
   private onAuxClick(e: Event) {
