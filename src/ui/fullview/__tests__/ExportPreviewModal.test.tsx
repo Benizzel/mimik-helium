@@ -9,6 +9,7 @@ const exportGuideAsHTML = vi.hoisted(() => vi.fn());
 const canExportVideo = vi.hoisted(() => vi.fn());
 
 vi.mock('@/core/export/video-export', () => ({ exportGuideAsVideo }));
+vi.mock('@/ui/fullview/VideoStepPlayer', () => ({ default: () => <div data-testid="video-player" /> }));
 vi.mock('@/core/export/html-export', () => ({ exportGuideAsHTML }));
 vi.mock('@/core/export/video-support', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/core/export/video-support')>()),
@@ -59,7 +60,7 @@ describe('ExportPreviewModal video preview', () => {
     vi.clearAllMocks();
     canExportVideo.mockResolvedValue(true);
     exportGuideAsHTML.mockResolvedValue('<html lang="en"><head></head><body></body></html>');
-    exportGuideAsVideo.mockResolvedValue({ blob: new Blob(['video']), extension: 'mp4' });
+    exportGuideAsVideo.mockResolvedValue({ blob: new Blob(['video']), extension: 'mp4', chapters: [] });
     URL.createObjectURL = vi.fn(() => 'blob:video');
     URL.revokeObjectURL = vi.fn();
   });

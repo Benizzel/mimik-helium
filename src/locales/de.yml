@@ -287,6 +287,11 @@ blurPanel:
   resetAll: Alles zurücksetzen
 
 exportPreview:
+  stepDescriptions: "Schritttexte"
+  stepDescriptionsHint: "Den Schritttext in jedes Videobild einzeichnen"
+  resolution: "Videoqualität"
+  res_720p: "720p"
+  res_1080p: "1080p"
   title: "Export-Vorschau"
   cover: "Deckblatt"
   coverHint: "Ein eigenes erstes Blatt mit Titel und Details"
@@ -307,12 +312,19 @@ exportPreview:
   modeVideo: "Video"
   encodingVideo: "Videovorschau wird erstellt"
   videoFailed: "Die Videovorschau konnte nicht erstellt werden"
+videoPlayer:
+  stepCount: "$1 Schritte"
+  previousStep: "Vorheriger Schritt"
+  nextStep: "Nächster Schritt"
+  speed: "Wiedergabegeschwindigkeit"
+
 exportMenu:
   docx: "DOCX"
   html: HTML
   markdown: Markdown
   pdf: PDF
   video: Video
+  cancelProgress: "Abbrechen · $1 %"
 
 onboarding:
   welcomeBadge: Willkommen
@@ -380,6 +392,7 @@ steps:
 
 export:
   guideLabel: "ANLEITUNG"
+  endLabel: "ANLEITUNG ABGESCHLOSSEN"
   stepsRange: "Schritte $1–$2 von $3"
   stepOf: "Schritt $1 von $2"
   madeWith: "Made with Mimik"

@@ -356,6 +356,11 @@ annotationEditor:
   done: Pronto
 
 exportPreview:
+  stepDescriptions: "Textos da etapa"
+  stepDescriptionsHint: "Desenhar o texto da etapa em cada quadro"
+  resolution: "Qualidade do vídeo"
+  res_720p: "720p"
+  res_1080p: "1080p"
   title: "Prévia da exportação"
   cover: "Capa"
   coverHint: "Uma primeira folha com título e detalhes"
@@ -376,12 +381,19 @@ exportPreview:
   modeVideo: "Vídeo"
   encodingVideo: "Codificando a prévia do vídeo"
   videoFailed: "Não foi possível criar a prévia do vídeo"
+videoPlayer:
+  stepCount: "$1 etapas"
+  previousStep: "Etapa anterior"
+  nextStep: "Próxima etapa"
+  speed: "Velocidade de reprodução"
+
 exportMenu:
   docx: DOCX
   html: HTML
   markdown: Markdown
   pdf: PDF
   video: Vídeo
+  cancelProgress: "Cancelar · $1%"
 
 onboarding:
   welcomeBadge: Bem-vindo
@@ -449,6 +461,7 @@ steps:
 
 export:
   guideLabel: "GUIA"
+  endLabel: "GUIA CONCLUÍDO"
   stepsRange: "Etapas $1–$2 de $3"
   stepOf: "Etapa $1 de $2"
   madeWith: "Made with Mimik"

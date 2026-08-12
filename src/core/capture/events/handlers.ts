@@ -4,7 +4,7 @@ import { localStorage } from '@/lib/browser-api';
 import { HoverRing } from '@/lib/hover-ring';
 import { sendMessage } from '@/lib/messaging';
 import { extractDOMContext } from '../dom/context';
-import { extractElementMeta } from '../dom/element-meta';
+import { extractElementMeta, freezeRect } from '../dom/element-meta';
 import {
   findFocusableAncestor,
   isMimikElement,
@@ -93,14 +93,17 @@ class CaptureController {
     }
   }
 
-  private async captureAction(action: string, target: HTMLElement, point?: { x: number; y: number }) {
-    const elementMeta = extractElementMeta(target);
-    await sendMessage('captureStep', {
-      guideId: this.guideId,
-      action,
-      elementMeta: point ? { ...elementMeta, clickPoint: point } : elementMeta,
-      domContext: extractDOMContext(target, action),
-    });
+  private capture(action: string, target: HTMLElement, point?: { x: number; y: number }) {
+    const atEvent = freezeRect(target);
+    return async () => {
+      const elementMeta = extractElementMeta(target, atEvent);
+      await sendMessage('captureStep', {
+        guideId: this.guideId,
+        action,
+        elementMeta: point ? { ...elementMeta, clickPoint: point } : elementMeta,
+        domContext: extractDOMContext(target, action),
+      });
+    };
   }
 
   private enqueue(task: () => Promise<unknown>) {
@@ -154,9 +157,10 @@ class CaptureController {
     lastClickTime = now;
 
     if (isTextField(target)) {
+      const atEvent = freezeRect(target);
       this.enqueue(async () => {
         if (this.input.active && this.input.target !== target) await this.input.finalize();
-        if (!this.input.active) await this.input.start(target);
+        if (!this.input.active) await this.input.start(target, atEvent);
       });
       return;
     }
@@ -164,7 +168,7 @@ class CaptureController {
     if (isNavigatingClick(target)) {
       me.preventDefault();
       me.stopImmediatePropagation();
-      this.enqueue(() => this.captureAction('click', target, { x: me.clientX, y: me.clientY }));
+      this.enqueue(this.capture('click', target, { x: me.clientX, y: me.clientY }));
       const anchor = target.closest('a[href]') as HTMLAnchorElement;
       if (anchor) {
         const href = anchor.href;
@@ -177,7 +181,7 @@ class CaptureController {
       return;
     }
 
-    this.enqueue(() => this.captureAction('click', target, { x: me.clientX, y: me.clientY }));
+    this.enqueue(this.capture('click', target, { x: me.clientX, y: me.clientY }));
   }
 
   private onAuxClick(e: Event) {
@@ -185,9 +189,7 @@ class CaptureController {
     if (!raw || !(raw instanceof Element)) return;
     const target = findFocusableAncestor(raw);
     if (isMimikElement(target)) return;
-    this.enqueue(() =>
-      this.captureAction('auxclick', target, { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY }),
-    );
+    this.enqueue(this.capture('auxclick', target, { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY }));
   }
 
   private onKeydown(e: Event) {
@@ -201,7 +203,7 @@ class CaptureController {
     }
 
     if (isTextField(target)) return;
-    this.enqueue(() => this.captureAction(`keydown:${ke.key}`, target));
+    this.enqueue(this.capture(`keydown:${ke.key}`, target));
   }
 
   private onInput(e: Event) {
@@ -218,7 +220,7 @@ class CaptureController {
       return;
 
     if (target instanceof HTMLSelectElement) {
-      this.enqueue(() => this.captureAction('input', target));
+      this.enqueue(this.capture('input', target));
       return;
     }
 
@@ -248,7 +250,7 @@ class CaptureController {
         ? ((e as ClipboardEvent).target as HTMLElement)
         : document.activeElement;
     if (!target || !(target instanceof HTMLElement) || isMimikElement(target)) return;
-    this.enqueue(() => this.captureAction(e.type, target));
+    this.enqueue(this.capture(e.type, target));
   }
 
   private onPointerDown(e: Event) {
@@ -272,7 +274,7 @@ class CaptureController {
 
     if (dx >= DRAG_MIN_PX || dy >= DRAG_MIN_PX) {
       const target = findFocusableAncestor(this.dragStartElement);
-      if (!isMimikElement(target)) this.enqueue(() => this.captureAction('drag', target));
+      if (!isMimikElement(target)) this.enqueue(this.capture('drag', target));
     }
 
     this.dragStartX = this.dragStartY = null;
@@ -281,7 +283,7 @@ class CaptureController {
 
   private onDragEnd(e: Event) {
     if (!e.target || !(e.target instanceof Element) || isMimikElement(e.target)) return;
-    this.enqueue(() => this.captureAction('drag', findFocusableAncestor(e.target as Element)));
+    this.enqueue(this.capture('drag', findFocusableAncestor(e.target as Element)));
   }
 
   stop() {

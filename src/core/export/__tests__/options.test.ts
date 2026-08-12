@@ -27,7 +27,19 @@ describe('normaliseExportOptions', () => {
       screenshots: DEFAULT_EXPORT_OPTIONS.screenshots,
       stepUrls: DEFAULT_EXPORT_OPTIONS.stepUrls,
       imageScale: 'small',
+      stepDescriptions: DEFAULT_EXPORT_OPTIONS.stepDescriptions,
+      resolution: DEFAULT_EXPORT_OPTIONS.resolution,
     });
+  });
+
+  it('rejects an unknown resolution so the encoder never gets bogus dimensions', () => {
+    expect(normaliseExportOptions({ resolution: '4k' }).resolution).toBe(DEFAULT_EXPORT_OPTIONS.resolution);
+    expect(normaliseExportOptions({ resolution: '1080p' }).resolution).toBe('1080p');
+  });
+
+  it('keeps step captions on unless they are explicitly turned off', () => {
+    expect(normaliseExportOptions({ stepDescriptions: 'no' }).stepDescriptions).toBe(true);
+    expect(normaliseExportOptions({ stepDescriptions: false }).stepDescriptions).toBe(false);
   });
 
   it('rejects an unknown image scale so no exporter can derive a NaN width', () => {

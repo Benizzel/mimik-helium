@@ -1,21 +1,32 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import {
+  cursorProgress,
+  cursorScale,
   easeInOut,
   FPS,
   findIdealZoomLevel,
+  landingFrame,
   letterbox,
+  normalizedTargetCenter,
   overlapFrames,
+  reserveTooltip,
+  ringProgress,
   STEP_SECONDS,
+  sharpZoomCeiling,
   stepFrames,
+  stepKind,
   toFrames,
+  tooltipBand,
   tooltipPlacement,
+  tooltipProgress,
   totalStepFrames,
+  videoChapters,
   wrapLines,
   zoomCrop,
   zoomProgress,
 } from '@/core/export/video-export';
-import { FRAME_HEIGHT, FRAME_WIDTH } from '@/core/export/video-support';
+import { FRAME_HEIGHT, FRAME_WIDTH, RESOLUTION_SPECS } from '@/core/export/video-support';
 
 const measure = (line: string) => line.length * 10;
 
@@ -113,19 +124,19 @@ describe('easeInOut', () => {
 
 describe('findIdealZoomLevel', () => {
   const zoom = (rect: { x: number; y: number; width: number; height: number }) =>
-    findIdealZoomLevel(rect, 1000, 800, FRAME_WIDTH, FRAME_HEIGHT);
+    findIdealZoomLevel(rect, 3000, 2400, FRAME_WIDTH, FRAME_HEIGHT);
 
   it('refuses to zoom when the target already fills the frame', () => {
-    expect(zoom({ x: 0, y: 0, width: 1000, height: 800 })).toBe(1);
+    expect(zoom({ x: 0, y: 0, width: 3000, height: 2400 })).toBe(1);
   });
 
   it('caps at the composition ceiling for a target hugging the bottom-right', () => {
-    expect(zoom({ x: 800, y: 640, width: 20, height: 16 })).toBe(3.5);
+    expect(zoom({ x: 2400, y: 1920, width: 60, height: 48 })).toBe(3.5);
   });
 
   it('zooms further on a small target than on a large one', () => {
-    const small = zoom({ x: 480, y: 380, width: 40, height: 40 });
-    const large = zoom({ x: 300, y: 240, width: 400, height: 320 });
+    const small = zoom({ x: 1440, y: 1140, width: 120, height: 120 });
+    const large = zoom({ x: 900, y: 720, width: 1200, height: 960 });
     expect(small).toBeGreaterThan(large);
     expect(large).toBeGreaterThanOrEqual(1);
     expect(small).toBeLessThanOrEqual(3.5);
@@ -134,14 +145,342 @@ describe('findIdealZoomLevel', () => {
   it('never leaves the one-to-ceiling band', () => {
     for (const rect of [
       { x: 0, y: 0, width: 1, height: 1 },
-      { x: 999, y: 799, width: 1, height: 1 },
-      { x: 0, y: 0, width: 5000, height: 5000 },
-      { x: 1000, y: 800, width: 10, height: 10 },
+      { x: 2999, y: 2399, width: 1, height: 1 },
+      { x: 0, y: 0, width: 15000, height: 15000 },
+      { x: 3000, y: 2400, width: 30, height: 30 },
     ]) {
       const level = zoom(rect);
       expect(level).toBeGreaterThanOrEqual(1);
       expect(level).toBeLessThanOrEqual(3.5);
     }
+  });
+
+  it('will not magnify a small capture past the upscale allowance', () => {
+    const pinpoint = { x: 640, y: 360, width: 8, height: 8 };
+    expect(findIdealZoomLevel(pinpoint, 1280, 720, FRAME_WIDTH, FRAME_HEIGHT)).toBe(1.5);
+    expect(findIdealZoomLevel(pinpoint, 2560, 1440, FRAME_WIDTH, FRAME_HEIGHT)).toBe(3);
+  });
+});
+
+describe('sharpZoomCeiling', () => {
+  it('allows a fixed upscale beyond one-to-one', () => {
+    expect(sharpZoomCeiling(1280)).toBe(1.5);
+    expect(sharpZoomCeiling(2560)).toBe(3);
+  });
+
+  it('never drops below one, however small the capture', () => {
+    expect(sharpZoomCeiling(320)).toBe(1);
+    expect(sharpZoomCeiling(1)).toBe(1);
+  });
+
+  it('still respects the composition ceiling on a huge capture', () => {
+    expect(sharpZoomCeiling(6000)).toBe(3.5);
+    expect(sharpZoomCeiling(20000)).toBe(3.5);
+  });
+
+  it('falls back to the composition ceiling for a degenerate size', () => {
+    expect(sharpZoomCeiling(0)).toBe(3.5);
+    expect(sharpZoomCeiling(Number.NaN)).toBe(3.5);
+  });
+});
+
+describe('reveal beats', () => {
+  const land = landingFrame();
+
+  it('lands the camera on frame 67', () => {
+    expect(land).toBe(67);
+  });
+
+  it('shows nothing but the page while the camera is still moving', () => {
+    for (let frame = 0; frame <= land; frame++) {
+      expect(ringProgress(frame)).toBe(0);
+      expect(tooltipProgress(frame)).toBe(0);
+    }
+  });
+
+  it('pops the ring after the camera lands, then settles', () => {
+    expect(ringProgress(land + 4)).toBe(0);
+    expect(ringProgress(land + 7)).toBeGreaterThan(0);
+    expect(ringProgress(land + 11)).toBe(1);
+  });
+
+  it('brings the tooltip in only once the ring is fully on', () => {
+    const ringDone = Array.from({ length: stepFrames() }, (_, f) => f).find((f) => ringProgress(f) === 1) as number;
+    const tipStart = Array.from({ length: stepFrames() }, (_, f) => f).find((f) => tooltipProgress(f) > 0) as number;
+    expect(tipStart).toBeGreaterThanOrEqual(ringDone);
+  });
+
+  it('holds ring and tooltip on for the rest of the step', () => {
+    for (let frame = 90; frame < stepFrames(); frame++) {
+      expect(ringProgress(frame)).toBe(1);
+      expect(tooltipProgress(frame)).toBe(1);
+    }
+  });
+
+  it('rises monotonically', () => {
+    let ring = -1;
+    let tip = -1;
+    let cursor = -1;
+    for (let frame = 0; frame <= stepFrames(); frame++) {
+      expect(ringProgress(frame)).toBeGreaterThanOrEqual(ring);
+      expect(tooltipProgress(frame)).toBeGreaterThanOrEqual(tip);
+      expect(cursorProgress(frame)).toBeGreaterThanOrEqual(cursor);
+      ring = ringProgress(frame);
+      tip = tooltipProgress(frame);
+      cursor = cursorProgress(frame);
+    }
+  });
+});
+
+describe('cursorProgress', () => {
+  it('waits before setting off', () => {
+    expect(cursorProgress(0)).toBe(0);
+    expect(cursorProgress(11)).toBe(0);
+  });
+
+  it('arrives exactly as the camera lands', () => {
+    expect(cursorProgress(landingFrame())).toBe(1);
+    expect(cursorProgress(landingFrame() - 1)).toBeLessThan(1);
+  });
+
+  it('is halfway across at the midpoint of its travel', () => {
+    expect(cursorProgress(39)).toBeCloseTo(0.5, 2);
+  });
+
+  it('stays parked on the target through the close hold', () => {
+    for (let frame = landingFrame(); frame < stepFrames(); frame++) {
+      expect(cursorProgress(frame)).toBe(1);
+    }
+  });
+});
+
+describe('reserveTooltip', () => {
+  const image = { width: 3000, height: 2000 };
+  const band = tooltipBand({ height: 66 });
+  const reserve = (target: { x: number; y: number; width: number; height: number }) =>
+    reserveTooltip(target, band, image, FRAME_HEIGHT);
+
+  it('counts the gap and the frame padding into the reserved band', () => {
+    expect(band).toBe(66 + 14 + 20);
+  });
+
+  it('grows downwards for a target in the upper half', () => {
+    const target = { x: 1400, y: 300, width: 120, height: 40 };
+    const reserved = reserve(target);
+    expect(reserved.y).toBe(target.y);
+    expect(reserved.height).toBeGreaterThan(target.height);
+  });
+
+  it('grows upwards for a target in the lower half', () => {
+    const target = { x: 1400, y: 1600, width: 120, height: 40 };
+    const reserved = reserve(target);
+    expect(reserved.y).toBeLessThan(target.y);
+    expect(reserved.y + reserved.height).toBeCloseTo(target.y + target.height, 6);
+  });
+
+  it('leaves the horizontal extent alone', () => {
+    const reserved = reserve({ x: 1400, y: 300, width: 120, height: 40 });
+    expect(reserved.x).toBe(1400);
+    expect(reserved.width).toBe(120);
+  });
+
+  it('pulls the camera back so the tooltip has somewhere to sit', () => {
+    const target = { x: 1400, y: 300, width: 120, height: 40 };
+    const zoomOf = (r: typeof target) => findIdealZoomLevel(r, image.width, image.height, FRAME_WIDTH, FRAME_HEIGHT);
+    expect(zoomOf(reserve(target))).toBeLessThan(zoomOf(target));
+  });
+
+  it('never reserves outside the image', () => {
+    for (const target of [
+      { x: 0, y: 0, width: 90, height: 60 },
+      { x: 2910, y: 1940, width: 90, height: 60 },
+      { x: 1400, y: 990, width: 120, height: 20 },
+    ]) {
+      const reserved = reserve(target);
+      expect(reserved.y).toBeGreaterThanOrEqual(0);
+      expect(reserved.y + reserved.height).toBeLessThanOrEqual(image.height);
+      expect(reserved.height).toBeGreaterThanOrEqual(target.height);
+    }
+  });
+
+  it('returns the bare target when there is nothing to reserve', () => {
+    const target = { x: 1400, y: 300, width: 120, height: 40 };
+    expect(reserveTooltip(target, 0, image, FRAME_HEIGHT)).toEqual(target);
+    expect(reserveTooltip(target, band, image, 0)).toEqual(target);
+  });
+});
+
+describe('resolution specs', () => {
+  it('offers a codec level that actually covers each frame size', () => {
+    expect(RESOLUTION_SPECS['720p']).toMatchObject({ width: 1280, height: 720, avc: 'avc1.64001f' });
+    expect(RESOLUTION_SPECS['1080p']).toMatchObject({ width: 1920, height: 1080, avc: 'avc1.640028' });
+  });
+
+  it('keeps every frame size on the sixteen-by-nine composition', () => {
+    for (const spec of Object.values(RESOLUTION_SPECS)) {
+      expect(spec.width / spec.height).toBeCloseTo(FRAME_WIDTH / FRAME_HEIGHT, 6);
+    }
+  });
+
+  it('demands more source pixels before zooming at the larger frame size', () => {
+    expect(sharpZoomCeiling(3024, RESOLUTION_SPECS['1080p'].width)).toBeLessThan(
+      sharpZoomCeiling(3024, RESOLUTION_SPECS['720p'].width),
+    );
+  });
+});
+
+describe('videoChapters', () => {
+  const steps = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ id: `s${i}`, description: `Do thing ${i}`, action: 'click' })) as never[];
+  const stride = (157 - 10) / 30;
+
+  it('has nothing to mark for a guide with no frames', () => {
+    expect(videoChapters([], true)).toEqual([]);
+  });
+
+  it('starts the first step at zero when there is no cover', () => {
+    expect(videoChapters(steps(3), false)[0].start).toBe(0);
+  });
+
+  it('pushes every step past the cover when there is one', () => {
+    const marks = videoChapters(steps(3), true);
+    expect(marks[0].start).toBe(3);
+    expect(marks[1].start).toBeCloseTo(3 + stride, 6);
+  });
+
+  it('spaces steps by one stride, not one full step', () => {
+    const marks = videoChapters(steps(4), false);
+    for (let i = 1; i < marks.length; i++) {
+      expect(marks[i].start - marks[i - 1].start).toBeCloseTo(stride, 6);
+    }
+  });
+
+  it('runs the last chapter to the true end of the footage', () => {
+    const marks = videoChapters(steps(6), true);
+    expect(marks[5].end).toBeCloseTo(3 + totalStepFrames(6) / FPS, 6);
+    expect(marks[5].end).toBeGreaterThan(marks[5].start);
+  });
+
+  it('leaves no gap or overlap between consecutive chapters', () => {
+    const marks = videoChapters(steps(5), true);
+    for (let i = 1; i < marks.length; i++) {
+      expect(marks[i].start).toBeCloseTo(marks[i - 1].end, 6);
+    }
+  });
+
+  it('carries the step description as the chapter title', () => {
+    expect(videoChapters(steps(2), false)[1].title).toBe('Do thing 1');
+  });
+
+  it('falls back to a numbered label when a step has no description', () => {
+    const bare = [{ id: 'a', description: '   ', action: 'click' }] as never[];
+    expect(videoChapters(bare, false)[0].title).toBe('export.stepLabel[1]');
+  });
+
+  it('carries the action kind through to each chapter', () => {
+    const mixed = [
+      { id: 'a', description: 'Click save', action: 'click' },
+      { id: 'b', description: 'Type a name', action: 'input' },
+      { id: 'c', description: 'Press Enter', action: 'keydown:Enter' },
+      { id: 'd', description: 'Open the page', action: 'navigate' },
+    ] as never[];
+    expect(videoChapters(mixed, false).map((c) => c.kind)).toEqual(['click', 'type', 'key', 'navigate']);
+  });
+});
+
+describe('stepKind', () => {
+  const step = (over: Record<string, unknown>) => over as unknown as Parameters<typeof stepKind>[0];
+
+  it('reads typing apart from clicking', () => {
+    expect(stepKind(step({ action: 'input' }))).toBe('type');
+    expect(stepKind(step({ action: 'click' }))).toBe('click');
+  });
+
+  it('recognises any key press', () => {
+    expect(stepKind(step({ action: 'keydown:Enter' }))).toBe('key');
+    expect(stepKind(step({ action: 'keydown:Tab' }))).toBe('key');
+  });
+
+  it('marks navigation, which has no target to point at', () => {
+    expect(stepKind(step({ action: 'navigate' }))).toBe('navigate');
+  });
+
+  it('treats an authored block as a note rather than an action', () => {
+    expect(stepKind(step({ blockType: 'callout', action: '' }))).toBe('note');
+    expect(stepKind(step({ blockType: 'heading', action: '' }))).toBe('note');
+  });
+
+  it('folds the remaining pointer actions in with clicks', () => {
+    for (const action of ['auxclick', 'copy', 'paste', 'cut', 'drag', '']) {
+      expect(stepKind(step({ action }))).toBe('click');
+    }
+  });
+});
+
+describe('cursorScale', () => {
+  const capture = 1700;
+  const wide = FRAME_WIDTH / 3024;
+  const close = FRAME_WIDTH / (3024 / 2.4);
+
+  it('shrinks the pointer on the wide shot and grows it as the camera closes in', () => {
+    expect(cursorScale(capture, wide)).toBeLessThan(cursorScale(capture, close));
+  });
+
+  it('keeps the pointer legible at the widest framing', () => {
+    expect(cursorScale(capture, wide)).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it('never lets the pointer swell past the ceiling', () => {
+    expect(cursorScale(capture, 12)).toBe(2.6);
+    expect(cursorScale(9000, close)).toBe(2.6);
+  });
+
+  it('tracks the camera proportionally between the two limits', () => {
+    const mid = cursorScale(capture, 0.7);
+    expect(mid).toBeCloseTo((capture * 0.026 * 0.7) / 23, 6);
+    expect(mid).toBeGreaterThan(0.9);
+    expect(mid).toBeLessThan(2.6);
+  });
+
+  it('falls back to the floor for a degenerate camera', () => {
+    expect(cursorScale(0, close)).toBe(0.9);
+    expect(cursorScale(capture, 0)).toBe(0.9);
+  });
+});
+
+describe('normalizedTargetCenter', () => {
+  const shot = (over: Record<string, unknown> = {}) =>
+    ({
+      id: 's',
+      stepId: 'p',
+      guideId: 'g',
+      blob: new Blob(),
+      mimeType: 'image/webp',
+      width: 2000,
+      height: 1000,
+      pixelRatio: 2,
+      bounds: { x: 100, y: 200, width: 50, height: 20 },
+      createdAt: 0,
+      ...over,
+    }) as unknown as Parameters<typeof normalizedTargetCenter>[0];
+
+  it('reports the target centre as a fraction of the full capture', () => {
+    expect(normalizedTargetCenter(shot())).toEqual({ x: 0.125, y: 0.42 });
+  });
+
+  it('measures against a deliberate crop when the step has one', () => {
+    const at = normalizedTargetCenter(shot({ edits: { viewport: { x: 200, y: 400, width: 200, height: 100 } } }));
+    expect(at).toEqual({ x: 0.25, y: 0.2 });
+  });
+
+  it('has no origin to offer when the step has no target', () => {
+    expect(normalizedTargetCenter(shot({ bounds: undefined }))).toBeNull();
+  });
+
+  it('stays inside the frame for a target sitting outside the crop', () => {
+    const at = normalizedTargetCenter(shot({ edits: { viewport: { x: 1000, y: 600, width: 400, height: 200 } } }));
+    expect(at?.x).toBe(0);
+    expect(at?.y).toBe(0);
   });
 });
 

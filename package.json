@@ -29,6 +29,7 @@
     "@ai-sdk/openai": "^3.0.49",
     "@fontsource/poppins": "^5.2.7",
     "@tailwindcss/vite": "^4.2.2",
+    "@vidstack/react": "^1.15.6",
     "@webext-core/messaging": "^2.3.0",
     "@wxt-dev/module-react": "^1.2.2",
     "@xstate/react": "^6.1.0",

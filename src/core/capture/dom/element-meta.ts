@@ -22,8 +22,21 @@ function getCleanText(el: HTMLElement): string | null {
   }
 }
 
-export function extractElementMeta(el: HTMLElement): ElementMeta {
-  const rect = el.getBoundingClientRect();
+export interface FrozenRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export function freezeRect(el: Element): FrozenRect {
+  const { x, y, width, height } = el.getBoundingClientRect();
+  return { x, y, width, height };
+}
+
+export function extractElementMeta(el: HTMLElement, atEvent?: FrozenRect): ElementMeta {
+  const live = freezeRect(el);
+  const rect = live.width > 0 || live.height > 0 ? live : (atEvent ?? live);
   let cssSelector: string;
   try {
     cssSelector = getCssSelector(el);
@@ -42,7 +55,7 @@ export function extractElementMeta(el: HTMLElement): ElementMeta {
     href: el instanceof HTMLAnchorElement ? el.href : null,
     inputType: el instanceof HTMLInputElement ? el.type : null,
     dataTestId: el.getAttribute('data-testid') || el.getAttribute('data-test-id') || el.getAttribute('data-qa') || null,
-    rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+    rect,
     devicePixelRatio: window.devicePixelRatio,
   };
 }

@@ -356,6 +356,11 @@ annotationEditor:
   done: Done
 
 exportPreview:
+  stepDescriptions: "Step captions"
+  stepDescriptionsHint: "Draw the step text onto each video frame"
+  resolution: "Video quality"
+  res_720p: "720p"
+  res_1080p: "1080p"
   title: "Export preview"
   cover: "Cover page"
   coverHint: "A separate first sheet with the title and details"
@@ -376,12 +381,19 @@ exportPreview:
   modeVideo: "Video"
   encodingVideo: "Encoding video preview"
   videoFailed: "The video preview could not be created"
+videoPlayer:
+  stepCount: "$1 steps"
+  previousStep: "Previous step"
+  nextStep: "Next step"
+  speed: "Playback speed"
+
 exportMenu:
   docx: DOCX
   html: HTML
   markdown: Markdown
   pdf: PDF
   video: Video
+  cancelProgress: "Cancel · $1%"
 
 onboarding:
   welcomeBadge: Welcome
@@ -449,6 +461,7 @@ steps:
 
 export:
   guideLabel: "GUIDE"
+  endLabel: "GUIDE COMPLETE"
   stepsRange: "Steps $1–$2 of $3"
   stepOf: "Step $1 of $2"
   madeWith: "Made with Mimik"

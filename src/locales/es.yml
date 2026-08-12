@@ -356,6 +356,11 @@ annotationEditor:
   done: Listo
 
 exportPreview:
+  stepDescriptions: "Textos de paso"
+  stepDescriptionsHint: "Dibujar el texto del paso en cada fotograma"
+  resolution: "Calidad de vídeo"
+  res_720p: "720p"
+  res_1080p: "1080p"
   title: "Vista previa de exportación"
   cover: "Portada"
   coverHint: "Una primera hoja con el título y los detalles"
@@ -376,12 +381,19 @@ exportPreview:
   modeVideo: "Vídeo"
   encodingVideo: "Codificando la vista previa del vídeo"
   videoFailed: "No se pudo crear la vista previa del vídeo"
+videoPlayer:
+  stepCount: "$1 pasos"
+  previousStep: "Paso anterior"
+  nextStep: "Paso siguiente"
+  speed: "Velocidad de reproducción"
+
 exportMenu:
   docx: DOCX
   html: HTML
   markdown: Markdown
   pdf: PDF
   video: Vídeo
+  cancelProgress: "Cancelar · $1 %"
 
 onboarding:
   welcomeBadge: Bienvenido
@@ -449,6 +461,7 @@ steps:
 
 export:
   guideLabel: "GUÍA"
+  endLabel: "GUÍA COMPLETADA"
   stepsRange: "Pasos $1–$2 de $3"
   stepOf: "Paso $1 de $2"
   madeWith: "Made with Mimik"

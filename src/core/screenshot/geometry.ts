@@ -8,6 +8,14 @@ export function clamp(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, val));
 }
 
+function hasArea<T extends { width: number; height: number }>(rect: T | null | undefined): rect is T {
+  return !!rect && rect.width > 0 && rect.height > 0;
+}
+
+export function resolveFrameViewport(screenshot: Screenshot): ScreenshotBounds {
+  return screenshot.edits?.viewport ?? { x: 0, y: 0, width: screenshot.width, height: screenshot.height };
+}
+
 export function resolveViewport(screenshot: Screenshot): ScreenshotBounds {
   const imgW = screenshot.width;
   const imgH = screenshot.height;
@@ -15,7 +23,7 @@ export function resolveViewport(screenshot: Screenshot): ScreenshotBounds {
   if (explicit) return explicit;
 
   const bounds = screenshot.bounds;
-  if (!bounds) return { x: 0, y: 0, width: imgW, height: imgH };
+  if (!hasArea(bounds)) return { x: 0, y: 0, width: imgW, height: imgH };
 
   const dpr = screenshot.pixelRatio || 1;
   const bx = bounds.x * dpr;
@@ -198,10 +206,10 @@ export type TargetSource = Pick<Screenshot, 'edits' | 'bounds' | 'pixelRatio'>;
 
 export function resolveTarget(screenshot: TargetSource): ClickTarget | null {
   const explicit = screenshot.edits?.target;
-  if (explicit !== undefined) return explicit;
+  if (explicit !== undefined) return hasArea(explicit) ? explicit : null;
 
   const bounds = screenshot.bounds;
-  if (!bounds) return null;
+  if (!hasArea(bounds)) return null;
 
   const dpr = screenshot.pixelRatio || 1;
   return {
