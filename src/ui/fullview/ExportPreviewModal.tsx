@@ -1,5 +1,5 @@
 import { FileCode, FileDown, FileText, Loader2, Video } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { downloadBlob, downloadText, safeFilename } from '@/core/export/download';
 import { exportGuideAsHTML } from '@/core/export/html-export';
@@ -9,13 +9,17 @@ import {
   type ImageScale,
   loadExportOptions,
   saveExportOptions,
+  VIDEO_RESOLUTIONS,
 } from '@/core/export/options';
 import { exportGuideAsPDF } from '@/core/export/pdf-export';
 import { paginatePreview, withPreviewStyles } from '@/core/export/preview';
+import type { VideoChapter } from '@/core/export/video-export';
 import { canExportVideo, STEP_SECONDS } from '@/core/export/video-support';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { Button } from '@/ui/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/ui/dialog';
+
+const VideoStepPlayer = lazy(() => import('@/ui/fullview/VideoStepPlayer'));
 
 const VIDEO_AUTOPLAY_STEP_LIMIT = 25;
 const IMAGE_SCALES: ImageScale[] = ['small', 'medium', 'large'];
@@ -39,6 +43,9 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
   const [videoSupported, setVideoSupported] = useState(false);
   const [mode, setMode] = useState<PreviewMode>('document');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoChapters, setVideoChapters] = useState<VideoChapter[]>([]);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const downloadAbort = useRef<AbortController | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoRequested, setVideoRequested] = useState(false);
@@ -58,7 +65,7 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
   }, []);
 
   const videoPending = steps.length > VIDEO_AUTOPLAY_STEP_LIMIT && !videoRequested;
-  const cover = options.cover;
+  const { cover, stepDescriptions, resolution } = options;
 
   useEffect(() => {
     if (!open) setVideoRequested(false);
@@ -89,11 +96,11 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
     const timer = setTimeout(async () => {
       try {
         const { exportGuideAsVideo } = await import('@/core/export/video-export');
-        const { blob } = await exportGuideAsVideo(
+        const { blob, chapters } = await exportGuideAsVideo(
           guide,
           steps,
           screenshots,
-          { cover },
+          { cover, stepDescriptions, resolution },
           {
             signal: controller.signal,
             onProgress: (encoded, frames) => {
@@ -103,6 +110,7 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
         );
         if (controller.signal.aborted) return;
         url = URL.createObjectURL(blob);
+        setVideoChapters(chapters);
         setVideoUrl(url);
       } catch (error) {
         if (controller.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) return;
@@ -115,7 +123,7 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
       if (url) URL.revokeObjectURL(url);
       setVideoUrl(null);
     };
-  }, [open, mode, guide, steps, screenshots, cover, videoPending]);
+  }, [open, mode, guide, steps, screenshots, cover, stepDescriptions, resolution, videoPending]);
 
   const update = (patch: Partial<ExportOptions>) => {
     const next = { ...options, ...patch };
@@ -135,15 +143,24 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
         const { exportGuideAsDOCX } = await import('@/core/export/docx-export');
         downloadBlob(await exportGuideAsDOCX(guide, steps, screenshots, options), safeFilename(guide.title, 'docx'));
       } else if (format === 'video') {
+        const controller = new AbortController();
+        downloadAbort.current = controller;
+        setDownloadProgress(0);
         const { exportGuideAsVideo } = await import('@/core/export/video-export');
-        const { blob, extension } = await exportGuideAsVideo(guide, steps, screenshots, options);
+        const { blob, extension } = await exportGuideAsVideo(guide, steps, screenshots, options, {
+          signal: controller.signal,
+          onProgress: (encoded, frames) => setDownloadProgress(frames > 0 ? encoded / frames : 0),
+        });
         downloadBlob(blob, safeFilename(guide.title, extension));
       } else {
         const { exportGuideAsMarkdown } = await import('@/core/export/markdown-export');
         const md = await exportGuideAsMarkdown(guide, steps, screenshots);
         downloadText(md, safeFilename(guide.title, 'md'), 'text/markdown');
       }
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) throw error;
     } finally {
+      downloadAbort.current = null;
       setExporting(null);
     }
   }
@@ -152,6 +169,11 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
     { key: 'cover', label: i18n.t('exportPreview.cover'), hint: i18n.t('exportPreview.coverHint') },
     { key: 'screenshots', label: i18n.t('exportPreview.screenshots'), hint: i18n.t('exportPreview.screenshotsHint') },
     { key: 'stepUrls', label: i18n.t('exportPreview.stepUrls'), hint: i18n.t('exportPreview.stepUrlsHint') },
+    {
+      key: 'stepDescriptions',
+      label: i18n.t('exportPreview.stepDescriptions'),
+      hint: i18n.t('exportPreview.stepDescriptionsHint'),
+    },
   ];
 
   const modes: Array<{ key: PreviewMode; icon: typeof FileText; label: string }> = [
@@ -223,20 +245,49 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
               </div>
             </div>
 
+            {videoSupported && (
+              <div className="pt-3 border-t border-border">
+                <div className="text-[12px] font-semibold text-foreground mb-2">
+                  {i18n.t('exportPreview.resolution')}
+                </div>
+                <div className="flex gap-1.5">
+                  {VIDEO_RESOLUTIONS.map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => update({ resolution: value })}
+                      className={`flex-1 px-2 py-1.5 rounded-lg border text-[11px] transition-colors ${
+                        options.resolution === value
+                          ? 'border-accent text-accent'
+                          : 'border-border text-muted-foreground hover:border-accent hover:text-foreground'
+                      }`}
+                    >
+                      {i18n.t(`exportPreview.res_${value}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="pt-3 border-t border-border space-y-1.5">
-              {formats.map(({ key, icon: Icon, label }) => (
-                <Button
-                  key={key}
-                  size="sm"
-                  variant="ghost"
-                  disabled={exporting !== null}
-                  onClick={() => handleExport(key)}
-                  className="w-full justify-start gap-2 border border-border hover:border-accent"
-                >
-                  {exporting === key ? <Loader2 size={14} className="animate-spin" /> : <Icon size={14} />}
-                  {i18n.t('exportPreview.download', [label])}
-                </Button>
-              ))}
+              {formats.map(({ key, icon: Icon, label }) => {
+                const cancellable = exporting === key && key === 'video';
+                return (
+                  <Button
+                    key={key}
+                    size="sm"
+                    variant="ghost"
+                    disabled={exporting !== null && !cancellable}
+                    onClick={() => (cancellable ? downloadAbort.current?.abort() : handleExport(key))}
+                    className="w-full justify-start gap-2 border border-border hover:border-accent"
+                  >
+                    {exporting === key ? <Loader2 size={14} className="animate-spin" /> : <Icon size={14} />}
+                    {cancellable
+                      ? i18n.t('exportMenu.cancelProgress', [String(Math.round(downloadProgress * 100))])
+                      : i18n.t('exportPreview.download', [label])}
+                  </Button>
+                );
+              })}
             </div>
           </div>
 
@@ -307,15 +358,9 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
                       <div className="mt-1 text-[11px] text-muted-foreground leading-snug">{videoError}</div>
                     </div>
                   ) : videoUrl ? (
-                    <video
-                      key={videoUrl}
-                      src={videoUrl}
-                      controls
-                      autoPlay
-                      muted
-                      loop
-                      className="w-full h-full object-contain"
-                    />
+                    <Suspense fallback={null}>
+                      <VideoStepPlayer key={videoUrl} src={videoUrl} chapters={videoChapters} />
+                    </Suspense>
                   ) : (
                     <div className="flex flex-col items-center gap-2 bg-card border border-border rounded-xl px-4 py-3">
                       <div className="text-[11px] text-muted-foreground">{i18n.t('exportPreview.encodingVideo')}</div>

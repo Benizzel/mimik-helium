@@ -28,7 +28,9 @@ export default function ExportMenu({
   const [open, setOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [videoSupported, setVideoSupported] = useState(false);
+  const [videoProgress, setVideoProgress] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const videoAbort = useRef<AbortController | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -67,13 +69,23 @@ export default function ExportMenu({
         const md = await exportGuideAsMarkdown(guide, steps, screenshots);
         downloadText(md, safeFilename(guide.title, 'md'), 'text/markdown');
       } else if (type === 'video') {
+        const controller = new AbortController();
+        videoAbort.current = controller;
+        setVideoProgress(0);
         const { exportGuideAsVideo } = await import('@/core/export/video-export');
-        const { blob, extension } = await exportGuideAsVideo(guide, steps, screenshots);
+        const { blob, extension } = await exportGuideAsVideo(guide, steps, screenshots, undefined, {
+          signal: controller.signal,
+          onProgress: (encoded, frames) => setVideoProgress(frames > 0 ? encoded / frames : 0),
+        });
         downloadBlob(blob, safeFilename(guide.title, extension));
       } else {
         downloadBlob(await exportGuideAsPDF(guide, steps, screenshots), safeFilename(guide.title, 'pdf'));
       }
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) throw error;
     } finally {
+      videoAbort.current = null;
+      setVideoProgress(null);
       setExporting(false);
     }
   }
@@ -88,9 +100,15 @@ export default function ExportMenu({
 
   return (
     <div ref={menuRef} className="relative">
-      <Button size="sm" onClick={() => setOpen((prev) => !prev)} disabled={exporting}>
+      <Button
+        size="sm"
+        onClick={() => (videoProgress === null ? setOpen((prev) => !prev) : videoAbort.current?.abort())}
+        disabled={exporting && videoProgress === null}
+      >
         {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-        {i18n.t('common.export')}
+        {videoProgress === null
+          ? i18n.t('common.export')
+          : i18n.t('exportMenu.cancelProgress', [String(Math.round(videoProgress * 100))])}
       </Button>
 
       {open && !exporting && (
