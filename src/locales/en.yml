@@ -89,6 +89,7 @@ settings:
   aiLanguage: Description Language
   voiceNarration: Voice Narration
   voiceUsingAiKey: "No voice key is set, so Mimik uses the OpenAI key from AI Descriptions above."
+  aiNoKey: "No API key is set, so steps will use plain rule-based descriptions."
   voiceNoKey: "No API key is set, so your recordings will not be narrated."
   microphone: Microphone
   microphoneDefault: System default

@@ -353,6 +353,12 @@ export default function SettingsView({ onBack }: SettingsViewProps) {
               </Button>
             </div>
             <KeyStatusNote status={aiKeyCheck.status} />
+            {!apiKey.trim() && (
+              <p className="mt-1.5 flex items-start gap-1.5 text-[10px] text-destructive leading-relaxed" role="alert">
+                <TriangleAlert size={11} className="shrink-0 mt-0.5" />
+                <span>{i18n.t('settings.aiNoKey')}</span>
+              </p>
+            )}
           </div>
 
           <div>
