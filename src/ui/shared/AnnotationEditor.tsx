@@ -496,7 +496,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
     for (const a of annotations) {
-      if (a.type === 'target' && a.id !== selectedId) {
+      if (a.type === 'target') {
         const gradient = ctx.createConicGradient(pulse * Math.PI * 2, a.x + a.w / 2, a.y + a.h / 2);
         for (const [stop, v, s] of TARGET_SWEEP) gradient.addColorStop(stop, shadeOf(a.color, v, s));
         ctx.save();
