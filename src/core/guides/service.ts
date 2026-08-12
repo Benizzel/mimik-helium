@@ -210,7 +210,18 @@ export async function applyNarrationToSteps(updates: readonly NarrationUpdate[])
 }
 
 export async function clearStepAiPending(stepId: string, description?: string): Promise<void> {
-  await db.steps.update(stepId, description ? { description, aiPending: false } : { aiPending: false });
+  const wrote = await db.transaction('rw', db.steps, async () => {
+    const step = await db.steps.get(stepId);
+    if (!step) return false;
+    const owned = step.aiPending === true && step.descriptionSource !== 'narration';
+    if (description && owned) {
+      await db.steps.update(stepId, { description, descriptionSource: 'ai', aiPending: false });
+      return true;
+    }
+    await db.steps.update(stepId, { aiPending: false });
+    return false;
+  });
+  if (wrote) notifyGuidesChanged({ type: 'mutated' });
 }
 
 export async function getStepsForGuide(guideId: string): Promise<Step[]> {
