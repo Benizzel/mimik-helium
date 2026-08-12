@@ -1,10 +1,12 @@
-import type { Screenshot } from '@/core/guides/types';
+import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
 import { drawAnnotation } from './draw';
 import { resolveTarget, resolveViewport } from './geometry';
 
 interface RenderOptions {
   format?: 'image/webp' | 'image/jpeg' | 'image/png';
   quality?: number;
+  viewport?: ScreenshotBounds;
+  target?: boolean;
 }
 
 export async function imageDimensions(file: Blob): Promise<{ width: number; height: number }> {
@@ -16,7 +18,7 @@ export async function imageDimensions(file: Blob): Promise<{ width: number; heig
 
 export async function renderScreenshot(screenshot: Screenshot, opts: RenderOptions = {}): Promise<Blob> {
   const { format = 'image/webp', quality = 0.85 } = opts;
-  const viewport = resolveViewport(screenshot);
+  const viewport = opts.viewport ?? resolveViewport(screenshot);
   const bitmap = await createImageBitmap(screenshot.blob);
 
   const canvas = new OffscreenCanvas(Math.round(viewport.width), Math.round(viewport.height));
@@ -26,7 +28,7 @@ export async function renderScreenshot(screenshot: Screenshot, opts: RenderOptio
 
   ctx.translate(-viewport.x, -viewport.y);
 
-  const target = resolveTarget(screenshot);
+  const target = opts.target === false ? null : resolveTarget(screenshot);
   if (target) {
     drawAnnotation(
       ctx,

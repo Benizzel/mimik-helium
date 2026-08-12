@@ -9,6 +9,7 @@ import {
   FRAME_HEIGHT,
   FRAME_WIDTH,
   pickContainer,
+  RESOLUTION_SPECS,
   STEP_SECONDS,
   STEP_ZOOM_TRANSITION_SEC,
   STEP_ZOOMED_OUT_SEC,
@@ -16,8 +17,8 @@ import {
 import { actionSteps, calloutAccent, isBlock } from '@/core/guides/blocks';
 import type { BlockType, Guide, Screenshot, Step } from '@/core/guides/types';
 import type { Ctx } from '@/core/screenshot/draw';
-import { drawRoundedRect } from '@/core/screenshot/draw';
-import { clamp, resolveTarget, resolveViewport } from '@/core/screenshot/geometry';
+import { drawRoundedRect, TARGET_RADIUS, TARGET_STROKE } from '@/core/screenshot/draw';
+import { clamp, resolveFrameViewport, resolveTarget } from '@/core/screenshot/geometry';
 import { renderScreenshot } from '@/core/screenshot/render';
 
 const TRANSITION_DURATION_SEC = 0.33;
@@ -27,6 +28,8 @@ const KEY_FRAME_INTERVAL_SEC = 2;
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 3.5;
 const ZOOM_PAD_RATIO = 0.15;
+const MAX_UPSCALE = 1.5;
+const RESERVE_PASSES = 3;
 
 const BACKDROP = '#1E1B4B';
 const MUTED = '#9CA3AF';
@@ -42,6 +45,22 @@ const TOOLTIP_GAP = 14;
 const TOOLTIP_MAX_LINES = 3;
 const TOOLTIP_MAX_WIDTH_RATIO = 0.45;
 const FRAME_PADDING = 20;
+
+const RING_DELAY_SEC = 0.12;
+const RING_POP_SEC = 0.22;
+const RING_OVERSHOOT = 0.16;
+const RING_PAD = 7;
+const TOOLTIP_DELAY_SEC = 0.37;
+const TOOLTIP_FADE_SEC = 0.28;
+const TOOLTIP_RISE = 8;
+
+const CURSOR_START_SEC = 0.35;
+const CURSOR_HEIGHT = 23;
+const CURSOR_PAGE_RATIO = 0.026;
+const CURSOR_MIN_SCALE = 0.9;
+const CURSOR_MAX_SCALE = 2.6;
+const CURSOR_PRESS_SEC = 0.16;
+const CURSOR_PRESS_SCALE = 0.86;
 
 const COVER_MARGIN = 96;
 const COVER_CELL_WIDTH = 300;
@@ -89,6 +108,34 @@ export function zoomProgress(frame: number, fps = FPS): number {
   return (frame - held) / moving;
 }
 
+export function landingFrame(fps = FPS): number {
+  return toFrames(STEP_ZOOMED_OUT_SEC + STEP_ZOOM_TRANSITION_SEC, fps);
+}
+
+function fadeAt(frame: number, startSec: number, spanSec: number, fps: number): number {
+  const start = landingFrame(fps) + toFrames(startSec, fps);
+  const span = toFrames(spanSec, fps);
+  if (frame < start) return 0;
+  if (span <= 0 || frame >= start + span) return 1;
+  return (frame - start) / span;
+}
+
+export function ringProgress(frame: number, fps = FPS): number {
+  return fadeAt(frame, RING_DELAY_SEC, RING_POP_SEC, fps);
+}
+
+export function tooltipProgress(frame: number, fps = FPS): number {
+  return fadeAt(frame, TOOLTIP_DELAY_SEC, TOOLTIP_FADE_SEC, fps);
+}
+
+export function cursorProgress(frame: number, fps = FPS): number {
+  const start = toFrames(CURSOR_START_SEC, fps);
+  const land = landingFrame(fps);
+  if (frame <= start) return 0;
+  if (frame >= land) return 1;
+  return (frame - start) / (land - start);
+}
+
 export function easeInOut(t: number): number {
   const x = clamp(t, 0, 1);
   return x < 0.5 ? 4 * x ** 3 : 1 - (-2 * x + 2) ** 3 / 2;
@@ -118,7 +165,12 @@ export function findIdealZoomLevel(
   const needWidth = Math.min(target.width / imgWidth + 2 * ZOOM_PAD_RATIO, 1 - nx) * viewWidth;
   const needHeight = Math.min(target.height / imgHeight + 2 * ZOOM_PAD_RATIO, 1 - ny) * viewHeight;
   const zoom = Math.min(viewWidth / needWidth, viewHeight / needHeight);
-  return Number.isFinite(zoom) ? clamp(zoom, ZOOM_MIN, ZOOM_MAX) : ZOOM_MIN;
+  return Number.isFinite(zoom) ? clamp(zoom, ZOOM_MIN, sharpZoomCeiling(imgWidth, viewWidth)) : ZOOM_MIN;
+}
+
+export function sharpZoomCeiling(imgWidth: number, viewWidth = FRAME_WIDTH): number {
+  if (!(imgWidth > 0) || !(viewWidth > 0)) return ZOOM_MAX;
+  return clamp((imgWidth * MAX_UPSCALE) / viewWidth, ZOOM_MIN, ZOOM_MAX);
 }
 
 export function zoomCrop(
@@ -192,6 +244,34 @@ export function wrapLines(
   return lines;
 }
 
+export function tooltipBand(box: { height: number }): number {
+  return box.height + TOOLTIP_GAP + FRAME_PADDING;
+}
+
+export function reserveTooltip(
+  target: Rect,
+  band: number,
+  image: Size,
+  fitHeight: number,
+  viewWidth = FRAME_WIDTH,
+  viewHeight = FRAME_HEIGHT,
+): Rect {
+  if (band <= 0 || fitHeight <= 0) return target;
+
+  const below = target.y + target.height / 2 < image.height / 2;
+  let rect = target;
+
+  for (let pass = 0; pass < RESERVE_PASSES; pass++) {
+    const zoom = findIdealZoomLevel(rect, image.width, image.height, viewWidth, viewHeight);
+    const reserve = (band * image.height) / (zoom * fitHeight);
+    const top = clamp(below ? target.y : target.y - reserve, 0, image.height);
+    const bottom = clamp((below ? target.y + reserve : target.y) + target.height, top, image.height);
+    rect = { x: target.x, y: top, width: target.width, height: bottom - top };
+  }
+
+  return rect;
+}
+
 export function tooltipPlacement(
   target: Rect,
   tooltip: { width: number; height: number },
@@ -214,25 +294,42 @@ function logoBitmap(logo: NonNullable<Branding['logo']>): Promise<ImageBitmap> {
   return createImageBitmap(new Blob([bytes as BlobPart]));
 }
 
-function drawTooltip(ctx: Ctx, text: string, target: Rect) {
+interface TooltipBox {
+  lines: string[];
+  width: number;
+  height: number;
+}
+
+function measureTooltip(ctx: Ctx, text: string): TooltipBox | null {
   ctx.font = `500 ${TOOLTIP_FONT_SIZE}px Poppins, sans-serif`;
   const lines = wrapLines(text, FRAME_WIDTH * TOOLTIP_MAX_WIDTH_RATIO, (line) => ctx.measureText(line).width);
-  if (lines.length === 0) return;
+  if (lines.length === 0) return null;
 
   const textWidth = Math.max(...lines.map((line) => ctx.measureText(line).width));
-  const width = textWidth + TOOLTIP_PADDING_X * 2;
-  const height = lines.length * TOOLTIP_LINE_HEIGHT + TOOLTIP_PADDING_Y * 2;
-  const at = tooltipPlacement(target, { width, height });
+  return {
+    lines,
+    width: textWidth + TOOLTIP_PADDING_X * 2,
+    height: lines.length * TOOLTIP_LINE_HEIGHT + TOOLTIP_PADDING_Y * 2,
+  };
+}
+
+function drawTooltip(ctx: Ctx, box: TooltipBox, target: Rect) {
+  const at = tooltipPlacement(target, box);
 
   ctx.fillStyle = TOOLTIP_BG;
-  drawRoundedRect(ctx, at.x, at.y, width, height, TOOLTIP_RADIUS);
+  drawRoundedRect(ctx, at.x, at.y, box.width, box.height, TOOLTIP_RADIUS);
   ctx.fill();
 
   ctx.fillStyle = ON_DARK;
   ctx.textBaseline = 'top';
-  lines.forEach((line, i) => {
+  box.lines.forEach((line, i) => {
     ctx.fillText(line, at.x + TOOLTIP_PADDING_X, at.y + TOOLTIP_PADDING_Y + i * TOOLTIP_LINE_HEIGHT);
   });
+}
+
+interface Point {
+  x: number;
+  y: number;
 }
 
 interface ScreenshotLayer {
@@ -240,6 +337,8 @@ interface ScreenshotLayer {
   bitmap: ImageBitmap;
   fit: ReturnType<typeof letterbox>;
   target: Rect | null;
+  ring: { color: string; dashed: boolean } | null;
+  from: Point | null;
   description: string;
 }
 
@@ -279,7 +378,10 @@ async function blurBackdrop(screenshot: Screenshot): Promise<Pick<BlockLayer, 'b
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D context unavailable');
 
-  const rendered = await renderScreenshot(screenshot, RENDER_OPTIONS);
+  const rendered = await renderScreenshot(screenshot, {
+    ...RENDER_OPTIONS,
+    viewport: resolveFrameViewport(screenshot),
+  });
   const source = await createImageBitmap(rendered);
   const blurred = supportsCanvasFilter();
   const at = coverFit(source, blurred ? BLOCK_OVERSCAN : 1);
@@ -302,10 +404,21 @@ async function loadBlockLayer(step: Step, behind: Screenshot | undefined): Promi
   };
 }
 
-async function loadScreenshotLayer(step: Step, screenshot: Screenshot): Promise<ScreenshotLayer> {
-  const rendered = await renderScreenshot(screenshot, RENDER_OPTIONS);
+export function normalizedTargetCenter(screenshot: Screenshot): Point | null {
+  const target = resolveTarget(screenshot);
+  if (!target) return null;
+  const viewport = resolveFrameViewport(screenshot);
+  if (!(viewport.width > 0) || !(viewport.height > 0)) return null;
+  return {
+    x: clamp((target.x + target.width / 2 - viewport.x) / viewport.width, 0, 1),
+    y: clamp((target.y + target.height / 2 - viewport.y) / viewport.height, 0, 1),
+  };
+}
+
+async function loadScreenshotLayer(step: Step, screenshot: Screenshot, from: Point | null): Promise<ScreenshotLayer> {
+  const viewport = resolveFrameViewport(screenshot);
+  const rendered = await renderScreenshot(screenshot, { ...RENDER_OPTIONS, viewport, target: false });
   const bitmap = await createImageBitmap(rendered);
-  const viewport = resolveViewport(screenshot);
   const target = resolveTarget(screenshot);
   const sx = bitmap.width / viewport.width;
   const sy = bitmap.height / viewport.height;
@@ -322,6 +435,8 @@ async function loadScreenshotLayer(step: Step, screenshot: Screenshot): Promise<
           height: target.height * sy,
         }
       : null,
+    ring: target ? { color: target.color, dashed: target.border === 'dashed' } : null,
+    from: from ? { x: from.x * bitmap.width, y: from.y * bitmap.height } : null,
     description: step.description,
   };
 }
@@ -378,32 +493,98 @@ function drawBlockFrame(ctx: Ctx, layer: BlockLayer) {
   ctx.restore();
 }
 
-function drawStepFrame(ctx: Ctx, layer: StepLayer, frame: number) {
+function drawRing(ctx: Ctx, at: Rect, ring: NonNullable<ScreenshotLayer['ring']>, progress: number) {
+  const pad = RING_PAD * (1 + RING_OVERSHOOT * (1 - progress) ** 2);
+  ctx.save();
+  ctx.globalAlpha *= progress;
+  ctx.strokeStyle = ring.color;
+  ctx.lineWidth = TARGET_STROKE;
+  if (ring.dashed) ctx.setLineDash([8, 5]);
+  drawRoundedRect(ctx, at.x - pad, at.y - pad, at.width + pad * 2, at.height + pad * 2, TARGET_RADIUS);
+  ctx.stroke();
+  ctx.restore();
+}
+
+export function cursorScale(imageHeight: number, cameraScale: number): number {
+  if (!(imageHeight > 0) || !(cameraScale > 0)) return CURSOR_MIN_SCALE;
+  const onPage = (imageHeight * CURSOR_PAGE_RATIO) / CURSOR_HEIGHT;
+  return clamp(onPage * cameraScale, CURSOR_MIN_SCALE, CURSOR_MAX_SCALE);
+}
+
+function drawCursor(ctx: Ctx, x: number, y: number, scale: number) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, 20);
+  ctx.lineTo(5.2, 15.2);
+  ctx.lineTo(8.6, 23);
+  ctx.lineTo(12.2, 21.4);
+  ctx.lineTo(8.8, 13.8);
+  ctx.lineTo(15.6, 13.2);
+  ctx.closePath();
+  ctx.fillStyle = ON_DARK;
+  ctx.strokeStyle = BACKDROP;
+  ctx.lineWidth = 1.6;
+  ctx.lineJoin = 'round';
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawStepFrame(ctx: Ctx, layer: StepLayer, frame: number, device: Size) {
   if (layer.kind === 'block') {
     drawBlockFrame(ctx, layer);
     return;
   }
 
-  const crop = zoomCrop(layer.bitmap, layer.target, easeInOut(zoomProgress(frame)));
   const { fit } = layer;
+  const box = layer.description ? measureTooltip(ctx, layer.description) : null;
+  const framed =
+    box && layer.target
+      ? reserveTooltip(layer.target, tooltipBand(box), layer.bitmap, fit.height, device.width, device.height)
+      : layer.target;
+
+  const crop = zoomCrop(layer.bitmap, framed, easeInOut(zoomProgress(frame)), device.width, device.height);
   ctx.drawImage(layer.bitmap, crop.x, crop.y, crop.width, crop.height, fit.x, fit.y, fit.width, fit.height);
 
-  if (!layer.description) return;
-
   const scale = fit.width / crop.width;
+  const project = (x: number, y: number) => ({ x: fit.x + (x - crop.x) * scale, y: fit.y + (y - crop.y) * scale });
+
   const anchor: Rect = layer.target
     ? {
-        x: fit.x + (layer.target.x - crop.x) * scale,
-        y: fit.y + (layer.target.y - crop.y) * scale,
+        ...project(layer.target.x, layer.target.y),
         width: layer.target.width * scale,
         height: layer.target.height * scale,
       }
     : { x: FRAME_WIDTH / 2, y: FRAME_HEIGHT, width: 0, height: 0 };
 
-  drawTooltip(ctx, layer.description, anchor);
+  const ringIn = ringProgress(frame);
+  if (layer.target && layer.ring && ringIn > 0) drawRing(ctx, anchor, layer.ring, ringIn);
+
+  const tipIn = tooltipProgress(frame);
+  if (box && tipIn > 0) {
+    ctx.save();
+    ctx.globalAlpha *= tipIn;
+    ctx.translate(0, (1 - tipIn) * -TOOLTIP_RISE);
+    drawTooltip(ctx, box, anchor);
+    ctx.restore();
+  }
+
+  if (layer.target && layer.from) {
+    const travel = easeInOut(cursorProgress(frame));
+    const tip = project(
+      layer.from.x + (layer.target.x + layer.target.width * 0.42 - layer.from.x) * travel,
+      layer.from.y + (layer.target.y + layer.target.height * 0.55 - layer.from.y) * travel,
+    );
+    const pressed = ringIn > 0 && frame < landingFrame() + toFrames(RING_DELAY_SEC + CURSOR_PRESS_SEC);
+    const size = cursorScale(layer.bitmap.height, scale) * (pressed ? CURSOR_PRESS_SCALE : 1);
+    drawCursor(ctx, tip.x, tip.y, size);
+  }
 }
 
-async function drawCoverFrame(ctx: Ctx, guide: Guide, steps: Step[], brand: Branding) {
+async function drawCardFrame(ctx: Ctx, guide: Guide, steps: Step[], brand: Branding, label: string) {
   ctx.fillStyle = BACKDROP;
   ctx.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
   ctx.textBaseline = 'top';
@@ -411,7 +592,7 @@ async function drawCoverFrame(ctx: Ctx, guide: Guide, steps: Step[], brand: Bran
   let y = 150;
   ctx.fillStyle = MUTED;
   ctx.font = '700 14px Poppins, sans-serif';
-  ctx.fillText(i18n.t('export.guideLabel').toUpperCase(), COVER_MARGIN, y);
+  ctx.fillText(label.toUpperCase(), COVER_MARGIN, y);
   y += 34;
 
   ctx.fillStyle = ON_DARK;
@@ -463,16 +644,51 @@ async function drawCoverFrame(ctx: Ctx, guide: Guide, steps: Step[], brand: Bran
   }
 }
 
-export type VideoOptions = Pick<ExportOptions, 'cover'>;
+export type VideoOptions = Pick<ExportOptions, 'cover' | 'stepDescriptions' | 'resolution'>;
 
 export interface VideoExportControls {
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
 }
 
+export type StepKind = 'click' | 'type' | 'key' | 'navigate' | 'note';
+
+export interface VideoChapter {
+  stepId: string;
+  title: string;
+  kind: StepKind;
+  start: number;
+  end: number;
+}
+
+export function stepKind(step: Step): StepKind {
+  if (isBlock(step)) return 'note';
+  const action = step.action ?? '';
+  if (action.startsWith('keydown:')) return 'key';
+  if (action === 'input') return 'type';
+  if (action === 'navigate') return 'navigate';
+  return 'click';
+}
+
 export interface VideoExportResult {
   blob: Blob;
   extension: string;
+  chapters: VideoChapter[];
+}
+
+export function videoChapters(frames: Step[], cover: boolean, fps = FPS): VideoChapter[] {
+  if (frames.length === 0) return [];
+  const offset = cover ? COVER_SECONDS : 0;
+  const stride = (stepFrames(fps) - overlapFrames(fps)) / fps;
+  const last = offset + totalStepFrames(frames.length, fps) / fps;
+
+  return frames.map((step, index) => ({
+    stepId: step.id,
+    title: step.description?.trim() || i18n.t('export.stepLabel', [String(index + 1)]),
+    kind: stepKind(step),
+    start: offset + index * stride,
+    end: index === frames.length - 1 ? last : offset + (index + 1) * stride,
+  }));
 }
 
 export async function exportGuideAsVideo(
@@ -489,20 +705,26 @@ export async function exportGuideAsVideo(
     'mediabunny'
   );
 
-  const container = await pickContainer();
-  if (!container) throw new Error('This browser cannot encode video');
-  const mp4 = container === 'mp4';
-
   const [brand, options] = await Promise.all([
     loadBranding(),
     exportOptions ? Promise.resolve(exportOptions) : loadExportOptions(),
   ]);
 
+  const requested = RESOLUTION_SPECS[options.resolution] ? options.resolution : '720p';
+  const preferred = await pickContainer(requested);
+  const resolution = preferred ? requested : '720p';
+  const container = preferred ?? (await pickContainer('720p'));
+  if (!container) throw new Error('This browser cannot encode video');
+  const mp4 = container === 'mp4';
+  const spec = RESOLUTION_SPECS[resolution];
+
   const canvas = document.createElement('canvas');
-  canvas.width = FRAME_WIDTH;
-  canvas.height = FRAME_HEIGHT;
+  canvas.width = spec.width;
+  canvas.height = spec.height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D context unavailable');
+  ctx.scale(spec.width / FRAME_WIDTH, spec.height / FRAME_HEIGHT);
+  const device = { width: spec.width, height: spec.height };
 
   const output = new Output({
     format: mp4 ? new Mp4OutputFormat() : new WebMOutputFormat(),
@@ -520,7 +742,7 @@ export async function exportGuideAsVideo(
   const overlap = overlapFrames();
   const stride = span - overlap;
   const stepTotal = totalStepFrames(frames.length);
-  const total = stepTotal + (options.cover ? 1 : 0);
+  const total = stepTotal + (options.cover ? 2 : 0);
   const loaded = new Map<number, StepLayer>();
   const { onProgress, signal } = controls;
   let done = 0;
@@ -533,13 +755,22 @@ export async function exportGuideAsVideo(
     return undefined;
   };
 
+  const cursorOriginFor = (index: number) => {
+    for (let i = index - 1; i >= 0; i--) {
+      const behind = screenshots.get(frames[i].id);
+      if (behind) return normalizedTargetCenter(behind);
+    }
+    return null;
+  };
+
   const layerAt = async (index: number) => {
     const cached = loaded.get(index);
     if (cached) return cached;
     const step = frames[index];
     const layer = isBlock(step)
       ? await loadBlockLayer(step, backdropFor(index))
-      : await loadScreenshotLayer(step, screenshots.get(step.id) as Screenshot);
+      : await loadScreenshotLayer(step, screenshots.get(step.id) as Screenshot, cursorOriginFor(index));
+    if (layer.kind === 'screenshot' && !options.stepDescriptions) layer.description = '';
     loaded.set(index, layer);
     return layer;
   };
@@ -560,9 +791,11 @@ export async function exportGuideAsVideo(
   try {
     const offset = options.cover ? COVER_SECONDS : 0;
 
+    const cards = actionSteps(frames);
+
     if (options.cover) {
       abortIfRequested();
-      await drawCoverFrame(ctx, guide, actionSteps(frames), brand);
+      await drawCardFrame(ctx, guide, cards, brand, i18n.t('export.guideLabel'));
       await source.add(0, COVER_SECONDS);
       done += 1;
       onProgress?.(done, total);
@@ -584,15 +817,23 @@ export async function exportGuideAsVideo(
       ctx.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 
       if (previous) {
-        drawStepFrame(ctx, previous, local + stride);
+        drawStepFrame(ctx, previous, local + stride, device);
         ctx.globalAlpha = (local + 1) / overlap;
-        drawStepFrame(ctx, current, local);
+        drawStepFrame(ctx, current, local, device);
         ctx.globalAlpha = 1;
       } else {
-        drawStepFrame(ctx, current, local);
+        drawStepFrame(ctx, current, local, device);
       }
 
       await source.add(offset + frame / FPS, 1 / FPS);
+      done += 1;
+      onProgress?.(done, total);
+    }
+
+    if (options.cover) {
+      abortIfRequested();
+      await drawCardFrame(ctx, guide, cards, brand, i18n.t('export.endLabel'));
+      await source.add(offset + stepTotal / FPS, COVER_SECONDS);
       done += 1;
       onProgress?.(done, total);
     }
@@ -612,5 +853,6 @@ export async function exportGuideAsVideo(
   return {
     blob: new Blob([buffer], { type: mp4 ? 'video/mp4' : 'video/webm' }),
     extension: mp4 ? 'mp4' : 'webm',
+    chapters: videoChapters(frames, Boolean(options.cover)),
   };
 }

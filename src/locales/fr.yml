@@ -356,6 +356,11 @@ annotationEditor:
   done: "Terminé"
 
 exportPreview:
+  stepDescriptions: "Textes d'étape"
+  stepDescriptionsHint: "Incruster le texte de l'étape sur chaque image"
+  resolution: "Qualité vidéo"
+  res_720p: "720p"
+  res_1080p: "1080p"
   title: "Aperçu de l’export"
   cover: "Page de couverture"
   coverHint: "Une première page avec le titre et les détails"
@@ -376,12 +381,19 @@ exportPreview:
   modeVideo: "Vidéo"
   encodingVideo: "Encodage de l’aperçu vidéo"
   videoFailed: "Impossible de créer l’aperçu vidéo"
+videoPlayer:
+  stepCount: "$1 étapes"
+  previousStep: "Étape précédente"
+  nextStep: "Étape suivante"
+  speed: "Vitesse de lecture"
+
 exportMenu:
   docx: DOCX
   html: HTML
   markdown: Markdown
   pdf: PDF
   video: Vidéo
+  cancelProgress: "Annuler · $1 %"
 
 onboarding:
   welcomeBadge: Bienvenue
@@ -449,6 +461,7 @@ steps:
 
 export:
   guideLabel: "GUIDE"
+  endLabel: "GUIDE TERMINÉ"
   stepsRange: "Étapes $1–$2 sur $3"
   stepOf: "Étape $1 sur $2"
   madeWith: "Made with Mimik"
