@@ -35,7 +35,6 @@ src/
 │   │   │   └── element-utils.ts # findFocusableAncestor, isTextField, etc.
 │   │   ├── events/           # Event capture system
 │   │   │   ├── handlers.ts      # CaptureController class + startCapture
-│   │   │   ├── highlight.ts     # HighlightManager (dashed border overlay)
 │   │   │   └── input-session.ts # InputSession (typing lifecycle)
 │   │   ├── machine.ts        # xstate capture state machine
 │   │   ├── session.ts        # CaptureSession (lifecycle manager)
@@ -126,7 +125,6 @@ Content Script ←→ Background Service Worker ←→ Sidepanel / Fullview
 
 **Tab messages** (content script ↔ background, `lib/tab-messages.ts`):
 - `PING` / `START_CAPTURE` / `STOP_CAPTURE` — lifecycle
-- `HIDE_OVERLAY` / `SHOW_OVERLAY` — overlay toggle (fallback, used for non-click captures)
 - `SHOW_NOTIFICATION` — "Recording started" overlay
 - `URL_CHANGED` / `GET_ROUTE` — SPA navigation tracking
 
@@ -142,22 +140,22 @@ Content Script ←→ Background Service Worker ←→ Sidepanel / Fullview
 **Capture a click:**
 1. Content script's CaptureController detects click via DOM event listener
 2. Click handler pushes async work into PQueue (concurrency: 1)
-3. Queue processes: hides overlay instantly → sends `captureStep` to background → waits
-4. Background calls `captureVisibleTab` (overlay is hidden, page hasn't reacted yet)
+3. Enqueueing hides the hover ring (`pointerdown` already did, on mouse paths); queue waits 3 frames then sends `captureStep`
+4. Background calls `captureVisibleTab` (ring is hidden, page hasn't reacted yet)
 5. Saves Screenshot + Step to IndexedDB
-6. Optionally generates AI description from DOM context text (not screenshot)
-7. Returns `{ stepId }` → content script shows overlay → queue processes next event
+6. Queues the AI description from DOM context text (serialized in the background; the step carries `aiPending` until it lands) rather than awaiting it
+7. Returns `{ stepId }` → queue processes next event; the ring returns only once the queue is fully drained
 
 **Capture text input (typing):**
 1. Click on text field → CaptureController starts InputSession → `captureStep` with initial screenshot
 2. Each keystroke → InputSession.update() → `updateInputStep` (description only, fire-and-forget)
-3. Enter/Escape/focusout → InputSession.finalize() → `finalizeInputStep` → final screenshot replaces initial + AI description
+3. Enter/Escape/focusout → InputSession.finalize() → `finalizeInputStep` → final screenshot replaces initial + queued AI description
 4. Result: one step for entire typing interaction
 
 **Stop recording:**
 1. Background transitions RECORDING → IDLE
 2. Broadcasts `STOP_CAPTURE`, content scripts flush pending input sessions
-3. Background generates guide title from step descriptions + URLs via AI
+3. Background drains queued step descriptions (20s cap), then generates the guide title from step descriptions + URLs via AI
 4. Opens fullview dashboard with the guide
 
 ## DOM Context (AI Input)
@@ -237,11 +235,11 @@ Font: Poppins (loaded via `@fontsource/poppins`).
 
 ## Key Technical Details
 
-- **Async event queue** in content script (PQueue, concurrency 1) serializes capture work — each action awaits the full background round-trip before the next starts
-- **Overlay hidden from content script side** (instant `display:none`) before sending capture message — no round-trip delay for overlay toggle
+- **Async event queue** in content script (PQueue, concurrency 1) serializes capture work — each action awaits the background round-trip (screenshot + step write, not the AI description) before the next starts
+- **Hover ring hidden when work is enqueued** (`CaptureController.enqueue`, instant `display:none`), and `show()` stays suppressed until the queue drains — a second click while the first capture is still in flight can't bring the ring back before the screenshot. `pointerdown` hides it earlier still, on top of `captureAction`'s 3-frame wait
 - **Input session** aggregates all typing on a field into one step — click creates it, keystrokes update description, finalize takes final screenshot
 - **DOM context** sent as text to AI instead of screenshots — 15-30x cheaper per step
-- **Highlight overlay** uses a custom web component (`<mimik-highlight>`) with closed Shadow DOM at max z-index
+- **Hover ring** (`lib/hover-ring.ts`) is a closed-Shadow-DOM host marked `data-mimik-ignore`, shared by recording and the blur picker (purple). Recording reads the user's `targetColor` so the live ring matches the dashed target baked into screenshots. Never drawn on `iframe`/`embed`/`object` — a capture inside a subframe can't hide the top frame's ring
 - **Content script injection** pings first, falls back to `chrome.scripting.executeScript()` for tabs without the script
 - **xstate snapshot** persisted to sessionStorage so the state machine survives service worker restarts
 - **Recording notification** uses `animationend` event (not hardcoded delays) for timing
