@@ -1,7 +1,7 @@
 import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { extractDOMContext } from '../dom/context';
-import { extractElementMeta } from '../dom/element-meta';
+import { extractElementMeta, type FrozenRect, freezeRect } from '../dom/element-meta';
 import { getFieldLabel, getFieldValue } from '../dom/element-utils';
 
 export class InputSession {
@@ -9,6 +9,7 @@ export class InputSession {
   target: HTMLElement | null = null;
 
   private guideId: string;
+  private atEvent: FrozenRect | undefined;
 
   constructor(guideId: string) {
     this.guideId = guideId;
@@ -18,11 +19,12 @@ export class InputSession {
     return this.stepId !== null;
   }
 
-  async start(target: HTMLElement) {
+  async start(target: HTMLElement, atEvent?: FrozenRect) {
+    this.atEvent = atEvent;
     const res = await sendMessage('captureStep', {
       guideId: this.guideId,
       action: 'input',
-      elementMeta: extractElementMeta(target),
+      elementMeta: extractElementMeta(target, atEvent),
       domContext: extractDOMContext(target, 'input'),
     });
     if ('stepId' in res) {
@@ -33,6 +35,7 @@ export class InputSession {
 
   update(target: HTMLElement) {
     if (!this.stepId) return;
+    this.atEvent = freezeRect(target);
     const val = getFieldValue(target);
     const desc = val ? `Type "${val}" in ${getFieldLabel(target)}` : `Clear ${getFieldLabel(target)}`;
     sendMessage('updateInputStep', { stepId: this.stepId, description: desc, inputValue: val || undefined }).catch(
@@ -44,11 +47,13 @@ export class InputSession {
     if (!this.target || !this.stepId) return;
     const target = this.target;
     const stepId = this.stepId;
+    const atEvent = this.atEvent;
     this.stepId = null;
     this.target = null;
+    this.atEvent = undefined;
     await sendMessage('finalizeInputStep', {
       stepId,
-      elementMeta: extractElementMeta(target),
+      elementMeta: extractElementMeta(target, atEvent),
       domContext: extractDOMContext(target, 'input'),
     });
   }

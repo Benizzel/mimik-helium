@@ -7,6 +7,7 @@ import {
   moveAnnotation,
   panBy,
   resizeAnnotation,
+  resolveTarget,
   resolveViewport,
   zoomBy,
 } from '@/core/screenshot/geometry';
@@ -58,6 +59,38 @@ describe('resolveViewport', () => {
     const v = resolveViewport(s);
     expect(v.width).toBeLessThanOrEqual(1000);
     expect(v.height).toBeLessThanOrEqual(800);
+  });
+
+  it('shows the whole page rather than the top-left corner when the element vanished before measuring', () => {
+    const s = makeScreenshot({ bounds: { x: 0, y: 0, width: 0, height: 0 }, pixelRatio: 2 });
+    expect(resolveViewport(s)).toEqual({ x: 0, y: 0, width: 1000, height: 800 });
+  });
+});
+
+describe('resolveTarget', () => {
+  it('derives the target from bounds at the captured pixel ratio', () => {
+    const s = makeScreenshot({ bounds: { x: 50, y: 60, width: 100, height: 20 }, pixelRatio: 2 });
+    expect(resolveTarget(s)).toMatchObject({ x: 100, y: 120, width: 200, height: 40 });
+  });
+
+  it('prefers an explicit target from the editor', () => {
+    const s = makeScreenshot({
+      bounds: { x: 50, y: 60, width: 100, height: 20 },
+      edits: { target: { x: 1, y: 2, width: 3, height: 4, border: 'dashed', color: '#fff' } },
+    });
+    expect(resolveTarget(s)).toMatchObject({ x: 1, y: 2, width: 3, height: 4 });
+  });
+
+  it('respects a target the user deliberately removed', () => {
+    expect(
+      resolveTarget(makeScreenshot({ bounds: { x: 5, y: 5, width: 9, height: 9 }, edits: { target: null } })),
+    ).toBe(null);
+  });
+
+  it('reports no target rather than one pinned to the origin when the element vanished before measuring', () => {
+    const zeroed = { x: 0, y: 0, width: 0, height: 0, border: 'dashed' as const, color: '#4F46E5' };
+    expect(resolveTarget(makeScreenshot({ edits: { target: zeroed } }))).toBe(null);
+    expect(resolveTarget(makeScreenshot({ bounds: { x: 0, y: 0, width: 0, height: 0 }, pixelRatio: 2 }))).toBe(null);
   });
 });
 
