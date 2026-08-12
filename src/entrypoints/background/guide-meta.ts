@@ -2,10 +2,17 @@ import { i18n } from '#imports';
 import { generateGuideMeta } from '@/core/capture/ai/meta';
 import { AI_PROVIDERS } from '@/core/capture/ai/models';
 import { actionSteps } from '@/core/guides/blocks';
-import { getGuideDomain, getStepsForGuide, updateGuideDescription, updateGuideTitle } from '@/core/guides/service';
+import {
+  clearStepAiPending,
+  getGuideDomain,
+  getStepsForGuide,
+  updateGuideDescription,
+  updateGuideTitle,
+} from '@/core/guides/service';
 import { localStorage } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import type { GenerateGuideDescriptionResponse, GuideDescriptionError } from '@/lib/messaging';
+import { drainDescriptions } from './description-queue';
 
 type ResolveFailure = Extract<GuideDescriptionError, 'no-api-key' | 'no-steps'>;
 
@@ -39,8 +46,15 @@ async function applyFallbackTitle(guideId: string) {
   );
 }
 
+export async function settlePendingDescriptions(guideId: string) {
+  await drainDescriptions(guideId);
+  const pending = (await getStepsForGuide(guideId)).filter((s) => s.aiPending);
+  await Promise.all(pending.map((s) => clearStepAiPending(s.id)));
+}
+
 export async function generateGuideMetaOnStop(guideId: string) {
   try {
+    await settlePendingDescriptions(guideId);
     const inputs = await resolveGuideMetaInputs(guideId);
     if (!inputs.ok) {
       if (inputs.reason === 'no-api-key') await applyFallbackTitle(guideId);

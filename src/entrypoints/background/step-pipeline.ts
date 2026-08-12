@@ -16,6 +16,7 @@ import { captureVisibleTab, localStorage } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import type { CaptureStepData, CaptureStepResponse } from '@/lib/messaging';
 import { getActor } from './actor';
+import { queueDescription } from './description-queue';
 
 async function takeScreenshot(stepId: string, meta: ElementMeta): Promise<string | undefined> {
   try {
@@ -96,12 +97,9 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
   });
   await addStepToGuide(guideId, stepId);
 
-  if (data.action !== 'input' && data.domContext) {
-    try {
-      await tryAIDescription(stepId, data.domContext);
-    } catch (err) {
-      logger.error('AI description failed', err);
-    }
+  const domContext = data.domContext;
+  if (data.action !== 'input' && domContext) {
+    queueDescription(guideId, () => tryAIDescription(stepId, domContext));
   }
 
   return { stepId };
@@ -124,11 +122,8 @@ export async function handleFinalizeInputStep(
   if (screenshotId) updates.screenshotId = screenshotId;
   await db.steps.update(stepId, updates);
 
-  if (domContext) {
-    try {
-      await tryAIDescription(stepId, domContext);
-    } catch (err) {
-      logger.error('AI description failed on finalize', err);
-    }
+  const guideId = (await db.steps.get(stepId))?.guideId;
+  if (domContext && guideId) {
+    queueDescription(guideId, () => tryAIDescription(stepId, domContext));
   }
 }
