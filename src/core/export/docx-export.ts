@@ -467,7 +467,16 @@ export async function exportGuideAsDOCX(
   const domain = extractDomain(steps);
   const brand = await loadBranding();
 
-  const children: Array<Paragraph | Table> = opts.cover ? buildCover(guide, steps, domain, brand) : [];
+  const children: Array<Paragraph | Table> = opts.cover
+    ? buildCover(guide, steps, domain, brand)
+    : guide.description
+      ? [
+          new Paragraph({
+            spacing: { after: 320 },
+            children: [new TextRun({ text: guide.description, color: MUTED, size: 22, font: DOCX_FONT_FAMILY })],
+          }),
+        ]
+      : [];
   const numbers = stepNumbers(steps);
 
   for (const [i, step] of steps.entries()) {
