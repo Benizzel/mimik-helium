@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import {
+  CURSOR_ENTRY_ORIGIN,
+  cursorOriginFor,
   cursorProgress,
   cursorScale,
   easeInOut,
@@ -631,5 +633,29 @@ describe('tooltipPlacement', () => {
     const at = tooltipPlacement({ x: 500, y: FRAME_HEIGHT, width: 0, height: 0 }, tooltip);
     expect(at.y).toBeGreaterThanOrEqual(20);
     expect(at.y + tooltip.height).toBeLessThanOrEqual(FRAME_HEIGHT - 20);
+  });
+});
+
+describe('cursorOriginFor', () => {
+  const at = (targets: Record<number, { x: number; y: number }>) => (i: number) => targets[i] ?? null;
+
+  it('starts from the previous frame target', () => {
+    expect(cursorOriginFor(1, at({ 0: { x: 0.2, y: 0.3 } }))).toEqual({ x: 0.2, y: 0.3 });
+  });
+
+  it('skips earlier frames that have no target', () => {
+    expect(cursorOriginFor(2, at({ 0: { x: 0.1, y: 0.9 } }))).toEqual({ x: 0.1, y: 0.9 });
+  });
+
+  it('falls back to the entry origin on the first frame', () => {
+    expect(cursorOriginFor(0, at({}))).toEqual(CURSOR_ENTRY_ORIGIN);
+  });
+
+  it('falls back to the entry origin when no earlier frame has a target', () => {
+    expect(cursorOriginFor(3, at({}))).toEqual(CURSOR_ENTRY_ORIGIN);
+  });
+
+  it('places the entry origin below the frame so the cursor travels in', () => {
+    expect(CURSOR_ENTRY_ORIGIN.y).toBeGreaterThan(1);
   });
 });
