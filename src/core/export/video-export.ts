@@ -333,13 +333,23 @@ interface Point {
   y: number;
 }
 
+export const CURSOR_ENTRY_ORIGIN: Point = { x: 0.5, y: 1.08 };
+
+export function cursorOriginFor(index: number, targetAt: (i: number) => Point | null): Point {
+  for (let i = index - 1; i >= 0; i--) {
+    const behind = targetAt(i);
+    if (behind) return behind;
+  }
+  return CURSOR_ENTRY_ORIGIN;
+}
+
 interface ScreenshotLayer {
   kind: 'screenshot';
   bitmap: ImageBitmap;
   fit: ReturnType<typeof letterbox>;
   target: Rect | null;
   ring: { color: string; dashed: boolean } | null;
-  from: Point | null;
+  from: Point;
   description: string;
 }
 
@@ -416,7 +426,7 @@ export function normalizedTargetCenter(screenshot: Screenshot): Point | null {
   };
 }
 
-async function loadScreenshotLayer(step: Step, screenshot: Screenshot, from: Point | null): Promise<ScreenshotLayer> {
+async function loadScreenshotLayer(step: Step, screenshot: Screenshot, from: Point): Promise<ScreenshotLayer> {
   const viewport = resolveFrameViewport(screenshot);
   const rendered = await renderScreenshot(screenshot, { ...RENDER_OPTIONS, viewport, target: false });
   const bitmap = await createImageBitmap(rendered);
@@ -437,7 +447,7 @@ async function loadScreenshotLayer(step: Step, screenshot: Screenshot, from: Poi
         }
       : null,
     ring: target ? { color: target.color, dashed: target.border === 'dashed' } : null,
-    from: from ? { x: from.x * bitmap.width, y: from.y * bitmap.height } : null,
+    from: { x: from.x * bitmap.width, y: from.y * bitmap.height },
     description: step.description,
   };
 }
@@ -573,7 +583,7 @@ function drawStepFrame(ctx: Ctx, layer: StepLayer, frame: number, device: Size) 
     ctx.restore();
   }
 
-  if (layer.target && layer.from) {
+  if (layer.target) {
     const travel = easeInOut(cursorProgress(frame));
     const tip = project(
       layer.from.x + (layer.target.x + layer.target.width * 0.42 - layer.from.x) * travel,
@@ -756,12 +766,9 @@ export async function exportGuideAsVideo(
     return undefined;
   };
 
-  const cursorOriginFor = (index: number) => {
-    for (let i = index - 1; i >= 0; i--) {
-      const behind = screenshots.get(frames[i].id);
-      if (behind) return normalizedTargetCenter(behind);
-    }
-    return null;
+  const targetAt = (index: number) => {
+    const behind = screenshots.get(frames[index].id);
+    return behind ? normalizedTargetCenter(behind) : null;
   };
 
   const layerAt = async (index: number) => {
@@ -770,7 +777,7 @@ export async function exportGuideAsVideo(
     const step = frames[index];
     const layer = isBlock(step)
       ? await loadBlockLayer(step, backdropFor(index))
-      : await loadScreenshotLayer(step, screenshots.get(step.id) as Screenshot, cursorOriginFor(index));
+      : await loadScreenshotLayer(step, screenshots.get(step.id) as Screenshot, cursorOriginFor(index, targetAt));
     if (layer.kind === 'screenshot' && !options.stepDescriptions) layer.description = '';
     loaded.set(index, layer);
     return layer;
