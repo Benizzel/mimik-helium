@@ -70,7 +70,7 @@ export class MicRecorder {
   private source: MediaStreamAudioSourceNode | null = null;
   private worklet: AudioWorkletNode | null = null;
   private analyser: AnalyserNode | null = null;
-  private analyserFrame: Float32Array | null = null;
+  private analyserFrame: Float32Array<ArrayBuffer> | null = null;
   private chunks: Int16Array[] = [];
   private samples = 0;
   private epochMs: number | null = null;
