@@ -13,8 +13,9 @@ function makeMeta(overrides: Partial<ElementMeta> = {}): ElementMeta {
     role: null,
     href: null,
     inputType: null,
-    selector: 'button.submit',
-    rect: null,
+    cssSelector: 'button.submit',
+    dataTestId: null,
+    rect: { x: 0, y: 0, width: 0, height: 0 },
     devicePixelRatio: 1,
     ...overrides,
   };

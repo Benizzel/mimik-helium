@@ -115,12 +115,17 @@ export function setSidePanelBehavior(openOnActionClick: boolean): void {
   });
 }
 
+const sidebarAction = () =>
+  (browser as unknown as { sidebarAction: { open(): Promise<void> | undefined; toggle(): void } }).sidebarAction;
+
 export function openSidebar(): void {
   try {
     if (import.meta.env.BROWSER === 'firefox') {
-      browser.sidebarAction.open()?.catch(() => undefined);
+      sidebarAction()
+        .open()
+        ?.catch(() => undefined);
     } else {
-      browser.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT })?.catch(() => undefined);
+      browser.sidePanel.open({ windowId: browser.windows.WINDOW_ID_CURRENT })?.catch(() => undefined);
     }
   } catch {
     return;
@@ -129,7 +134,7 @@ export function openSidebar(): void {
 
 export function toggleSidebar(): void {
   if (import.meta.env.BROWSER === 'firefox') {
-    browser.sidebarAction.toggle();
+    sidebarAction().toggle();
   }
 }
 

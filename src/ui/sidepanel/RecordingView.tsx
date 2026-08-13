@@ -1,6 +1,6 @@
 import { Check, EyeOff, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { i18n } from '#imports';
+import { browser, i18n } from '#imports';
 import { deleteStep, getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
 import type { Screenshot, Step } from '@/core/guides/types';
 import { getActiveTab, localStorage } from '@/lib/browser-api';
@@ -92,13 +92,13 @@ export default function RecordingView({ guideId, onStop, voice }: RecordingViewP
   }, []);
 
   useEffect(() => {
-    const handler = (changes: Record<string, chrome.storage.StorageChange>) => {
+    const handler = (changes: Record<string, { newValue?: unknown }>) => {
       if ('mimikBlurMode' in changes && changes.mimikBlurMode.newValue === false) {
         setIsBlurring(false);
       }
     };
-    chrome.storage.onChanged.addListener(handler);
-    return () => chrome.storage.onChanged.removeListener(handler);
+    browser.storage.onChanged.addListener(handler);
+    return () => browser.storage.onChanged.removeListener(handler);
   }, []);
 
   const handleDeleteStep = useCallback(

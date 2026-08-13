@@ -1,3 +1,4 @@
+import type { VoiceProvider } from '@/core/capture/voice/transcribe';
 import type { NarrationResult } from '@/core/capture/voice/types';
 
 export const VOICE_OFFSCREEN_TARGET = 'mimik-offscreen';
@@ -58,7 +59,7 @@ export interface VoiceStepMark {
 }
 
 export interface VoiceTranscriptionSettings {
-  provider: string;
+  provider: VoiceProvider;
   apiKey: string;
   language?: string;
 }

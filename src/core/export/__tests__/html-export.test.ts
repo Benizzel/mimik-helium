@@ -26,19 +26,20 @@ function makeStep(index: number): Step {
     description: `Click the button ${index}`,
     action: 'click',
     url: 'https://example.com/page',
-    createdAt: guide.createdAt,
-  } as Step;
+    timestamp: guide.createdAt,
+  };
 }
 
 function makeScreenshot(stepId: string, edits?: Screenshot['edits']): Screenshot {
   return {
     id: `shot-${stepId}`,
     stepId,
-    guideId: 'guide-1',
     blob: new Blob(['raw'], { type: 'image/png' }),
-    createdAt: guide.createdAt,
+    mimeType: 'image/png',
+    width: 1280,
+    height: 800,
     edits,
-  } as Screenshot;
+  };
 }
 
 function render(steps: Step[], screenshots: Map<string, Screenshot>) {

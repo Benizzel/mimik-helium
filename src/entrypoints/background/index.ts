@@ -12,7 +12,14 @@ import {
   mergeGuideInto,
 } from '@/core/guides/service';
 import type { Step } from '@/core/guides/types';
-import { getActiveTab, localStorage, sendMessageToTab, setSidePanelBehavior, updateTab } from '@/lib/browser-api';
+import {
+  getActiveTab,
+  localStorage,
+  sendMessageToTab,
+  setSidePanelBehavior,
+  toggleSidebar,
+  updateTab,
+} from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import { onMessage } from '@/lib/messaging';
 import { broadcastStateToPanel, setupPortListener } from '@/lib/port';
@@ -56,7 +63,7 @@ export default defineBackground(() => {
   setSidePanelBehavior(true);
   if (import.meta.env.BROWSER === 'firefox') {
     browser.action.onClicked.addListener(() => {
-      browser.sidebarAction.toggle();
+      toggleSidebar();
     });
   }
   initActor().catch(initActorFallback);
