@@ -9,7 +9,7 @@ const byGuide = new Map<string, Set<Promise<unknown>>>();
 
 export function queueDescription(guideId: string, run: () => Promise<void>): void {
   const pending = queue
-    .add(run, { timeout: TASK_TIMEOUT_MS, throwOnTimeout: true })
+    .add(run, { timeout: TASK_TIMEOUT_MS })
     .catch((err) => logger.error('AI description failed', err));
 
   const tracked = byGuide.get(guideId) ?? new Set<Promise<unknown>>();
