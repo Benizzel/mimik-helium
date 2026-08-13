@@ -72,7 +72,11 @@ export default defineConfig({
                 id: "mimik@westpoint.io",
                 strict_min_version: "128.0",
                 data_collection_permissions: {
-                  required: ["none"],
+                  required: ["websiteActivity"],
+                  optional: [
+                    "websiteContent",
+                    "personallyIdentifyingInfo",
+                  ],
                 },
               },
             },

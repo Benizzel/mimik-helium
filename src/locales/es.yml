@@ -3,8 +3,8 @@ meta:
 
 app:
   name: Mimik
-  store_title: "Mimik: guías paso a paso, tutoriales y capturas"
-  description: Convierte cualquier tarea del navegador en una guía paso a paso con capturas. Local, código abierto, con tu propia clave de IA.
+  store_title: "Mimik: guías paso a paso y tutoriales"
+  description: "Graba cualquier tarea del navegador como una guía paso a paso. Edita, narra con voz y exporta a vídeo, PDF o DOCX. Código abierto."
 
 common:
   loading: Cargando...
