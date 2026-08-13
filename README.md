@@ -8,7 +8,7 @@
 
 **Auto-capture any browser workflow into a step-by-step guide. No account, no cloud, no tracking.**
 
-Click record, do the thing, get a polished guide with annotated screenshots. Edit, replay, or export.
+Click record, do the thing, get a polished guide with annotated screenshots. Narrate it as you go, edit it after, then replay or export.
 
 <!-- SHIELD GROUP -->
 
@@ -37,9 +37,11 @@ Click record, do the thing, get a polished guide with annotated screenshots. Edi
   - [🔒 Smart Blur](#-smart-blur)
   - [🧠 AI descriptions (optional)](#-ai-descriptions-optional)
   - [▶️ Guide Me replay](#️-guide-me-replay)
+  - [🎙️ Voice narration (optional)](#️-voice-narration-optional)
+  - [✏️ Guide editor](#️-guide-editor)
   - [📤 Multi-format export](#-multi-format-export)
   - [🌍 Multi-language](#-multi-language)
-  - [💾 100% local storage](#-100-local-storage)
+  - [💾 Local-first storage](#-local-first-storage)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
 
@@ -118,7 +120,7 @@ Need to blur something custom? The manual blur picker lets you select any DOM el
 
 Bring your own API key (OpenAI or Anthropic) and Mimik generates human-readable step descriptions like *"Click the **Submit** button to save changes"* instead of `Click button "Submit"`.
 
-Descriptions are generated from a lightweight DOM context (~50-100 tokens), not screenshots. Roughly 15-30x cheaper than vision models. Choose the language you want descriptions in (English, Spanish, Portuguese, French).
+Descriptions are generated from a lightweight DOM context (~50-100 tokens), not screenshots. Roughly 15-30x cheaper than vision models. Choose the language you want descriptions in (English, Spanish, Portuguese, French, German).
 
 <div align="right">
 
@@ -136,12 +138,38 @@ Replay any guide live on a real page. Mimik highlights the next element to click
 
 </div>
 
+### 🎙️ Voice narration (optional)
+
+Talk through the workflow out loud while you record and Mimik turns what you said into the step
+descriptions. Audio is transcribed with your own key (OpenAI or Groq) and matched to the steps it
+belongs to, so you narrate once instead of writing every step by hand.
+
+<div align="right">
+
+[![Back to top][back-to-top]](#readme-top)
+
+</div>
+
+### ✏️ Guide editor
+
+Fix a guide after the fact without re-recording. Crop, annotate and redact any screenshot, rewrite a
+step with AI inline, drop headings and notes between steps, reorder or bulk-delete, and roll back
+through version history.
+
+<div align="right">
+
+[![Back to top][back-to-top]](#readme-top)
+
+</div>
+
 ### 📤 Multi-format export
 
 Share guides in whatever format fits your workflow:
 
-- **HTML**: self-contained, share anywhere, base64-embedded images
+- **Video**: narrated walkthrough, mp4/H.264, with the cursor moving to each target
 - **PDF**: print-ready, A4 portrait with auto page breaks
+- **DOCX**: open and keep editing in Word
+- **HTML**: self-contained, share anywhere, base64-embedded images
 - **Markdown**: paste into Notion, GitHub, internal docs, wikis
 
 All exports are generated client-side. Nothing touches a server.
@@ -154,7 +182,7 @@ All exports are generated client-side. Nothing touches a server.
 
 ### 🌍 Multi-language
 
-UI available in English, Spanish, Brazilian Portuguese, and French. The AI description language is configurable independently, so you can run Mimik in English but generate guides in Spanish, or any combination.
+UI available in English, Spanish, Brazilian Portuguese, French, and German. The AI description language is configurable independently, so you can run Mimik in English but generate guides in Spanish, or any combination.
 
 <div align="right">
 
@@ -162,9 +190,11 @@ UI available in English, Spanish, Brazilian Portuguese, and French. The AI descr
 
 </div>
 
-### 💾 100% local storage
+### 💾 Local-first storage
 
-Guides, steps, and screenshots live on your device. There's no backend, no account, no telemetry. Your API keys (if you bring one) never leave your browser. They're stored locally and sent directly to the AI provider you chose.
+Guides, steps, and screenshots live on your device. There's no backend, no account, no telemetry. Your API keys (if you bring one) never leave your browser — they're stored locally and used to call the provider you chose directly.
+
+Two things do leave the browser, both documented in the [privacy policy](https://mimik.westpoint.io/privacy/): site icons are fetched from Google's favicon service, which sends that site's domain, and the optional AI and voice features send text or audio to the provider you configured.
 
 <div align="right">
 
