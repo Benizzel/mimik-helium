@@ -36,12 +36,27 @@ const guide: Guide = {
 function makeGuideOf(stepCount: number) {
   const steps = Array.from(
     { length: stepCount },
-    (_, i) => ({ id: `step-${i}`, guideId: 'guide-1', index: i, description: `Step ${i}`, action: 'click' }) as Step,
+    (_, i): Step => ({
+      id: `step-${i}`,
+      guideId: 'guide-1',
+      index: i,
+      description: `Step ${i}`,
+      action: 'click',
+      url: 'https://example.com',
+      timestamp: 0,
+    }),
   );
   const screenshots = new Map<string, Screenshot>(
     steps.map((s) => [
       s.id,
-      { id: `shot-${s.id}`, stepId: s.id, guideId: 'guide-1', blob: new Blob(['x']) } as Screenshot,
+      {
+        id: `shot-${s.id}`,
+        stepId: s.id,
+        blob: new Blob(['x']),
+        mimeType: 'image/png',
+        width: 1280,
+        height: 800,
+      },
     ]),
   );
   return { steps, screenshots };
