@@ -203,6 +203,7 @@ editor:
   descriptionErrorFailed: Could not generate a description. Try again.
   descriptionErrorSaveFailed: Generated the description but could not save it. Try again.
   writingStepDescription: "Writing description\u2026"
+  transcribingStepDescription: "Transcribing what you said…"
   rewriteAskAi: Ask AI
   rewritePlaceholder: "Tell AI how to edit this text\u2026"
   rewriteEnter: Enter

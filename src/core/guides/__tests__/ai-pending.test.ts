@@ -223,3 +223,15 @@ describe('applyAiDescription', () => {
     await expect(applyAiDescription('gone', AI_TEXT)).resolves.toBeUndefined();
   });
 });
+
+describe('narration clears the pending spinner', () => {
+  it('stops a narrated step from waiting on a description', async () => {
+    await db.steps.add(makeStep({ id: 's20', aiPending: true }));
+
+    await applyNarrationToSteps([{ stepId: 's20', description: 'what I said' }]);
+
+    const step = await db.steps.get('s20');
+    expect(step?.description).toBe('what I said');
+    expect(step?.aiPending).toBe(false);
+  });
+});

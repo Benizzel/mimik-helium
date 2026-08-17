@@ -203,7 +203,7 @@ export async function applyNarrationToSteps(updates: readonly NarrationUpdate[])
   if (updates.length === 0) return;
   await db.transaction('rw', db.steps, async () => {
     for (const { stepId, description } of updates) {
-      await db.steps.update(stepId, { description, descriptionSource: 'narration' });
+      await db.steps.update(stepId, { description, descriptionSource: 'narration', aiPending: false });
     }
   });
   notifyGuidesChanged({ type: 'mutated' });

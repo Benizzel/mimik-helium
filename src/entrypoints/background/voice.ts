@@ -8,6 +8,7 @@ import {
   closeVoiceHost,
   closeVoiceHostIfIdle,
   ensureVoiceHost,
+  flushVoiceCapture,
   hasVoiceHost,
   openMicPermissionPage,
   queryMicPermission,
@@ -31,6 +32,7 @@ import {
 } from '@/lib/voice-messages';
 import { narrateRecording, readTranscriptionSettings, type VoiceRecording } from '@/lib/voice-narration';
 import { handedOffPcm, voiceStopAction } from '@/lib/voice-recovery';
+import { discardDeferred } from './deferred-descriptions';
 import { describeUnnarratedSteps } from './describe-unnarrated';
 
 const START_TIMEOUT_MS = 8000;
@@ -72,6 +74,30 @@ async function readVoiceSettings(): Promise<{ enabled: boolean; hasApiKey: boole
 
 let orphanAudio: VoiceRecording | null = null;
 let transcribingGuideId: string | null = null;
+let settleNarration: (() => void) | null = null;
+let narrationSettled: Promise<void> | null = null;
+
+const NARRATION_SETTLE_TIMEOUT_MS = 30000;
+
+export function whenNarrationSettled(): Promise<void> {
+  if (!narrationSettled) return Promise.resolve();
+  return Promise.race([
+    narrationSettled,
+    new Promise<void>((resolve) => setTimeout(resolve, NARRATION_SETTLE_TIMEOUT_MS)),
+  ]);
+}
+
+function markNarrationPending(): void {
+  narrationSettled = new Promise<void>((resolve) => {
+    settleNarration = resolve;
+  });
+}
+
+function markNarrationSettled(): void {
+  settleNarration?.();
+  settleNarration = null;
+  narrationSettled = null;
+}
 
 function requestMicPermission(tabId?: number): void {
   void openMicPermissionPage(tabId).catch((error) => logger.error('voice: mic permission page failed to open', error));
@@ -155,6 +181,18 @@ async function recoverNarration(guideId: string): Promise<void> {
   await applyNarration(guideId, result);
 }
 
+export async function flushNarrationForStep(guideId: string, stepId: string, timestamp: number): Promise<void> {
+  if (phase.phase !== 'recording') return;
+  try {
+    const settings = await readTranscriptionSettings();
+    if (!settings.apiKey) return;
+    const response = await flushVoiceCapture(guideId, { stepId, timestamp }, settings);
+    if (!response.ok) logger.warn('voice: could not narrate the step yet', response);
+  } catch (error) {
+    logger.warn('voice: narrating the step while recording failed', error);
+  }
+}
+
 export async function stopVoiceNarration(guideId: string): Promise<void> {
   if (!supportsVoice()) return;
   try {
@@ -181,6 +219,7 @@ export async function stopVoiceNarration(guideId: string): Promise<void> {
     if (response.ok) {
       logger.info('voice: transcribing narration', response);
       transcribingGuideId = guideId;
+      markNarrationPending();
       if (phase.phase === 'recording') report({ phase: 'transcribing' });
       return;
     }
@@ -196,23 +235,33 @@ export async function stopVoiceNarration(guideId: string): Promise<void> {
 }
 
 async function applyNarration(guideId: string, result: VoiceResultEvent['result']): Promise<void> {
+  const final = transcribingGuideId === guideId;
   try {
-    transcribingGuideId = null;
+    if (final) transcribingGuideId = null;
     const narrated = result.descriptions.map((entry) => entry.stepId);
     const surviving = await findExistingStepIds(narrated);
     const updates = narrationUpdates(result, surviving);
     await applyNarrationToSteps(updates);
-    logger.info('voice: narration applied', { narrated: updates.length, of: narrated.length, stats: result.stats });
-    report({ phase: 'idle', narrated: updates.length });
-    describeUnnarratedSteps(
-      guideId,
-      updates.map((update) => update.stepId),
-    );
+    const narratedIds = updates.map((update) => update.stepId);
+    discardDeferred(guideId, narratedIds);
+    logger.info('voice: narration applied', {
+      narrated: updates.length,
+      of: narrated.length,
+      final,
+      stats: result.stats,
+    });
+    if (final) {
+      report({ phase: 'idle', narrated: updates.length });
+      describeUnnarratedSteps(guideId, narratedIds);
+    }
   } catch (error) {
     logger.error('voice: narration could not be applied', error);
-    report({ phase: 'error', reason: 'unknown', error: String(error) });
+    if (final) report({ phase: 'error', reason: 'unknown', error: String(error) });
   } finally {
-    await closeVoiceHostIfIdle();
+    if (final) {
+      markNarrationSettled();
+      await closeVoiceHostIfIdle();
+    }
   }
 }
 

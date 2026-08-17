@@ -3,6 +3,7 @@ import type { DOMContext } from '@/core/capture/dom/context';
 import {
   clearDeferredDescriptions,
   deferDescription,
+  discardDeferred,
   shouldQueueAiDescription,
   takeDeferredDescriptions,
 } from '../deferred-descriptions';
@@ -78,5 +79,32 @@ describe('takeDeferredDescriptions', () => {
 
   it('returns nothing for a guide that deferred nothing', () => {
     expect(takeDeferredDescriptions('g1', [])).toEqual([]);
+  });
+});
+
+describe('discardDeferred', () => {
+  beforeEach(() => {
+    clearDeferredDescriptions('g1');
+  });
+
+  it('drops only the steps narration already covered', () => {
+    deferDescription('g1', 's1', ctx('one'));
+    deferDescription('g1', 's2', ctx('two'));
+
+    discardDeferred('g1', ['s1']);
+
+    expect(takeDeferredDescriptions('g1', []).map((p) => p.stepId)).toEqual(['s2']);
+  });
+
+  it('leaves the rest waiting for the end of the recording', () => {
+    deferDescription('g1', 's1', ctx('one'));
+
+    discardDeferred('g1', ['s2']);
+
+    expect(takeDeferredDescriptions('g1', []).map((p) => p.stepId)).toEqual(['s1']);
+  });
+
+  it('does nothing for a guide with nothing deferred', () => {
+    expect(() => discardDeferred('g1', ['s1'])).not.toThrow();
   });
 });

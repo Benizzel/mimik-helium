@@ -203,6 +203,7 @@ editor:
   descriptionErrorFailed: "Impossible de générer une description. Réessayez."
   descriptionErrorSaveFailed: "Description générée mais impossible de l'enregistrer. Réessayez."
   writingStepDescription: "R\xE9daction de la description\u2026"
+  transcribingStepDescription: "Transcription de ce que tu as dit…"
   rewriteAskAi: "Demander \xE0 l'IA"
   rewritePlaceholder: "Dites \xE0 l'IA comment modifier ce texte\u2026"
   rewriteEnter: "Entr\xE9e"

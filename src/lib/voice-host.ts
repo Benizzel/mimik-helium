@@ -1,3 +1,4 @@
+import { partialRecording } from '@/core/capture/voice/partial-recording';
 import type { NarrationResult } from '@/core/capture/voice/types';
 import { getExtensionURL, onMessage, sendMessage } from './browser-api';
 import { logger } from './logger';
@@ -11,6 +12,8 @@ import {
   type VoiceErrorEvent,
   type VoiceErrorReason,
   type VoiceEvent,
+  type VoiceFlushRequest,
+  type VoiceFlushResponse,
   type VoiceHandoffEvent,
   type VoiceLevelEvent,
   VoiceMessage,
@@ -71,6 +74,7 @@ async function permissionState(): Promise<VoicePermissionQueryResponse> {
 export function createVoiceHost(): VoiceHost {
   let pending = 0;
   let retained: VoiceRecording | null = null;
+  let flushedUpToSeconds = 0;
 
   const recorder = new MicRecorder(getExtensionURL('/pcm-processor.js'), {
     onEpoch: (audioEpochMs) =>
@@ -133,6 +137,7 @@ export function createVoiceHost(): VoiceHost {
       return { started: false, reason: 'already-recording', error: 'Microphone capture is already running' };
     }
     try {
+      flushedUpToSeconds = 0;
       const stream = await recorder.start(request.deviceId);
       logger.info('voice: microphone capture started', stream);
       return { started: true, ...stream };
@@ -156,6 +161,32 @@ export function createVoiceHost(): VoiceHost {
     deliver(guideId, result);
   }
 
+  async function handleFlush(request: VoiceFlushRequest): Promise<VoiceFlushResponse> {
+    if (!recorder.recording) {
+      return { ok: false, reason: 'not-recording', error: 'Microphone capture is not running' };
+    }
+    if (!request.settings?.apiKey) {
+      return { ok: false, reason: 'missing-api-key', error: 'No transcription API key is configured' };
+    }
+
+    const full = usableRecording(recorder.snapshot());
+    if (!full) return { ok: true, flushed: false };
+
+    const closesAt = (request.step.timestamp - full.audioEpochMs) / 1000;
+    const slice = partialRecording(full, flushedUpToSeconds, closesAt);
+    if (!slice) return { ok: true, flushed: false };
+
+    flushedUpToSeconds = closesAt;
+    pending += 1;
+    try {
+      const result = await narrateRecording(slice, [request.step], request.settings);
+      if (result.descriptions.length > 0) deliver(request.guideId, result);
+      return { ok: true, flushed: result.descriptions.length > 0 };
+    } finally {
+      pending -= 1;
+    }
+  }
+
   async function handleStop(request: VoiceStopRequest): Promise<VoiceStopResponse> {
     if (!recorder.recording) {
       return { ok: false, reason: 'not-recording', error: 'Microphone capture is not running' };
@@ -177,8 +208,14 @@ export function createVoiceHost(): VoiceHost {
       return { ok: false, reason: 'missing-api-key', error: 'No transcription API key is configured' };
     }
 
-    retained = audio;
-    void transcribeInBackground(request.guideId, audio, request.steps, settings);
+    const tail = flushedUpToSeconds > 0 ? partialRecording(audio, flushedUpToSeconds, audio.durationSeconds) : audio;
+    if (!tail) {
+      deliver(request.guideId, EMPTY_NARRATION);
+      return { ok: true, audioEpochMs, durationSeconds };
+    }
+
+    retained = tail;
+    void transcribeInBackground(request.guideId, tail, request.steps, settings);
     return { ok: true, audioEpochMs, durationSeconds };
   }
 
@@ -197,6 +234,8 @@ export function createVoiceHost(): VoiceHost {
     switch (request.type) {
       case VoiceMessage.VOICE_START:
         return handleStart(request);
+      case VoiceMessage.VOICE_FLUSH:
+        return handleFlush(request);
       case VoiceMessage.VOICE_STOP:
         return handleStop(request);
       case VoiceMessage.VOICE_ABORT:

@@ -40,6 +40,12 @@ export function takeDeferredDescriptions(guideId: string, narratedStepIds: reado
     .map(([stepId, domContext]) => ({ stepId, domContext }));
 }
 
+export function discardDeferred(guideId: string, stepIds: readonly string[]): void {
+  const forGuide = deferred.get(guideId);
+  if (!forGuide) return;
+  for (const stepId of stepIds) forGuide.delete(stepId);
+}
+
 export function clearDeferredDescriptions(guideId: string): void {
   deferred.delete(guideId);
 }

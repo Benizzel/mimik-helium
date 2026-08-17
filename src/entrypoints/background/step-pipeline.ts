@@ -18,7 +18,7 @@ import { getActor } from './actor';
 import { generateAiDescription } from './ai-description';
 import { deferDescription, shouldQueueAiDescription } from './deferred-descriptions';
 import { queueDescription } from './description-queue';
-import { getVoiceUpdate } from './voice';
+import { flushNarrationForStep, getVoiceUpdate } from './voice';
 
 async function takeScreenshot(stepId: string, meta: ElementMeta): Promise<string | undefined> {
   try {
@@ -87,6 +87,7 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
     narrationCapturing,
   });
 
+  const timestamp = Date.now();
   await createStep({
     id: stepId,
     guideId,
@@ -94,10 +95,10 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
     description: buildFallbackDescription(data.action, data.elementMeta),
     action: data.action,
     url: snap.context.currentUrl,
-    timestamp: Date.now(),
+    timestamp,
     screenshotId,
     elementMeta: data.elementMeta,
-    aiPending: willUseAI,
+    aiPending: willUseAI || narrationCapturing,
   });
   await addStepToGuide(guideId, stepId);
 
@@ -106,6 +107,8 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
     if (willUseAI) queueDescription(guideId, () => tryAIDescription(stepId, domContext));
     else if (narrationCapturing && hasAiKey) deferDescription(guideId, stepId, domContext);
   }
+
+  if (narrationCapturing) void flushNarrationForStep(guideId, stepId, timestamp);
 
   return { stepId };
 }

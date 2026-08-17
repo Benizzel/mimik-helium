@@ -13,6 +13,7 @@ import { localStorage } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import type { GenerateGuideDescriptionResponse, GuideDescriptionError } from '@/lib/messaging';
 import { drainDescriptions } from './description-queue';
+import { whenNarrationSettled } from './voice';
 
 type ResolveFailure = Extract<GuideDescriptionError, 'no-api-key' | 'no-steps'>;
 
@@ -47,6 +48,7 @@ async function applyFallbackTitle(guideId: string) {
 }
 
 export async function settlePendingDescriptions(guideId: string) {
+  await whenNarrationSettled();
   await drainDescriptions(guideId);
   const pending = (await getStepsForGuide(guideId)).filter((s) => s.aiPending);
   await Promise.all(pending.map((s) => clearStepAiPending(s.id)));

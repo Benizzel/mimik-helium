@@ -136,13 +136,17 @@ export class MicRecorder {
     return { deviceId: stream.getAudioTracks()[0]?.getSettings().deviceId ?? null, usedFallbackDevice };
   }
 
-  stop(): MicRecording {
-    const recording: MicRecording = {
+  snapshot(): MicRecording {
+    return {
       pcm: concat(this.chunks, this.samples),
       sampleRate: this.rate,
       audioEpochMs: this.epochMs,
       durationSeconds: this.durationSeconds,
     };
+  }
+
+  stop(): MicRecording {
+    const recording = this.snapshot();
     this.release();
     return recording;
   }
