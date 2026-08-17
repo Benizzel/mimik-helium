@@ -121,6 +121,10 @@ export interface EnterBlurModeResponse {
   entered: boolean;
 }
 
+export interface StartNarrationResponse {
+  started: boolean;
+}
+
 export interface ExitBlurModeResponse {
   exited: boolean;
 }
@@ -138,6 +142,7 @@ interface MimikProtocol {
   guideMeGoTo(data: GuideMe_GoToData): GuideMe_GoToResponse;
   enterBlurMode(): EnterBlurModeResponse;
   exitBlurMode(): ExitBlurModeResponse;
+  startNarration(): StartNarrationResponse;
   generateGuideDescription(data: GenerateGuideDescriptionData): GenerateGuideDescriptionResponse;
   validateApiKey(data: ValidateApiKeyData): ValidateApiKeyResponse;
   rewriteSelection(data: RewriteSelectionData): RewriteSelectionResponse;

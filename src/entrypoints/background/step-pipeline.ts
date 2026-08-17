@@ -1,4 +1,3 @@
-import { getAIDescription } from '@/core/capture/ai/description';
 import type { DOMContext } from '@/core/capture/dom/context';
 import { CaptureState } from '@/core/capture/machine';
 import { buildFallbackDescription } from '@/core/capture/step-description';
@@ -16,7 +15,10 @@ import { captureVisibleTab, localStorage } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import type { CaptureStepData, CaptureStepResponse } from '@/lib/messaging';
 import { getActor } from './actor';
+import { generateAiDescription } from './ai-description';
+import { deferDescription, shouldQueueAiDescription } from './deferred-descriptions';
 import { queueDescription } from './description-queue';
+import { getVoiceUpdate } from './voice';
 
 async function takeScreenshot(stepId: string, meta: ElementMeta): Promise<string | undefined> {
   try {
@@ -55,14 +57,9 @@ async function takeScreenshot(stepId: string, meta: ElementMeta): Promise<string
 }
 
 async function tryAIDescription(stepId: string, domContext: DOMContext) {
-  const settings = await localStorage.get(['aiApiKey', 'aiProvider', 'aiModel']);
-  if (!settings.aiApiKey) return;
-
-  const provider = (settings.aiProvider as string) || 'openai';
-  const model = (settings.aiModel as string) || 'gpt-4o-mini';
+  if (!(await localStorage.get(['aiApiKey'])).aiApiKey) return;
   try {
-    const description = await getAIDescription(domContext, provider, model, settings.aiApiKey as string);
-    await clearStepAiPending(stepId, description || undefined);
+    await clearStepAiPending(stepId, await generateAiDescription(domContext));
   } catch (err) {
     await clearStepAiPending(stepId);
     throw err;
@@ -81,7 +78,14 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
 
   const screenshotId = await takeScreenshot(stepId, data.elementMeta);
 
-  const willUseAI = data.action !== 'input' && !!data.domContext && !!(await localStorage.get(['aiApiKey'])).aiApiKey;
+  const narrationCapturing = getVoiceUpdate().phase === 'recording';
+  const hasAiKey = !!(await localStorage.get(['aiApiKey'])).aiApiKey;
+  const willUseAI = shouldQueueAiDescription({
+    action: data.action,
+    hasDomContext: !!data.domContext,
+    hasAiKey,
+    narrationCapturing,
+  });
 
   await createStep({
     id: stepId,
@@ -99,7 +103,8 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
 
   const domContext = data.domContext;
   if (data.action !== 'input' && domContext) {
-    queueDescription(guideId, () => tryAIDescription(stepId, domContext));
+    if (willUseAI) queueDescription(guideId, () => tryAIDescription(stepId, domContext));
+    else if (narrationCapturing && hasAiKey) deferDescription(guideId, stepId, domContext);
   }
 
   return { stepId };

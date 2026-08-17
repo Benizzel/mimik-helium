@@ -1,3 +1,4 @@
+import { CaptureState } from '@/core/capture/machine';
 import { hasVoiceApiKey, VOICE_KEY_SETTINGS } from '@/core/capture/voice/api-key';
 import { narrationUpdates } from '@/core/capture/voice/narration-updates';
 import { applyNarrationToSteps, findExistingStepIds, getStepsForGuide } from '@/core/guides/service';
@@ -15,6 +16,7 @@ import {
   stopVoiceCapture,
   supportsVoice,
 } from '@/lib/offscreen';
+import type { VoicePhase } from '@/lib/port';
 import { broadcastVoiceToPanel, type PanelVoiceUpdate } from '@/lib/port';
 import {
   isVoiceMessageFor,
@@ -29,6 +31,7 @@ import {
 } from '@/lib/voice-messages';
 import { narrateRecording, readTranscriptionSettings, type VoiceRecording } from '@/lib/voice-narration';
 import { handedOffPcm, voiceStopAction } from '@/lib/voice-recovery';
+import { describeUnnarratedSteps } from './describe-unnarrated';
 
 const START_TIMEOUT_MS = 8000;
 
@@ -100,6 +103,10 @@ async function beginVoiceCapture(microphoneId: string | undefined, tabId: number
   report({ phase: 'error', reason: started.reason, error: started.error });
   if (started.reason === 'permission-denied') requestMicPermission(tabId);
   await closeVoiceHost();
+}
+
+export function canStartNarrationNow(captureState: string, voicePhase: VoicePhase): boolean {
+  return captureState === CaptureState.RECORDING && voicePhase !== 'recording' && voicePhase !== 'transcribing';
 }
 
 export async function startVoiceNarration(tabId?: number): Promise<void> {
@@ -188,7 +195,7 @@ export async function stopVoiceNarration(guideId: string): Promise<void> {
   }
 }
 
-async function applyNarration(_guideId: string, result: VoiceResultEvent['result']): Promise<void> {
+async function applyNarration(guideId: string, result: VoiceResultEvent['result']): Promise<void> {
   try {
     transcribingGuideId = null;
     const narrated = result.descriptions.map((entry) => entry.stepId);
@@ -197,6 +204,10 @@ async function applyNarration(_guideId: string, result: VoiceResultEvent['result
     await applyNarrationToSteps(updates);
     logger.info('voice: narration applied', { narrated: updates.length, of: narrated.length, stats: result.stats });
     report({ phase: 'idle', narrated: updates.length });
+    describeUnnarratedSteps(
+      guideId,
+      updates.map((update) => update.stepId),
+    );
   } catch (error) {
     logger.error('voice: narration could not be applied', error);
     report({ phase: 'error', reason: 'unknown', error: String(error) });

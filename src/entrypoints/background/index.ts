@@ -28,7 +28,13 @@ import { generateDescriptionOnDemand, generateGuideMetaOnStop, settlePendingDesc
 import { registerNavigationListeners } from './navigation';
 import { handleCaptureStep, handleFinalizeInputStep, handleUpdateInputStep } from './step-pipeline';
 import { broadcastStartCapture, broadcastStopCapture, showNotificationOnTab } from './tab-manager';
-import { getVoiceUpdate, registerVoiceListeners, startVoiceNarration, stopVoiceNarration } from './voice';
+import {
+  canStartNarrationNow,
+  getVoiceUpdate,
+  registerVoiceListeners,
+  startVoiceNarration,
+  stopVoiceNarration,
+} from './voice';
 
 async function resolveManual(step: Step): Promise<boolean> {
   if (!step.screenshotId) return stepRequiresManual(step, null);
@@ -140,6 +146,17 @@ export default defineBackground(() => {
     if (guideId) generateGuideMetaOnStop(guideId).catch(() => {});
 
     return { success: true, guideId: guideId ?? undefined, inserted: false };
+  });
+
+  onMessage('startNarration', async () => {
+    await waitUntilReady();
+    const actor = getActor();
+    if (!canStartNarrationNow(String(actor.getSnapshot().value), getVoiceUpdate().phase)) {
+      return { started: false };
+    }
+    const activeTab = await getActiveTab();
+    await startVoiceNarration(activeTab?.id);
+    return { started: getVoiceUpdate().phase === 'recording' };
   });
 
   onMessage('enterBlurMode', async () => {

@@ -24,7 +24,13 @@ const { broadcasts } = vi.hoisted(() => {
 });
 
 import { db } from '../db';
-import { applyNarrationToSteps, clearStepAiPending, type GuideChangeEvent, updateStepDescription } from '../service';
+import {
+  applyAiDescription,
+  applyNarrationToSteps,
+  clearStepAiPending,
+  type GuideChangeEvent,
+  updateStepDescription,
+} from '../service';
 import type { Guide, Step } from '../types';
 
 const FALLBACK = 'Clicked Save';
@@ -191,5 +197,29 @@ describe('clearStepAiPending', () => {
     const sibling = await db.steps.get('s2');
     expect(sibling?.description).toBe('Clicked Cancel');
     expect(sibling?.aiPending).toBe(true);
+  });
+});
+
+describe('applyAiDescription', () => {
+  it('fills a step that narration did not cover', async () => {
+    await db.steps.add(makeStep({ id: 's9', aiPending: false }));
+
+    await applyAiDescription('s9', AI_TEXT);
+
+    const step = await db.steps.get('s9');
+    expect(step?.description).toBe(AI_TEXT);
+    expect(step?.descriptionSource).toBe('ai');
+  });
+
+  it('leaves a narrated step alone', async () => {
+    await db.steps.add(makeStep({ id: 's10', description: 'What I said out loud', descriptionSource: 'narration' }));
+
+    await applyAiDescription('s10', AI_TEXT);
+
+    expect((await db.steps.get('s10'))?.description).toBe('What I said out loud');
+  });
+
+  it('does nothing for a step that no longer exists', async () => {
+    await expect(applyAiDescription('gone', AI_TEXT)).resolves.toBeUndefined();
   });
 });
