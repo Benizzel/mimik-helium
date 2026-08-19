@@ -216,6 +216,7 @@ editor:
   descriptionErrorFailed: Beschreibung konnte nicht erstellt werden. Versuche es erneut.
   descriptionErrorSaveFailed: Die Beschreibung wurde erstellt, konnte aber nicht gespeichert werden. Versuche es erneut.
   writingStepDescription: "Beschreibung wird geschrieben…"
+  transcribingStepDescription: "Deine Aufnahme wird transkribiert…"
 
 capture:
   recordSteps: Schritte aufzeichnen

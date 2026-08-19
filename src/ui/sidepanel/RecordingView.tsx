@@ -172,7 +172,11 @@ export default function RecordingView({ guideId, onStop, voice }: RecordingViewP
                       {liveStep.step.aiPending ? (
                         <p className="flex items-center gap-1.5 text-[13px] font-medium leading-snug text-muted-foreground">
                           <Loader2 size={13} className="animate-spin" />
-                          {i18n.t('editor.writingStepDescription')}
+                          {i18n.t(
+                            voice.phase === 'recording' || voice.phase === 'transcribing'
+                              ? 'editor.transcribingStepDescription'
+                              : 'editor.writingStepDescription',
+                          )}
                         </p>
                       ) : (
                         <p className="text-[13px] font-medium leading-snug text-foreground">

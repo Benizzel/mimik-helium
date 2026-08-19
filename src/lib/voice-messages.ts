@@ -13,6 +13,7 @@ export type VoiceTarget =
 export const VoiceMessage = {
   VOICE_START: 'VOICE_START',
   VOICE_STOP: 'VOICE_STOP',
+  VOICE_FLUSH: 'VOICE_FLUSH',
   VOICE_ABORT: 'VOICE_ABORT',
   VOICE_STATUS: 'VOICE_STATUS',
   VOICE_PERMISSION_QUERY: 'VOICE_PERMISSION_QUERY',
@@ -74,6 +75,18 @@ export interface VoiceStopRequest extends VoiceEnvelope {
 
 export type VoiceStopResponse =
   | { ok: true; audioEpochMs: number; durationSeconds: number }
+  | { ok: false; reason: VoiceErrorReason; error: string };
+
+export interface VoiceFlushRequest extends VoiceEnvelope {
+  type: typeof VoiceMessage.VOICE_FLUSH;
+  target: typeof VOICE_OFFSCREEN_TARGET;
+  guideId: string;
+  step: VoiceStepMark;
+  settings: VoiceTranscriptionSettings;
+}
+
+export type VoiceFlushResponse =
+  | { ok: true; flushed: boolean }
   | { ok: false; reason: VoiceErrorReason; error: string };
 
 export interface VoiceAbortRequest extends VoiceEnvelope {
@@ -155,6 +168,7 @@ export interface VoicePermissionResultEvent extends VoiceEnvelope {
 export type VoiceRequest =
   | VoiceStartRequest
   | VoiceStopRequest
+  | VoiceFlushRequest
   | VoiceAbortRequest
   | VoiceStatusRequest
   | VoicePermissionQueryRequest;
