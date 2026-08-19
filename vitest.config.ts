@@ -12,7 +12,13 @@ export default defineConfig({
     watch: false,
     coverage: {
       provider: "istanbul",
-      reporter: ["text", "html", "lcov"],
+      reporter: ["text", "json-summary", "html", "lcov"],
+      thresholds: {
+        statements: 78,
+        branches: 66,
+        functions: 76,
+        lines: 78,
+      },
     },
   },
 });
