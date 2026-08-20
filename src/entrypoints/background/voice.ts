@@ -33,7 +33,7 @@ import {
 import { narrateRecording, readTranscriptionSettings, type VoiceRecording } from '@/lib/voice-narration';
 import { handedOffPcm, voiceStopAction } from '@/lib/voice-recovery';
 import { discardDeferred } from './deferred-descriptions';
-import { describeUnnarratedSteps } from './describe-unnarrated';
+import { describeStepNow, describeUnnarratedSteps } from './describe-unnarrated';
 
 const START_TIMEOUT_MS = 8000;
 
@@ -210,9 +210,15 @@ export async function flushNarrationForStep(guideId: string, stepId: string, tim
     const settings = await readTranscriptionSettings();
     if (!settings.apiKey) return;
     const response = await flushVoiceCapture(guideId, { stepId, timestamp }, settings);
-    if (!response.ok) logger.warn('voice: could not narrate the step yet', response);
+    if (!response.ok) {
+      logger.warn('voice: could not narrate the step yet', response);
+      describeStepNow(guideId, stepId);
+      return;
+    }
+    if (!response.flushed) describeStepNow(guideId, stepId);
   } catch (error) {
     logger.warn('voice: narrating the step while recording failed', error);
+    describeStepNow(guideId, stepId);
   }
 }
 
