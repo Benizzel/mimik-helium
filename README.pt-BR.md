@@ -32,16 +32,13 @@ Clica em gravar, faz o que precisa, e recebe um guia caprichado com capturas de 
 - [📺 Demo](#-demo)
 - [👋 Começando](#-começando)
 - [✨ Funcionalidades](#-funcionalidades)
-  - [🎬 Captura automática](#-captura-automática)
-  - [📸 Capturas anotadas](#-capturas-anotadas)
   - [🔒 Smart Blur](#-smart-blur)
   - [🧠 Descrições por IA (opcional)](#-descrições-por-ia-opcional)
   - [▶️ Reprodução Guide Me](#️-reprodução-guide-me)
   - [🎙️ Narração por voz (opcional)](#️-narração-por-voz-opcional)
   - [✏️ Editor de guias](#️-editor-de-guias)
   - [📤 Exportação multi-formato](#-exportação-multi-formato)
-  - [🌍 Multi-idioma](#-multi-idioma)
-  - [💾 Armazenamento local primeiro](#-armazenamento-local-primeiro)
+- [🔐 Privacidade e armazenamento](#-privacidade-e-armazenamento)
 - [🤝 Contribuir](#-contribuir)
 - [📜 Licença](#-licença)
 
@@ -61,11 +58,17 @@ O Mimik transforma qualquer tarefa repetitiva do navegador num guia documentado 
 
 Seja documentando ferramentas internas, escrevendo tutoriais do produto, ou integrando um colega novo, o Mimik captura cada clique, tecla e navegação automaticamente pra tu focar no que importa.
 
+Cada ação relevante vira um passo: cliques em botões e links, campos de formulário, atalhos de teclado, ações da área de transferência, arrastos e navegações. Cliques rápidos em elementos próximos são agrupados pros guias ficarem limpos, e o clique é interceptado antes da página navegar, então nada se perde em SPAs nem em carregamentos completos.
+
+Cada passo ganha uma captura com o elemento clicado destacado e ampliado. Sem recortar na mão, sem ferramenta de anotação pra aprender.
+
 | Navegador | Versão | Instalação |
 | --------- | ------ | ---------- |
 | Chrome    | [![Chrome Version][chrome-version-shield]][chrome-link]   | [Chrome Web Store][chrome-link] |
 | Firefox   | [![Firefox Version][firefox-version-shield]][firefox-link] | [Firefox Add-ons][firefox-link]  |
 | Edge      | [![Edge Version][edge-version-shield]][edge-link]          | [Microsoft Edge Add-ons][edge-link] |
+
+Disponível em inglês, espanhol, português brasileiro, francês e alemão. O idioma das descrições de IA é configurado separadamente, então tu pode usar o Mimik em inglês e gerar os guias em português, ou qualquer combinação.
 
 > \[!IMPORTANT]
 >
@@ -82,28 +85,6 @@ Seja documentando ferramentas internas, escrevendo tutoriais do produto, ou inte
 </div>
 
 ## ✨ Funcionalidades
-
-### 🎬 Captura automática
-
-Clica, digita, navega. O Mimik vê tudo. Cada ação relevante vira um passo: cliques em botões e links, campos de formulário, atalhos de teclado, área de transferência, arrastar e soltar, e navegações.
-
-A fusão inteligente de eventos descarta os cliques rápidos em elementos próximos, pra teus guias ficarem limpos. A interceptação do clique acontece *antes* da página mudar, então nada se perde em SPAs nem em recarregamentos completos.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 📸 Capturas anotadas
-
-Cada passo ganha uma captura com o elemento clicado destacado e um zoom na área importante. Sem recortar na mão, sem aprender ferramentas de anotação. O Mimik descobre qual parte da página importa e enquadra ela pra ti.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
 
 ### 🔒 Smart Blur
 
@@ -193,17 +174,7 @@ Todas as exportações são geradas no cliente. Nada passa por servidor.
 
 </div>
 
-### 🌍 Multi-idioma
-
-Interface disponível em inglês, espanhol, português brasileiro, francês e alemão. O idioma das descrições de IA é configurado separadamente, então tu pode usar o Mimik em inglês e gerar os guias em português, ou qualquer combinação.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 💾 Armazenamento local primeiro
+## 🔐 Privacidade e armazenamento
 
 Teus guias, passos e capturas ficam no teu dispositivo. Sem backend, sem conta, sem telemetria. Tuas API keys (se tu usar alguma) nunca saem do navegador. Ficam salvas localmente e são usadas pra chamar direto o provedor que tu escolheu.
 

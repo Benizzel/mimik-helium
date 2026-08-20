@@ -32,16 +32,13 @@ Clique sur enregistrer, fais ce que tu as à faire, et récupère un guide soign
 - [📺 Démo](#-démo)
 - [👋 Pour commencer](#-pour-commencer)
 - [✨ Fonctionnalités](#-fonctionnalités)
-  - [🎬 Capture automatique](#-capture-automatique)
-  - [📸 Captures annotées](#-captures-annotées)
   - [🔒 Smart Blur](#-smart-blur)
   - [🧠 Descriptions par IA (optionnel)](#-descriptions-par-ia-optionnel)
   - [▶️ Lecture Guide Me](#️-lecture-guide-me)
   - [🎙️ Narration vocale (optionnel)](#️-narration-vocale-optionnel)
   - [✏️ Éditeur de guides](#️-éditeur-de-guides)
   - [📤 Export multi-format](#-export-multi-format)
-  - [🌍 Multilingue](#-multilingue)
-  - [💾 Stockage local d'abord](#-stockage-local-dabord)
+- [🔐 Confidentialité et stockage](#-confidentialité-et-stockage)
 - [🤝 Contribuer](#-contribuer)
 - [📜 Licence](#-licence)
 
@@ -61,11 +58,17 @@ Mimik transforme n'importe quelle tâche répétitive dans le navigateur en un g
 
 Que tu documentes des outils internes, que tu rédiges des tutoriels, ou que tu formes un collègue, Mimik capture chaque clic, frappe et navigation pour que tu puisses te concentrer sur le reste.
 
+Chaque action utile devient une étape : clics sur les boutons et les liens, champs de formulaire, raccourcis clavier, actions du presse-papiers, glisser-déposer et navigations. Les clics rapprochés sur des éléments voisins sont fusionnés pour garder les guides propres, et le clic est intercepté avant que la page ne navigue, donc rien ne se perd sur les SPA ni sur les chargements complets.
+
+Chaque étape reçoit une capture avec l'élément cliqué mis en évidence et zoomé. Pas de recadrage manuel, pas d'outil d'annotation à apprendre.
+
 | Navigateur | Version | Installation |
 | ---------- | ------- | ------------ |
 | Chrome     | [![Chrome Version][chrome-version-shield]][chrome-link]   | [Chrome Web Store][chrome-link] |
 | Firefox    | [![Firefox Version][firefox-version-shield]][firefox-link] | [Firefox Add-ons][firefox-link]  |
 | Edge       | [![Edge Version][edge-version-shield]][edge-link]          | [Microsoft Edge Add-ons][edge-link] |
+
+Disponible en anglais, espagnol, portugais brésilien, français et allemand. La langue des descriptions IA se règle séparément, donc tu peux lancer Mimik en anglais et générer les guides en français, ou n'importe quelle combinaison.
 
 > \[!IMPORTANT]
 >
@@ -82,28 +85,6 @@ Que tu documentes des outils internes, que tu rédiges des tutoriels, ou que tu 
 </div>
 
 ## ✨ Fonctionnalités
-
-### 🎬 Capture automatique
-
-Tu cliques, tu tapes, tu navigues. Mimik voit tout. Chaque action utile devient une étape : clics sur boutons et liens, champs de formulaire, raccourcis clavier, presse-papiers, drag & drop, et navigations.
-
-La fusion intelligente des événements écarte les clics rapprochés sur des éléments proches, pour garder tes guides propres. L'interception du clic se fait *avant* que la page ne change, donc rien ne se perd dans les SPA ou les rechargements complets.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 📸 Captures annotées
-
-Chaque étape reçoit une capture avec l'élément cliqué mis en surbrillance et zoomé. Pas besoin de rogner à la main, pas d'outil d'annotation à apprendre. Mimik trouve la partie importante de la page et la cadre pour toi.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
 
 ### 🔒 Smart Blur
 
@@ -193,17 +174,7 @@ Tous les exports sont générés côté client. Rien ne passe par un serveur.
 
 </div>
 
-### 🌍 Multilingue
-
-Interface disponible en anglais, espagnol, portugais brésilien, français et allemand. La langue des descriptions IA se configure séparément, donc tu peux lancer Mimik en anglais et générer les guides en français, ou n'importe quelle combinaison.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 💾 Stockage local d'abord
+## 🔐 Confidentialité et stockage
 
 Tes guides, étapes et captures restent sur ton appareil. Pas de backend, pas de compte, pas de télémétrie. Tes clés API (si tu en utilises) ne quittent jamais le navigateur. Elles sont stockées localement et servent à appeler directement le fournisseur que tu as choisi.
 

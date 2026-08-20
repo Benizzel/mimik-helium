@@ -32,16 +32,13 @@ Click record, do the thing, get a polished guide with annotated screenshots. Nar
 - [📺 Demo](#-demo)
 - [👋 Getting Started](#-getting-started)
 - [✨ Features](#-features)
-  - [🎬 Auto-capture](#-auto-capture)
-  - [📸 Annotated screenshots](#-annotated-screenshots)
   - [🔒 Smart Blur](#-smart-blur)
   - [🧠 AI descriptions (optional)](#-ai-descriptions-optional)
   - [▶️ Guide Me replay](#️-guide-me-replay)
   - [🎙️ Voice narration (optional)](#️-voice-narration-optional)
   - [✏️ Guide editor](#️-guide-editor)
   - [📤 Multi-format export](#-multi-format-export)
-  - [🌍 Multi-language](#-multi-language)
-  - [💾 Local-first storage](#-local-first-storage)
+- [🔐 Privacy & storage](#-privacy--storage)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
 
@@ -61,11 +58,17 @@ Mimik turns any repetitive browser task into a documented, shareable guide in se
 
 Whether you're documenting internal tools, writing product tutorials, or onboarding a teammate, Mimik captures every click, keystroke, and navigation automatically so you can focus on the work.
 
+Every meaningful action becomes a step: clicks on buttons and links, form inputs, keyboard shortcuts, clipboard actions, drag events, and page navigations. Rapid clicks on nearby elements are merged so guides stay clean, and clicks are intercepted before the page navigates away, so nothing is lost on SPAs or full page loads.
+
+Each step gets a screenshot with the clicked element highlighted and zoomed in. No manual cropping, no annotation tools to learn.
+
 | Browser | Version | Install |
 | ------- | ------- | ------- |
 | Chrome  | [![Chrome Version][chrome-version-shield]][chrome-link]   | [Chrome Web Store][chrome-link] |
 | Firefox | [![Firefox Version][firefox-version-shield]][firefox-link] | [Firefox Add-ons][firefox-link]  |
 | Edge    | [![Edge Version][edge-version-shield]][edge-link]          | [Microsoft Edge Add-ons][edge-link] |
+
+Available in English, Spanish, Brazilian Portuguese, French, and German. The AI description language is set separately, so you can run Mimik in English and generate guides in Spanish, or any combination.
 
 > \[!IMPORTANT]
 >
@@ -82,28 +85,6 @@ Whether you're documenting internal tools, writing product tutorials, or onboard
 </div>
 
 ## ✨ Features
-
-### 🎬 Auto-capture
-
-Click, type, navigate. Mimik watches it all. Every meaningful action becomes a step: clicks on buttons and links, form inputs, keyboard shortcuts, clipboard actions, drag events, and page navigations.
-
-Smart event merging deduplicates rapid clicks on nearby elements, so your guides stay clean. Click interception fires *before* the page navigates away, so nothing gets lost during SPAs or full page loads.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 📸 Annotated screenshots
-
-Every step gets a screenshot with the clicked element highlighted and zoomed in. No manual cropping, no annotation tools to learn. Mimik figures out the important part of the page and frames it for you.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
 
 ### 🔒 Smart Blur
 
@@ -193,17 +174,7 @@ All exports are generated client-side. Nothing touches a server.
 
 </div>
 
-### 🌍 Multi-language
-
-UI available in English, Spanish, Brazilian Portuguese, French, and German. The AI description language is configurable independently, so you can run Mimik in English but generate guides in Spanish, or any combination.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 💾 Local-first storage
+## 🔐 Privacy & storage
 
 Guides, steps, and screenshots live on your device. There's no backend, no account, no telemetry. Your API keys (if you bring one) never leave your browser — they're stored locally and used to call the provider you chose directly.
 

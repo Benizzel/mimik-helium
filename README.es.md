@@ -32,16 +32,13 @@ Le das a grabar, haces lo tuyo, y obtienes una guía pulida con capturas anotada
 - [📺 Demo](#-demo)
 - [👋 Empezar](#-empezar)
 - [✨ Funciones](#-funciones)
-  - [🎬 Captura automática](#-captura-automática)
-  - [📸 Capturas anotadas](#-capturas-anotadas)
   - [🔒 Smart Blur](#-smart-blur)
   - [🧠 Descripciones con IA (opcional)](#-descripciones-con-ia-opcional)
   - [▶️ Reproducción Guide Me](#️-reproducción-guide-me)
   - [🎙️ Narración por voz (opcional)](#️-narración-por-voz-opcional)
   - [✏️ Editor de guías](#️-editor-de-guías)
   - [📤 Exportación multi-formato](#-exportación-multi-formato)
-  - [🌍 Multi-idioma](#-multi-idioma)
-  - [💾 Almacenamiento local primero](#-almacenamiento-local-primero)
+- [🔐 Privacidad y almacenamiento](#-privacidad-y-almacenamiento)
 - [🤝 Contribuir](#-contribuir)
 - [📜 Licencia](#-licencia)
 
@@ -61,11 +58,17 @@ Mimik convierte cualquier tarea repetitiva del navegador en una guía documentad
 
 Ya sea que estés documentando herramientas internas, escribiendo tutoriales de producto, o formando a un compañero, Mimik captura cada clic, tecla y navegación automáticamente para que te concentres en lo importante.
 
+Cada acción relevante se convierte en un paso: clics en botones y enlaces, campos de formulario, atajos de teclado, acciones del portapapeles, arrastres y navegaciones. Los clics rápidos sobre elementos cercanos se agrupan para que las guías queden limpias, y el clic se intercepta antes de que la página navegue, así no se pierde nada en SPAs ni en cargas completas.
+
+Cada paso lleva una captura con el elemento pulsado resaltado y ampliado. Sin recortar a mano, sin herramientas de anotación que aprender.
+
 | Navegador | Versión | Instalación |
 | --------- | ------- | ----------- |
 | Chrome    | [![Chrome Version][chrome-version-shield]][chrome-link]   | [Chrome Web Store][chrome-link] |
 | Firefox   | [![Firefox Version][firefox-version-shield]][firefox-link] | [Firefox Add-ons][firefox-link]  |
 | Edge      | [![Edge Version][edge-version-shield]][edge-link]          | [Microsoft Edge Add-ons][edge-link] |
+
+Disponible en inglés, español, portugués brasileño, francés y alemán. El idioma de las descripciones de IA se configura por separado, así que puedes usar Mimik en inglés y generar guías en español, o cualquier combinación.
 
 > \[!IMPORTANT]
 >
@@ -82,28 +85,6 @@ Ya sea que estés documentando herramientas internas, escribiendo tutoriales de 
 </div>
 
 ## ✨ Funciones
-
-### 🎬 Captura automática
-
-Haces clic, escribes, navegas. Mimik lo ve todo. Cada acción relevante se convierte en un paso: clics en botones y enlaces, entradas de formulario, atajos de teclado, portapapeles, arrastrar y soltar, y navegaciones.
-
-La fusión inteligente de eventos descarta los clics rápidos en elementos cercanos, para que tus guías queden limpias. La interceptación del clic ocurre *antes* de que la página cambie, así no se pierde nada en SPAs o recargas completas.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 📸 Capturas anotadas
-
-Cada paso recibe una captura con el elemento resaltado y un zoom al área importante. Sin recortar a mano, sin aprender herramientas de anotación. Mimik descubre qué parte de la página importa y te la enmarca.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
 
 ### 🔒 Smart Blur
 
@@ -193,17 +174,7 @@ Todas las exportaciones se generan del lado del cliente. Nada pasa por un servid
 
 </div>
 
-### 🌍 Multi-idioma
-
-Interfaz disponible en inglés, español, portugués brasileño, francés y alemán. El idioma de las descripciones de IA se configura por separado, así que puedes usar Mimik en inglés y generar guías en español, o cualquier combinación.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 💾 Almacenamiento local primero
+## 🔐 Privacidad y almacenamiento
 
 Tus guías, pasos y capturas viven en tu dispositivo. No hay backend, no hay cuenta, no hay telemetría. Tus API keys (si usas alguna) nunca salen del navegador. Se guardan localmente y se usan para llamar directo al proveedor que elegiste.
 
