@@ -5,6 +5,7 @@ import {
   deferDescription,
   discardDeferred,
   shouldQueueAiDescription,
+  takeDeferredDescription,
   takeDeferredDescriptions,
 } from '../deferred-descriptions';
 
@@ -106,5 +107,32 @@ describe('discardDeferred', () => {
 
   it('does nothing for a guide with nothing deferred', () => {
     expect(() => discardDeferred('g1', ['s1'])).not.toThrow();
+  });
+});
+
+describe('takeDeferredDescription', () => {
+  it('hands back the context saved for one step', () => {
+    deferDescription('g1', 's1', ctx('one'));
+
+    expect(takeDeferredDescription('g1', 's1')).toEqual(ctx('one'));
+  });
+
+  it('leaves the other steps waiting for the end of the recording', () => {
+    deferDescription('g1', 's1', ctx('one'));
+    deferDescription('g1', 's2', ctx('two'));
+    takeDeferredDescription('g1', 's1');
+
+    expect(takeDeferredDescriptions('g1', []).map((d) => d.stepId)).toEqual(['s2']);
+  });
+
+  it('hands back nothing for a step that was never deferred', () => {
+    expect(takeDeferredDescription('g1', 'missing')).toBeUndefined();
+  });
+
+  it('hands back nothing the second time the same step is taken', () => {
+    deferDescription('g1', 's1', ctx('one'));
+    takeDeferredDescription('g1', 's1');
+
+    expect(takeDeferredDescription('g1', 's1')).toBeUndefined();
   });
 });
