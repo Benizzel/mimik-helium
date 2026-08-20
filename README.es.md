@@ -37,9 +37,11 @@ Le das a grabar, haces lo tuyo, y obtienes una guía pulida con capturas anotada
   - [🔒 Smart Blur](#-smart-blur)
   - [🧠 Descripciones con IA (opcional)](#-descripciones-con-ia-opcional)
   - [▶️ Reproducción Guide Me](#️-reproducción-guide-me)
+  - [🎙️ Narración por voz (opcional)](#️-narración-por-voz-opcional)
+  - [✏️ Editor de guías](#️-editor-de-guías)
   - [📤 Exportación multi-formato](#-exportación-multi-formato)
   - [🌍 Multi-idioma](#-multi-idioma)
-  - [💾 Almacenamiento 100% local](#-almacenamiento-100-local)
+  - [💾 Almacenamiento local primero](#-almacenamiento-local-primero)
 - [🤝 Contribuir](#-contribuir)
 - [📜 Licencia](#-licencia)
 
@@ -143,12 +145,42 @@ Reproduce cualquier guía en vivo sobre una página real. Mimik resalta el sigui
 
 </div>
 
+### 🎙️ Narración por voz (opcional)
+
+Habla en voz alta mientras grabas y Mimik convierte lo que dijiste en las descripciones de los
+pasos. El audio se transcribe con tu propia key (OpenAI o Groq) y se empareja con el paso al que
+corresponde, así narras una vez en lugar de escribir cada paso a mano.
+
+<img src="https://github.com/user-attachments/assets/061fddc7-da65-4641-8b39-d30b80c36531" alt="Narración por voz" width="800" />
+
+<div align="right">
+
+[![Back to top][back-to-top]](#readme-top)
+
+</div>
+
+### ✏️ Editor de guías
+
+Arregla una guía después sin volver a grabar. Recorta, anota y censura cualquier captura, reescribe
+un paso con IA sin salir del editor, mete títulos y notas entre pasos, reordena o borra en lote, y
+vuelve atrás con el historial de versiones.
+
+<img src="https://github.com/user-attachments/assets/62d3a01e-b129-44c8-8ba3-e9b97ff08d7e" alt="Editor de guías" width="800" />
+
+<div align="right">
+
+[![Back to top][back-to-top]](#readme-top)
+
+</div>
+
 ### 📤 Exportación multi-formato
 
 Comparte tus guías en el formato que mejor encaje con tu flujo:
 
-- **HTML**: autónomo, comparte donde sea, imágenes embebidas en base64
+- **Video**: recorrido narrado, mp4/H.264, con el cursor moviéndose a cada objetivo
 - **PDF**: listo para imprimir, A4 vertical con saltos automáticos
+- **DOCX**: ábrelo y sigue editando en Word
+- **HTML**: autónomo, comparte donde sea, imágenes embebidas en base64
 - **Markdown**: pega en Notion, GitHub, documentación interna, wikis
 
 Todas las exportaciones se generan del lado del cliente. Nada pasa por un servidor.
@@ -163,7 +195,7 @@ Todas las exportaciones se generan del lado del cliente. Nada pasa por un servid
 
 ### 🌍 Multi-idioma
 
-Interfaz disponible en inglés, español, portugués brasileño y francés. El idioma de las descripciones de IA se configura por separado, así que puedes usar Mimik en inglés y generar guías en español, o cualquier combinación.
+Interfaz disponible en inglés, español, portugués brasileño, francés y alemán. El idioma de las descripciones de IA se configura por separado, así que puedes usar Mimik en inglés y generar guías en español, o cualquier combinación.
 
 <div align="right">
 
@@ -171,9 +203,11 @@ Interfaz disponible en inglés, español, portugués brasileño y francés. El i
 
 </div>
 
-### 💾 Almacenamiento 100% local
+### 💾 Almacenamiento local primero
 
-Tus guías, pasos y capturas viven en tu dispositivo. No hay backend, no hay cuenta, no hay telemetría. Tus API keys (si usas alguna) nunca salen del navegador. Se guardan localmente y se envían directo al proveedor que elegiste.
+Tus guías, pasos y capturas viven en tu dispositivo. No hay backend, no hay cuenta, no hay telemetría. Tus API keys (si usas alguna) nunca salen del navegador. Se guardan localmente y se usan para llamar directo al proveedor que elegiste.
+
+Dos cosas sí salen del navegador, ambas documentadas en la [política de privacidad](https://mimik.westpoint.io/privacy/): los iconos de los sitios se piden al servicio de favicons de Google, lo que envía el dominio de ese sitio, y las funciones opcionales de IA y voz mandan texto o audio al proveedor que configuraste.
 
 <div align="right">
 

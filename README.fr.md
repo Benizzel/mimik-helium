@@ -37,9 +37,11 @@ Clique sur enregistrer, fais ce que tu as à faire, et récupère un guide soign
   - [🔒 Smart Blur](#-smart-blur)
   - [🧠 Descriptions par IA (optionnel)](#-descriptions-par-ia-optionnel)
   - [▶️ Lecture Guide Me](#️-lecture-guide-me)
+  - [🎙️ Narration vocale (optionnel)](#️-narration-vocale-optionnel)
+  - [✏️ Éditeur de guides](#️-éditeur-de-guides)
   - [📤 Export multi-format](#-export-multi-format)
   - [🌍 Multilingue](#-multilingue)
-  - [💾 Stockage 100% local](#-stockage-100-local)
+  - [💾 Stockage local d'abord](#-stockage-local-dabord)
 - [🤝 Contribuer](#-contribuer)
 - [📜 Licence](#-licence)
 
@@ -143,12 +145,42 @@ Rejoue n'importe quel guide en direct sur une vraie page. Mimik met en évidence
 
 </div>
 
+### 🎙️ Narration vocale (optionnel)
+
+Parle à voix haute pendant que tu enregistres et Mimik transforme ce que tu as dit en descriptions
+d'étapes. L'audio est transcrit avec ta propre clé (OpenAI ou Groq) puis rattaché à l'étape
+correspondante, donc tu narres une fois au lieu d'écrire chaque étape à la main.
+
+<img src="https://github.com/user-attachments/assets/061fddc7-da65-4641-8b39-d30b80c36531" alt="Narration vocale" width="800" />
+
+<div align="right">
+
+[![Back to top][back-to-top]](#readme-top)
+
+</div>
+
+### ✏️ Éditeur de guides
+
+Corrige un guide après coup sans réenregistrer. Recadre, annote et masque n'importe quelle capture,
+réécris une étape avec l'IA sans quitter l'éditeur, ajoute des titres et des notes entre les étapes,
+réordonne ou supprime en lot, et reviens en arrière via l'historique de versions.
+
+<img src="https://github.com/user-attachments/assets/62d3a01e-b129-44c8-8ba3-e9b97ff08d7e" alt="Éditeur de guides" width="800" />
+
+<div align="right">
+
+[![Back to top][back-to-top]](#readme-top)
+
+</div>
+
 ### 📤 Export multi-format
 
 Partage tes guides dans le format qui colle à ton flux :
 
-- **HTML** : autonome, à partager partout, images intégrées en base64
+- **Vidéo** : parcours narré, mp4/H.264, avec le curseur qui se déplace vers chaque cible
 - **PDF** : prêt à imprimer, A4 portrait avec sauts de page auto
+- **DOCX** : ouvre-le et continue dans Word
+- **HTML** : autonome, à partager partout, images intégrées en base64
 - **Markdown** : à coller dans Notion, GitHub, docs internes, wikis
 
 Tous les exports sont générés côté client. Rien ne passe par un serveur.
@@ -163,7 +195,7 @@ Tous les exports sont générés côté client. Rien ne passe par un serveur.
 
 ### 🌍 Multilingue
 
-Interface disponible en anglais, espagnol, portugais brésilien et français. La langue des descriptions IA se configure séparément, donc tu peux lancer Mimik en anglais et générer les guides en français, ou n'importe quelle combinaison.
+Interface disponible en anglais, espagnol, portugais brésilien, français et allemand. La langue des descriptions IA se configure séparément, donc tu peux lancer Mimik en anglais et générer les guides en français, ou n'importe quelle combinaison.
 
 <div align="right">
 
@@ -171,9 +203,11 @@ Interface disponible en anglais, espagnol, portugais brésilien et français. La
 
 </div>
 
-### 💾 Stockage 100% local
+### 💾 Stockage local d'abord
 
-Tes guides, étapes et captures restent sur ton appareil. Pas de backend, pas de compte, pas de télémétrie. Tes clés API (si tu en utilises) ne quittent jamais le navigateur. Elles sont stockées localement et envoyées directement au fournisseur d'IA que tu as choisi.
+Tes guides, étapes et captures restent sur ton appareil. Pas de backend, pas de compte, pas de télémétrie. Tes clés API (si tu en utilises) ne quittent jamais le navigateur. Elles sont stockées localement et servent à appeler directement le fournisseur que tu as choisi.
+
+Deux choses sortent bien du navigateur, toutes deux documentées dans la [politique de confidentialité](https://mimik.westpoint.io/privacy/) : les icônes de sites sont récupérées via le service de favicons de Google, ce qui envoie le domaine du site, et les fonctions optionnelles d'IA et de voix envoient du texte ou de l'audio au fournisseur que tu as configuré.
 
 <div align="right">
 
