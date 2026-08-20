@@ -50,7 +50,7 @@ Clique sur enregistrer, fais ce que tu as à faire, et récupère un guide soign
 ## 📺 Démo
 
 <div align="center">
-<img src="public/demo.gif" alt="Démo de Mimik" width="800" />
+<img src="https://github.com/user-attachments/assets/9de20b45-2256-4127-8242-141cf1802f39" alt="Démo de Mimik" width="800" />
 </div>
 
 ## 👋 Pour commencer
@@ -109,6 +109,8 @@ Mimik détecte et floute automatiquement les données sensibles dans tes capture
 
 Besoin de cacher quelque chose de précis ? Le sélecteur manuel te laisse choisir n'importe quel élément du DOM et le masquer sur toutes les captures où il apparaît.
 
+<img src="https://github.com/user-attachments/assets/968d2518-c561-4d68-92a6-3d5f569fe38a" alt="Smart Blur" width="800" />
+
 <div align="right">
 
 [![Back to top][back-to-top]](#readme-top)
@@ -121,6 +123,8 @@ Apporte ta propre clé API (OpenAI ou Anthropic) et Mimik génère des descripti
 
 Les descriptions sont générées à partir d'un contexte léger du DOM (~50-100 tokens), pas des captures. Environ 15-30x moins cher que les modèles vision. Choisis la langue des descriptions (anglais, espagnol, portugais, français).
 
+<img src="https://github.com/user-attachments/assets/3540cbd5-133f-46fd-a9b6-ffce9b4d422a" alt="Descriptions par IA" width="800" />
+
 <div align="right">
 
 [![Back to top][back-to-top]](#readme-top)
@@ -130,6 +134,8 @@ Les descriptions sont générées à partir d'un contexte léger du DOM (~50-100
 ### ▶️ Lecture Guide Me
 
 Rejoue n'importe quel guide en direct sur une vraie page. Mimik met en évidence l'élément suivant, suit ta progression étape par étape, et avance tout seul au fur et à mesure. Parfait pour former un collègue ou se guider soi-même dans un process.
+
+<img src="https://github.com/user-attachments/assets/56ffca1d-5074-491f-8571-dd70782d4b05" alt="Lecture Guide Me" width="800" />
 
 <div align="right">
 
@@ -146,6 +152,8 @@ Partage tes guides dans le format qui colle à ton flux :
 - **Markdown** : à coller dans Notion, GitHub, docs internes, wikis
 
 Tous les exports sont générés côté client. Rien ne passe par un serveur.
+
+<img src="https://github.com/user-attachments/assets/e7584527-7d68-4f3f-9261-8380ee08dfb4" alt="Export multi-format" width="800" />
 
 <div align="right">
 

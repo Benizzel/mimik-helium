@@ -50,7 +50,7 @@ Clica em gravar, faz o que precisa, e recebe um guia caprichado com capturas de 
 ## 📺 Demo
 
 <div align="center">
-<img src="public/demo.gif" alt="Demo do Mimik" width="800" />
+<img src="https://github.com/user-attachments/assets/9de20b45-2256-4127-8242-141cf1802f39" alt="Demo do Mimik" width="800" />
 </div>
 
 ## 👋 Começando
@@ -109,6 +109,8 @@ O Mimik detecta e desfoca dados sensíveis automaticamente nas tuas capturas: e-
 
 Precisa esconder algo específico? O seletor manual deixa tu escolher qualquer elemento do DOM e mascarar ele em todas as capturas onde aparecer.
 
+<img src="https://github.com/user-attachments/assets/968d2518-c561-4d68-92a6-3d5f569fe38a" alt="Smart Blur" width="800" />
+
 <div align="right">
 
 [![Back to top][back-to-top]](#readme-top)
@@ -121,6 +123,8 @@ Traz a tua API key (OpenAI ou Anthropic) e o Mimik gera descrições naturais ti
 
 As descrições são geradas a partir de um contexto leve do DOM (~50-100 tokens), não das capturas. Umas 15-30 vezes mais barato que modelos com visão. Escolhe o idioma das descrições (inglês, espanhol, português, francês).
 
+<img src="https://github.com/user-attachments/assets/3540cbd5-133f-46fd-a9b6-ffce9b4d422a" alt="Descrições por IA" width="800" />
+
 <div align="right">
 
 [![Back to top][back-to-top]](#readme-top)
@@ -130,6 +134,8 @@ As descrições são geradas a partir de um contexto leve do DOM (~50-100 tokens
 ### ▶️ Reprodução Guide Me
 
 Reproduz qualquer guia ao vivo numa página real. O Mimik destaca o próximo elemento, marca teu progresso passo a passo, e avança sozinho conforme tu vai interagindo. Perfeito pra integrar colegas ou pra se guiar num processo tu mesmo.
+
+<img src="https://github.com/user-attachments/assets/56ffca1d-5074-491f-8571-dd70782d4b05" alt="Reprodução Guide Me" width="800" />
 
 <div align="right">
 
@@ -146,6 +152,8 @@ Compartilha os guias no formato que melhor cabe no teu fluxo:
 - **Markdown**: cola no Notion, GitHub, docs internas, wikis
 
 Todas as exportações são geradas no cliente. Nada passa por servidor.
+
+<img src="https://github.com/user-attachments/assets/e7584527-7d68-4f3f-9261-8380ee08dfb4" alt="Exportação multi-formato" width="800" />
 
 <div align="right">
 

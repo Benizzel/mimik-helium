@@ -52,7 +52,7 @@ Click record, do the thing, get a polished guide with annotated screenshots. Nar
 ## 📺 Demo
 
 <div align="center">
-<img src="https://github.com/user-attachments/assets/d4c64cb8-ad26-4de1-af02-a04a64e2836e" alt="Mimik demo" width="800" />
+<img src="https://github.com/user-attachments/assets/9de20b45-2256-4127-8242-141cf1802f39" alt="Mimik demo" width="800" />
 </div>
 
 ## 👋 Getting Started
@@ -111,6 +111,8 @@ Mimik automatically detects and blurs sensitive data in your screenshots: emails
 
 Need to blur something custom? The manual blur picker lets you select any DOM element and mask it across every screenshot where it appears.
 
+<img src="https://github.com/user-attachments/assets/968d2518-c561-4d68-92a6-3d5f569fe38a" alt="Smart Blur" width="800" />
+
 <div align="right">
 
 [![Back to top][back-to-top]](#readme-top)
@@ -123,6 +125,8 @@ Bring your own API key (OpenAI or Anthropic) and Mimik generates human-readable 
 
 Descriptions are generated from a lightweight DOM context (~50-100 tokens), not screenshots. Roughly 15-30x cheaper than vision models. Choose the language you want descriptions in (English, Spanish, Portuguese, French, German).
 
+<img src="https://github.com/user-attachments/assets/3540cbd5-133f-46fd-a9b6-ffce9b4d422a" alt="AI descriptions" width="800" />
+
 <div align="right">
 
 [![Back to top][back-to-top]](#readme-top)
@@ -132,6 +136,8 @@ Descriptions are generated from a lightweight DOM context (~50-100 tokens), not 
 ### ▶️ Guide Me replay
 
 Replay any guide live on a real page. Mimik highlights the next element to click, tracks your progress step by step, and advances automatically as you interact. Perfect for onboarding teammates or walking through a process yourself.
+
+<img src="https://github.com/user-attachments/assets/56ffca1d-5074-491f-8571-dd70782d4b05" alt="Guide Me replay" width="800" />
 
 <div align="right">
 
@@ -145,6 +151,8 @@ Talk through the workflow out loud while you record and Mimik turns what you sai
 descriptions. Audio is transcribed with your own key (OpenAI or Groq) and matched to the steps it
 belongs to, so you narrate once instead of writing every step by hand.
 
+<img src="https://github.com/user-attachments/assets/061fddc7-da65-4641-8b39-d30b80c36531" alt="Voice narration" width="800" />
+
 <div align="right">
 
 [![Back to top][back-to-top]](#readme-top)
@@ -156,6 +164,8 @@ belongs to, so you narrate once instead of writing every step by hand.
 Fix a guide after the fact without re-recording. Crop, annotate and redact any screenshot, rewrite a
 step with AI inline, drop headings and notes between steps, reorder or bulk-delete, and roll back
 through version history.
+
+<img src="https://github.com/user-attachments/assets/62d3a01e-b129-44c8-8ba3-e9b97ff08d7e" alt="Guide editor" width="800" />
 
 <div align="right">
 
@@ -174,6 +184,8 @@ Share guides in whatever format fits your workflow:
 - **Markdown**: paste into Notion, GitHub, internal docs, wikis
 
 All exports are generated client-side. Nothing touches a server.
+
+<img src="https://github.com/user-attachments/assets/e7584527-7d68-4f3f-9261-8380ee08dfb4" alt="Multi-format export" width="800" />
 
 <div align="right">
 
