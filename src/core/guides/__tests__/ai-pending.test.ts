@@ -104,6 +104,14 @@ describe('clearStepAiPending', () => {
     expect(step?.descriptionSource).toBe('ai');
   });
 
+  it('says nothing when the step was not spinning in the first place', async () => {
+    await db.steps.add(makeStep({ id: 's1', aiPending: false }));
+
+    await clearStepAiPending('s1');
+
+    expect(guideEvents()).toEqual([]);
+  });
+
   it('clears the flag and leaves the description alone when no AI text arrives', async () => {
     await seedPendingStep('s1');
 
@@ -113,7 +121,7 @@ describe('clearStepAiPending', () => {
     expect(step?.description).toBe(FALLBACK);
     expect(step?.descriptionSource).toBeUndefined();
     expect(step?.aiPending).toBe(false);
-    expect(guideEvents()).toEqual([]);
+    expect(guideEvents()).toEqual([{ type: 'mutated' }]);
   });
 
   it('treats empty AI text as no result', async () => {
@@ -125,7 +133,7 @@ describe('clearStepAiPending', () => {
     expect(step?.description).toBe(FALLBACK);
     expect(step?.descriptionSource).toBeUndefined();
     expect(step?.aiPending).toBe(false);
-    expect(guideEvents()).toEqual([]);
+    expect(guideEvents()).toEqual([{ type: 'mutated' }]);
   });
 
   it('never overwrites a voice narration that landed while the AI call was in flight', async () => {
