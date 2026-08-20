@@ -86,6 +86,12 @@ export default function RecordingView({ guideId, onStop, voice }: RecordingViewP
     localStorage.get(['voiceEnabled']).then((stored) => setVoiceEnabled(stored.voiceEnabled === true));
   }, []);
 
+  useEffect(() => {
+    if (voice.phase !== 'error' || voice.reason !== 'permission-denied') return;
+    setVoiceEnabled(false);
+    void localStorage.set({ voiceEnabled: false });
+  }, [voice.phase, voice.reason]);
+
   const handleBlur = useCallback(async () => {
     await sendMessage('enterBlurMode', undefined);
     setIsBlurring(true);

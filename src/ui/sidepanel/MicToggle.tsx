@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { browser, i18n } from '#imports';
 import { hasVoiceApiKey, VOICE_KEY_SETTINGS } from '@/core/capture/voice/api-key';
 import { getActiveTab, localStorage } from '@/lib/browser-api';
+import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { abortVoiceCapture, openMicPermissionPage } from '@/lib/offscreen';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
@@ -60,12 +61,17 @@ export default function MicToggle({ enabled, live, onChange }: MicToggleProps) {
       return;
     }
 
-    if (await microphoneGranted()) {
-      await sendMessage('startNarration', undefined).catch(() => undefined);
+    if (!(await microphoneGranted())) {
+      const tab = await getActiveTab();
+      await openMicPermissionPage(tab?.id).catch((error) => {
+        logger.error('voice: the microphone permission page could not be opened', error);
+      });
       return;
     }
-    const tab = await getActiveTab();
-    await openMicPermissionPage(tab?.id).catch(() => undefined);
+
+    await sendMessage('startNarration', undefined).catch((error) => {
+      logger.error('voice: the background did not take the request to start narration', error);
+    });
   }, [enabled, live, locked, onChange]);
 
   const Icon = enabled ? Mic : MicOff;
