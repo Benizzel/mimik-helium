@@ -121,29 +121,46 @@ function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   const [aiLanguage, setAiLanguage] = useState<AILanguageCode>('en');
 
   useEffect(() => {
-    localStorage.get(['aiProvider', 'aiModel', 'aiApiKey', 'aiLanguage']).then((stored) => {
-      if (typeof stored.aiProvider === 'string' && stored.aiProvider in AI_PROVIDERS) {
-        setProvider(stored.aiProvider as AIProviderKey);
-      }
-      if (typeof stored.aiModel === 'string') setModel(stored.aiModel);
-      if (typeof stored.aiApiKey === 'string') setApiKey(stored.aiApiKey);
-      if (typeof stored.aiLanguage === 'string') setAiLanguage(stored.aiLanguage as AILanguageCode);
-    });
+    const load = () =>
+      localStorage.get(['aiProvider', 'aiModel', 'aiApiKey', 'aiLanguage']).then((stored) => {
+        if (typeof stored.aiProvider === 'string' && stored.aiProvider in AI_PROVIDERS) {
+          setProvider(stored.aiProvider as AIProviderKey);
+        }
+        if (typeof stored.aiModel === 'string') setModel(stored.aiModel);
+        if (typeof stored.aiApiKey === 'string') setApiKey(stored.aiApiKey);
+        if (typeof stored.aiLanguage === 'string') setAiLanguage(stored.aiLanguage as AILanguageCode);
+      });
+
+    void load();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   const providerConfig = AI_PROVIDERS[provider];
 
   const handleProviderChange = (newProvider: AIProviderKey) => {
+    const nextModel = AI_PROVIDERS[newProvider].defaultModel;
     setProvider(newProvider);
-    setModel(AI_PROVIDERS[newProvider].defaultModel);
+    setModel(nextModel);
+    void localStorage.set({ aiProvider: newProvider, aiModel: nextModel });
   };
 
-  const handleContinue = async () => {
-    await localStorage.set({
-      ...(apiKey ? { aiApiKey: apiKey, aiProvider: provider, aiModel: model } : {}),
-      aiLanguage,
-    });
-    onNext();
+  const handleModelChange = (nextModel: string) => {
+    setModel(nextModel);
+    void localStorage.set({ aiModel: nextModel });
+  };
+
+  const handleApiKeyChange = (nextKey: string) => {
+    setApiKey(nextKey);
+    void localStorage.set({ aiApiKey: nextKey });
+  };
+
+  const handleLanguageChange = (nextLanguage: AILanguageCode) => {
+    setAiLanguage(nextLanguage);
+    void localStorage.set({ aiLanguage: nextLanguage });
   };
 
   return (
@@ -177,7 +194,7 @@ function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
 
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1.5">{i18n.t('settings.model')}</label>
-              <Select value={model} onValueChange={(v) => setModel(v)}>
+              <Select value={model} onValueChange={handleModelChange}>
                 <SelectTrigger className="w-full rounded-xl px-4 py-2.5 text-sm focus:border-accent focus:ring-accent/10">
                   <SelectValue />
                 </SelectTrigger>
@@ -196,7 +213,7 @@ function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
               <Input
                 type="password"
                 value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
+                onChange={(e) => handleApiKeyChange(e.target.value)}
                 placeholder="sk-..."
                 className="w-full rounded-xl px-4 py-2.5 text-sm focus:border-accent focus:ring-accent/10"
               />
@@ -206,7 +223,7 @@ function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
               <label className="block text-xs font-semibold text-foreground mb-1.5">
                 {i18n.t('settings.aiLanguage')}
               </label>
-              <Select value={aiLanguage} onValueChange={(v) => setAiLanguage(v as AILanguageCode)}>
+              <Select value={aiLanguage} onValueChange={(v) => handleLanguageChange(v as AILanguageCode)}>
                 <SelectTrigger className="w-full rounded-xl px-4 py-2.5 text-sm focus:border-accent focus:ring-accent/10">
                   <SelectValue />
                 </SelectTrigger>
@@ -229,7 +246,7 @@ function AISetupStep({ onNext, onSkip, onBack, index, total }: StepProps) {
               {i18n.t('common.back')}
             </button>
             <button
-              onClick={handleContinue}
+              onClick={onNext}
               className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
             >
               {i18n.t('common.continue')}
@@ -319,24 +336,34 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
   const [microphoneId, setMicrophoneId] = useState('');
 
   useEffect(() => {
-    localStorage.get(['voiceProvider', 'voiceApiKey', 'voiceMicrophoneId']).then((stored) => {
-      if (stored.voiceProvider === 'openai' || stored.voiceProvider === 'groq') setProvider(stored.voiceProvider);
-      if (typeof stored.voiceApiKey === 'string') setApiKey(stored.voiceApiKey);
-      if (typeof stored.voiceMicrophoneId === 'string') setMicrophoneId(stored.voiceMicrophoneId);
-    });
+    const load = () =>
+      localStorage.get(['voiceProvider', 'voiceApiKey', 'voiceMicrophoneId']).then((stored) => {
+        if (stored.voiceProvider === 'openai' || stored.voiceProvider === 'groq') setProvider(stored.voiceProvider);
+        if (typeof stored.voiceApiKey === 'string') setApiKey(stored.voiceApiKey);
+        if (typeof stored.voiceMicrophoneId === 'string') setMicrophoneId(stored.voiceMicrophoneId);
+      });
+
+    void load();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   const handleMicrophoneChange = (deviceId: string) => {
     setMicrophoneId(deviceId);
-    localStorage.set({ voiceMicrophoneId: deviceId });
+    void localStorage.set({ voiceMicrophoneId: deviceId });
   };
 
-  const handleContinue = async () => {
-    await localStorage.set({
-      voiceProvider: provider,
-      ...(apiKey ? { voiceApiKey: apiKey } : {}),
-    });
-    onNext();
+  const handleProviderChange = (nextProvider: VoiceProvider) => {
+    setProvider(nextProvider);
+    void localStorage.set({ voiceProvider: nextProvider });
+  };
+
+  const handleApiKeyChange = (nextKey: string) => {
+    setApiKey(nextKey);
+    void localStorage.set({ voiceApiKey: nextKey });
   };
 
   return (
@@ -359,7 +386,7 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
                 </label>
                 <select
                   value={provider}
-                  onChange={(e) => setProvider(e.target.value as VoiceProvider)}
+                  onChange={(e) => handleProviderChange(e.target.value as VoiceProvider)}
                   className="w-full border border-border rounded-xl px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
                 >
                   <option value="openai">OpenAI</option>
@@ -373,7 +400,7 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
                 <input
                   type="password"
                   value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  onChange={(e) => handleApiKeyChange(e.target.value)}
                   placeholder={provider === 'groq' ? 'gsk_...' : 'sk-...'}
                   className="w-full border border-border rounded-xl px-3 py-2 text-[13px] text-foreground bg-card font-medium outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 placeholder:text-muted-foreground/50"
                 />
@@ -401,7 +428,7 @@ function VoiceStep({ onNext, onSkip, onBack, index, total }: StepProps) {
               {i18n.t('common.back')}
             </button>
             <button
-              onClick={handleContinue}
+              onClick={onNext}
               className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
             >
               {i18n.t('common.continue')}
