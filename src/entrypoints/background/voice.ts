@@ -33,11 +33,25 @@ import {
 import { narrateRecording, readTranscriptionSettings, type VoiceRecording } from '@/lib/voice-narration';
 import { handedOffPcm, voiceStopAction } from '@/lib/voice-recovery';
 import { discardDeferred } from './deferred-descriptions';
-import { describeUnnarratedSteps } from './describe-unnarrated';
+import { describeStepNow, describeUnnarratedSteps } from './describe-unnarrated';
 
 const START_TIMEOUT_MS = 8000;
 
 let resumeNarration: (() => Promise<unknown>) | null = null;
+
+const narratedSteps = new Map<string, Set<string>>();
+
+export function recordNarrated(guideId: string, stepIds: readonly string[]): void {
+  const seen = narratedSteps.get(guideId) ?? new Set<string>();
+  for (const stepId of stepIds) seen.add(stepId);
+  narratedSteps.set(guideId, seen);
+}
+
+export function takeNarrated(guideId: string): string[] {
+  const seen = narratedSteps.get(guideId);
+  narratedSteps.delete(guideId);
+  return seen ? [...seen] : [];
+}
 
 let phase: PanelVoiceUpdate = { type: 'VOICE_UPDATE', phase: 'idle' };
 
@@ -196,9 +210,15 @@ export async function flushNarrationForStep(guideId: string, stepId: string, tim
     const settings = await readTranscriptionSettings();
     if (!settings.apiKey) return;
     const response = await flushVoiceCapture(guideId, { stepId, timestamp }, settings);
-    if (!response.ok) logger.warn('voice: could not narrate the step yet', response);
+    if (!response.ok) {
+      logger.warn('voice: could not narrate the step yet', response);
+      describeStepNow(guideId, stepId);
+      return;
+    }
+    if (!response.flushed) describeStepNow(guideId, stepId);
   } catch (error) {
     logger.warn('voice: narrating the step while recording failed', error);
+    describeStepNow(guideId, stepId);
   }
 }
 
@@ -253,6 +273,7 @@ async function applyNarration(guideId: string, result: VoiceResultEvent['result'
     await applyNarrationToSteps(updates);
     const narratedIds = updates.map((update) => update.stepId);
     discardDeferred(guideId, narratedIds);
+    recordNarrated(guideId, narratedIds);
     logger.info('voice: narration applied', {
       narrated: updates.length,
       of: narrated.length,
@@ -260,8 +281,9 @@ async function applyNarration(guideId: string, result: VoiceResultEvent['result'
       stats: result.stats,
     });
     if (final) {
-      report({ phase: 'idle', narrated: updates.length });
-      describeUnnarratedSteps(guideId, narratedIds);
+      const narratedSoFar = takeNarrated(guideId);
+      report({ phase: 'idle', narrated: narratedSoFar.length });
+      describeUnnarratedSteps(guideId, narratedSoFar);
     }
   } catch (error) {
     logger.error('voice: narration could not be applied', error);

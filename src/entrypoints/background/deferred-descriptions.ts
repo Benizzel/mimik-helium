@@ -29,6 +29,14 @@ export function deferDescription(guideId: string, stepId: string, domContext: DO
   deferred.set(guideId, forGuide);
 }
 
+export function takeDeferredDescription(guideId: string, stepId: string): DOMContext | undefined {
+  const forGuide = deferred.get(guideId);
+  if (!forGuide) return undefined;
+  const domContext = forGuide.get(stepId);
+  forGuide.delete(stepId);
+  return domContext;
+}
+
 export function takeDeferredDescriptions(guideId: string, narratedStepIds: readonly string[]): DeferredDescription[] {
   const forGuide = deferred.get(guideId);
   if (!forGuide) return [];
