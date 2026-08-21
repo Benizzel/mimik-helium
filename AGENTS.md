@@ -35,20 +35,18 @@ src/
 │   │   │   └── element-utils.ts # findFocusableAncestor, isTextField, etc.
 │   │   ├── events/           # Event capture system
 │   │   │   ├── handlers.ts      # CaptureController class + startCapture
-│   │   │   ├── highlight.ts     # HighlightManager (dashed border overlay)
 │   │   │   └── input-session.ts # InputSession (typing lifecycle)
 │   │   ├── machine.ts        # xstate capture state machine
-│   │   ├── rrweb-recorder.ts # DOM recording for replay
 │   │   ├── session.ts        # CaptureSession (lifecycle manager)
 │   │   ├── spa-nav.ts        # SPA navigation tracking
 │   │   ├── start-notification.ts # Recording notification overlay
 │   │   └── step-description.ts   # Fallback rule-based descriptions
 │   ├── blur/                # Smart blur: regex presets, DOM scanner, element picker, panel UI
-│   ├── export/              # HTML, PDF, Markdown export generators + shared utils
+│   ├── export/              # HTML, PDF, DOCX, Markdown, video generators + shared utils
 │   └── guides/              # Data layer: types, Dexie DB, CRUD service
 ├── entrypoints/             # Chrome extension entry points (WXT)
 │   ├── background/          # Service worker: state machine, message handlers, tab management
-│   ├── content.ts           # Content script: CaptureSession, event listeners, rrweb
+│   ├── content.ts           # Content script: CaptureSession, event listeners
 │   ├── sidepanel/           # Side panel React mount
 │   ├── fullview/            # Full-page view React mount
 │   ├── onboarding/          # Onboarding wizard (opens on first install)
@@ -95,7 +93,7 @@ src/
 |-------|------|---------|
 | Capture lifecycle | xstate | State machine (IDLE ↔ RECORDING) in background service worker |
 | Fullview UI | Zustand | Search modal, guide counts, active guide data |
-| Persistence | Dexie (IndexedDB) | Guides, steps, screenshots, rrweb chunks |
+| Persistence | Dexie (IndexedDB) | Guides, steps, screenshots, snapshots |
 | Service worker recovery | sessionStorage | xstate machine snapshot persistence |
 | Background → Sidepanel | Port messaging | Real-time state broadcast |
 | Cross-context sync | BroadcastChannel | Guide mutations (star, delete) across sidepanel/fullview |
@@ -105,7 +103,7 @@ src/
 | Entry Point | File | Purpose |
 |-------------|------|---------|
 | Background | `entrypoints/background/` | Service worker: xstate actor, message handlers, tab management |
-| Content Script | `entrypoints/content.ts` | Injected into all tabs: CaptureSession, event listeners, rrweb |
+| Content Script | `entrypoints/content.ts` | Injected into all tabs: CaptureSession, event listeners |
 | Side Panel | `entrypoints/sidepanel/` | Recording controls, library, guide editor, settings |
 | Full View | `entrypoints/fullview/` | Dashboard: library browse, guide viewer, Ctrl+K search |
 | Onboarding | `entrypoints/onboarding/` | First-install wizard: AI setup, smart blur, pin extension |
@@ -124,11 +122,9 @@ Content Script ←→ Background Service Worker ←→ Sidepanel / Fullview
 - `captureStep({guideId, action, elementMeta, domContext})` → screenshots + creates step
 - `updateInputStep({stepId, description})` → updates typing step description
 - `finalizeInputStep({stepId, elementMeta, domContext})` → final screenshot + AI description
-- `rrwebChunk({guideId, events, timestamp})` → stores DOM recording chunk
 
 **Tab messages** (content script ↔ background, `lib/tab-messages.ts`):
 - `PING` / `START_CAPTURE` / `STOP_CAPTURE` — lifecycle
-- `HIDE_OVERLAY` / `SHOW_OVERLAY` — overlay toggle (fallback, used for non-click captures)
 - `SHOW_NOTIFICATION` — "Recording started" overlay
 - `URL_CHANGED` / `GET_ROUTE` — SPA navigation tracking
 
@@ -138,28 +134,28 @@ Content Script ←→ Background Service Worker ←→ Sidepanel / Fullview
 1. User clicks "Start Capture" in sidepanel
 2. Background transitions xstate machine IDLE → RECORDING
 3. Creates Guide in IndexedDB, broadcasts `START_CAPTURE` to all tabs
-4. Content scripts create CaptureSession → CaptureController (event listeners) + rrweb
+4. Content scripts create CaptureSession → CaptureController (event listeners)
 5. Shows recording notification overlay on active tab
 
 **Capture a click:**
 1. Content script's CaptureController detects click via DOM event listener
 2. Click handler pushes async work into PQueue (concurrency: 1)
-3. Queue processes: hides overlay instantly → sends `captureStep` to background → waits
-4. Background calls `captureVisibleTab` (overlay is hidden, page hasn't reacted yet)
+3. Enqueueing hides the hover ring (`pointerdown` already did, on mouse paths); queue waits 3 frames then sends `captureStep`
+4. Background calls `captureVisibleTab` (ring is hidden, page hasn't reacted yet)
 5. Saves Screenshot + Step to IndexedDB
-6. Optionally generates AI description from DOM context text (not screenshot)
-7. Returns `{ stepId }` → content script shows overlay → queue processes next event
+6. Queues the AI description from DOM context text (serialized in the background; the step carries `aiPending` until it lands) rather than awaiting it
+7. Returns `{ stepId }` → queue processes next event; the ring returns only once the queue is fully drained
 
 **Capture text input (typing):**
 1. Click on text field → CaptureController starts InputSession → `captureStep` with initial screenshot
 2. Each keystroke → InputSession.update() → `updateInputStep` (description only, fire-and-forget)
-3. Enter/Escape/focusout → InputSession.finalize() → `finalizeInputStep` → final screenshot replaces initial + AI description
+3. Enter/Escape/focusout → InputSession.finalize() → `finalizeInputStep` → final screenshot replaces initial + queued AI description
 4. Result: one step for entire typing interaction
 
 **Stop recording:**
 1. Background transitions RECORDING → IDLE
-2. Broadcasts `STOP_CAPTURE`, content scripts flush pending input sessions + rrweb events
-3. Background generates guide title from step descriptions + URLs via AI
+2. Broadcasts `STOP_CAPTURE`, content scripts flush pending input sessions
+3. Background drains queued step descriptions (20s cap), then generates the guide title from step descriptions + URLs via AI
 4. Opens fullview dashboard with the guide
 
 ## DOM Context (AI Input)
@@ -187,6 +183,14 @@ Extraction walks up from the target element to find:
 | HTML | `core/export/html-export.ts` | Self-contained, base64 images, inline CSS |
 | PDF | `core/export/pdf-export.ts` | jsPDF, A4 portrait, auto page breaks |
 | Markdown | `core/export/markdown-export.ts` | Standard MD with base64 image data URLs |
+| DOCX | `core/export/docx-export.ts` | Lazy-imported, Word-compatible |
+| Video | `core/export/video-export.ts` | WebCodecs via mediabunny (lazy), mp4/H.264 with WebM/VP9 fallback |
+
+Video frames reuse `renderScreenshot`, so the auto-crop, click-target outline, annotations and
+redactions are already baked in. Each step holds 1.5s wide, eases into a crop around the target
+over 0.73s, holds 3s close, and consecutive steps cross-dissolve over 0.33s at 30fps. Capability
+probing lives in `video-support.ts`, which must stay free of mediabunny imports because both
+export UIs load it eagerly.
 
 ## Tech Stack
 
@@ -201,8 +205,7 @@ Extraction walks up from the target element to find:
 | State (UI) | Zustand |
 | Storage | Dexie.js (IndexedDB) |
 | Messaging | webext-core |
-| Session recording | rrweb |
-| Export | jsPDF, client-side HTML/Markdown |
+| Export | jsPDF, docx, mediabunny (WebCodecs video), client-side HTML/Markdown |
 | AI (optional) | Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic`) |
 | Event queue | p-queue (concurrency: 1) |
 | Icons | Lucide React |
@@ -219,8 +222,8 @@ All colors are defined as CSS variables in `src/ui/global.css` and used via Tail
 | `--color-muted-foreground` | `#6B7280` | Secondary text |
 | `--color-border` | `#C7D2FE` | Borders, dividers (lavender) |
 | `--color-secondary` | `#EEF2FF` | Light wash backgrounds |
-| `--color-accent` | `#4F46E5` | Accent / interactive (indigo) |
-| `--color-primary` | `#1E1B4B` | Dark backgrounds, badges |
+| `--color-accent` | `#4F46E5` | Icons, links, focus rings, toggles, meters (indigo) — never a button fill |
+| `--color-primary` | `#1E1B4B` | Primary buttons, badges, dark backgrounds |
 | `--color-primary-foreground` | `#C7D2FE` | Text on dark backgrounds |
 | `--color-lavender` | `#C7D2FE` | Soft accent |
 | `--color-purple` | `#4F46E5` | Primary indigo |
@@ -232,11 +235,11 @@ Font: Poppins (loaded via `@fontsource/poppins`).
 
 ## Key Technical Details
 
-- **Async event queue** in content script (PQueue, concurrency 1) serializes capture work — each action awaits the full background round-trip before the next starts
-- **Overlay hidden from content script side** (instant `display:none`) before sending capture message — no round-trip delay for overlay toggle
+- **Async event queue** in content script (PQueue, concurrency 1) serializes capture work — each action awaits the background round-trip (screenshot + step write, not the AI description) before the next starts
+- **Hover ring hidden when work is enqueued** (`CaptureController.enqueue`, instant `display:none`), and `show()` stays suppressed until the queue drains — a second click while the first capture is still in flight can't bring the ring back before the screenshot. `pointerdown` hides it earlier still, on top of `captureAction`'s 3-frame wait
 - **Input session** aggregates all typing on a field into one step — click creates it, keystrokes update description, finalize takes final screenshot
 - **DOM context** sent as text to AI instead of screenshots — 15-30x cheaper per step
-- **Highlight overlay** uses a custom web component (`<mimik-highlight>`) with closed Shadow DOM at max z-index
+- **Hover ring** (`lib/hover-ring.ts`) is a closed-Shadow-DOM host marked `data-mimik-ignore`, shared by recording and the blur picker (purple). Recording reads the user's `targetColor` so the live ring matches the dashed target baked into screenshots. Never drawn on `iframe`/`embed`/`object` — a capture inside a subframe can't hide the top frame's ring
 - **Content script injection** pings first, falls back to `chrome.scripting.executeScript()` for tabs without the script
 - **xstate snapshot** persisted to sessionStorage so the state machine survives service worker restarts
 - **Recording notification** uses `animationend` event (not hardcoded delays) for timing

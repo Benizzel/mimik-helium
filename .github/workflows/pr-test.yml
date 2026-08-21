@@ -4,9 +4,11 @@ on:
   pull_request:
     branches:
       - main
+      - dev
   push:
     branches:
       - main
+      - dev
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,8 +33,22 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Run tests
-        run: pnpm test
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Run tests with coverage
+        run: pnpm test:cov
+
+      - name: Publish coverage summary
+        if: always()
+        run: |
+          node -e '
+            const t = require("./coverage/coverage-summary.json").total;
+            const rows = ["statements", "branches", "functions", "lines"]
+              .map((k) => `| ${k} | ${t[k].pct}% | ${t[k].covered}/${t[k].total} |`)
+              .join("\n");
+            console.log(`## Test coverage\n\n| metric | % | covered |\n| --- | --- | --- |\n${rows}`);
+          ' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build Chrome
         run: pnpm build

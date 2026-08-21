@@ -1,6 +1,14 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { blobToBase64, blobToDataUrl, escapeHtml, extractDomain, formatDate } from '@/core/export/utils';
+import {
+  blobToBase64,
+  blobToDataUrl,
+  containFit,
+  escapeHtml,
+  extractDomain,
+  fitImage,
+  formatDate,
+} from '@/core/export/utils';
 import type { Step } from '@/core/guides/types';
 
 function makeStep(overrides: Partial<Step> = {}): Step {
@@ -116,5 +124,70 @@ describe('blobToDataUrl', () => {
     expect(result).toMatch(/^data:text\/plain;base64,/);
     const b64Part = result.split(',')[1];
     expect(atob(b64Part)).toBe('hello');
+  });
+});
+
+describe('fitImage', () => {
+  it('leaves an image that already fits untouched', () => {
+    expect(fitImage(103, 58, 211.5)).toEqual({ width: 103, height: 58 });
+  });
+
+  it('scales width down proportionally when the height exceeds the cap', () => {
+    const fitted = fitImage(143, 300, 211.5);
+    expect(fitted.height).toBe(211.5);
+    expect(fitted.width).toBeCloseTo(143 * (211.5 / 300), 5);
+    expect(fitted.width / fitted.height).toBeCloseTo(143 / 300, 5);
+  });
+
+  it('keeps a portrait phone screenshot inside the page at medium scale', () => {
+    const width = 103;
+    const height = (2436 / 1125) * width;
+    const fitted = fitImage(width, height, 211.5);
+    expect(height).toBeGreaterThan(211.5);
+    expect(fitted.height).toBe(211.5);
+    expect(fitted.width).toBeLessThan(width);
+  });
+
+  it('returns the input for a zero or non-finite height', () => {
+    expect(fitImage(100, 0, 200)).toEqual({ width: 100, height: 0 });
+    expect(fitImage(100, Number.NaN, 200)).toEqual({ width: 100, height: Number.NaN });
+  });
+
+  it('leaves an image exactly at the cap untouched', () => {
+    expect(fitImage(143, 211.5, 211.5)).toEqual({ width: 143, height: 211.5 });
+  });
+});
+
+describe('containFit', () => {
+  it('fills the box exactly when the ratios match', () => {
+    const fit = containFit(1600, 900, 143, 80.4375);
+    expect(fit.width).toBeCloseTo(143, 4);
+    expect(fit.height).toBeCloseTo(80.4375, 4);
+    expect(fit.x).toBeCloseTo(0, 4);
+    expect(fit.y).toBeCloseTo(0, 4);
+  });
+
+  it('pillarboxes a square inside a wide frame without exceeding it', () => {
+    const fit = containFit(1000, 1000, 143, 80.4375);
+    expect(fit.width).toBeCloseTo(80.4375, 4);
+    expect(fit.height).toBeCloseTo(80.4375, 4);
+    expect(fit.x).toBeCloseTo((143 - 80.4375) / 2, 4);
+    expect(fit.y).toBeCloseTo(0, 4);
+  });
+
+  it('letterboxes a wide image inside a tall frame', () => {
+    const fit = containFit(2000, 500, 100, 100);
+    expect(fit.width).toBeCloseTo(100, 4);
+    expect(fit.height).toBeCloseTo(25, 4);
+    expect(fit.y).toBeCloseTo(37.5, 4);
+  });
+
+  it('preserves the source aspect ratio', () => {
+    const fit = containFit(1366, 768, 143, 80.4375);
+    expect(fit.width / fit.height).toBeCloseTo(1366 / 768, 6);
+  });
+
+  it('falls back to the box for a degenerate source', () => {
+    expect(containFit(0, 0, 143, 80)).toEqual({ width: 143, height: 80, x: 0, y: 0 });
   });
 });

@@ -1,54 +1,54 @@
-import { browser, defineBackground, i18n } from '#imports';
-import { generateGuideTitle } from '@/core/capture/ai/title';
+import { browser, defineBackground } from '#imports';
+import { rewriteSelection } from '@/core/capture/ai/rewrite';
+import { validateApiKey } from '@/core/capture/ai/validate';
+import { stepRequiresManual } from '@/core/guideme/manual';
 import { advanceSession, cancelSession, completeSession, getSession, startSession } from '@/core/guideme/session';
-import { createGuide, getGuideDomain, getStepsForGuide, updateGuideTitle } from '@/core/guides/service';
-import { getActiveTab, localStorage, sendMessageToTab, setSidePanelBehavior, updateTab } from '@/lib/browser-api';
+import { actionSteps } from '@/core/guides/blocks';
+import {
+  createGuide,
+  createSnapshot,
+  getScreenshotsForSteps,
+  getStepsForGuide,
+  mergeGuideInto,
+} from '@/core/guides/service';
+import type { Step } from '@/core/guides/types';
+import {
+  getActiveTab,
+  localStorage,
+  sendMessageToTab,
+  setSidePanelBehavior,
+  toggleSidebar,
+  updateTab,
+} from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import { onMessage } from '@/lib/messaging';
 import { broadcastStateToPanel, setupPortListener } from '@/lib/port';
 import { getActor, getStateUpdate, initActor, initActorFallback, waitUntilReady } from './actor';
+import { generateDescriptionOnDemand, generateGuideMetaOnStop, settlePendingDescriptions } from './guide-meta';
 import { registerNavigationListeners } from './navigation';
 import { handleCaptureStep, handleFinalizeInputStep, handleUpdateInputStep } from './step-pipeline';
 import { broadcastStartCapture, broadcastStopCapture, showNotificationOnTab } from './tab-manager';
+import {
+  canStartNarrationNow,
+  getVoiceUpdate,
+  registerVoiceListeners,
+  startVoiceNarration,
+  stopVoiceNarration,
+} from './voice';
 
-async function generateTitleInBackground(guideId: string) {
-  try {
-    const settings = await localStorage.get(['aiApiKey', 'aiProvider', 'aiModel']);
-    if (!settings.aiApiKey) {
-      const domain = await getGuideDomain(guideId);
-      await updateGuideTitle(
-        guideId,
-        domain ? i18n.t('background.guideOnDomain', [domain]) : i18n.t('background.newGuide'),
-      );
-      return;
-    }
+async function resolveManual(step: Step): Promise<boolean> {
+  if (!step.screenshotId) return stepRequiresManual(step, null);
+  const screenshots = await getScreenshotsForSteps([step.screenshotId]);
+  return stepRequiresManual(step, screenshots.get(step.id));
+}
 
-    const steps = await getStepsForGuide(guideId);
-    const allSteps = steps.filter((s) => s.description).map((s) => ({ description: s.description, url: s.url }));
-    if (allSteps.length === 0) return;
-    const stepsWithUrl = allSteps.length > 15 ? [...allSteps.slice(0, 10), ...allSteps.slice(-5)] : allSteps;
-
-    const provider = (settings.aiProvider as string) || 'openai';
-    const model = (settings.aiModel as string) || 'gpt-4o-mini';
-    const title = await generateGuideTitle(stepsWithUrl, provider, model, settings.aiApiKey as string);
-    if (title) {
-      await updateGuideTitle(guideId, title);
-      logger.info('Generated guide title:', title);
-    } else {
-      const domain = await getGuideDomain(guideId);
-      await updateGuideTitle(
-        guideId,
-        domain ? i18n.t('background.guideOnDomain', [domain]) : i18n.t('background.newGuide'),
-      );
-    }
-  } catch (err) {
-    logger.error('Guide title generation failed', err);
-    const domain = await getGuideDomain(guideId);
-    await updateGuideTitle(
-      guideId,
-      domain ? i18n.t('background.guideOnDomain', [domain]) : i18n.t('background.newGuide'),
-    );
-  }
+async function startNarrationIfPossible(): Promise<boolean> {
+  await waitUntilReady();
+  const actor = getActor();
+  if (!canStartNarrationNow(String(actor.getSnapshot().value), getVoiceUpdate().phase)) return false;
+  const activeTab = await getActiveTab();
+  await startVoiceNarration(activeTab?.id);
+  return getVoiceUpdate().phase === 'recording';
 }
 
 export default defineBackground(() => {
@@ -78,18 +78,20 @@ export default defineBackground(() => {
   setSidePanelBehavior(true);
   if (import.meta.env.BROWSER === 'firefox') {
     browser.action.onClicked.addListener(() => {
-      browser.sidebarAction.toggle();
+      toggleSidebar();
     });
   }
   initActor().catch(initActorFallback);
   cancelSession();
   registerNavigationListeners();
+  registerVoiceListeners(startNarrationIfPossible);
 
   setupPortListener((port) => {
     logger.debug('Panel connected via port');
     waitUntilReady().then(() => {
       try {
         port.postMessage(getStateUpdate());
+        port.postMessage(getVoiceUpdate());
       } catch {}
     });
 
@@ -115,13 +117,20 @@ export default defineBackground(() => {
   onMessage('startRecording', async ({ data }) => {
     await waitUntilReady();
     const actor = getActor();
-    actor.send({ type: 'START_RECORDING', url: data.url });
+    actor.send({
+      type: 'START_RECORDING',
+      url: data.url,
+      insertTargetGuideId: data.insertTargetGuideId,
+      insertAtIndex: data.insertAtIndex,
+    });
     const guideId = actor.getSnapshot().context.currentGuideId!;
 
-    await createGuide(guideId);
+    await createGuide(guideId, data.insertTargetGuideId !== undefined);
 
     const activeTab = await getActiveTab();
     if (activeTab?.id) await showNotificationOnTab(activeTab.id);
+
+    await startVoiceNarration(activeTab?.id);
 
     await broadcastStartCapture(guideId);
     return { guideId };
@@ -130,14 +139,25 @@ export default defineBackground(() => {
   onMessage('stopRecording', async () => {
     await waitUntilReady();
     const actor = getActor();
-    const guideId = actor.getSnapshot().context.currentGuideId;
+    const { currentGuideId: guideId, insertTargetGuideId, insertAtIndex } = actor.getSnapshot().context;
     await broadcastStopCapture();
     actor.send({ type: 'STOP_RECORDING' });
 
-    if (guideId) generateTitleInBackground(guideId);
+    if (guideId) void stopVoiceNarration(guideId);
 
-    return { success: true, guideId: guideId ?? undefined };
+    if (guideId && insertTargetGuideId !== null && insertAtIndex !== null) {
+      await settlePendingDescriptions(guideId);
+      await createSnapshot(insertTargetGuideId);
+      await mergeGuideInto(guideId, insertTargetGuideId, insertAtIndex);
+      return { success: true, guideId: insertTargetGuideId, inserted: true };
+    }
+
+    if (guideId) generateGuideMetaOnStop(guideId).catch(() => {});
+
+    return { success: true, guideId: guideId ?? undefined, inserted: false };
   });
+
+  onMessage('startNarration', async () => ({ started: await startNarrationIfPossible() }));
 
   onMessage('enterBlurMode', async () => {
     await waitUntilReady();
@@ -160,6 +180,12 @@ export default defineBackground(() => {
     return { exited: true };
   });
 
+  onMessage('generateGuideDescription', ({ data }) => generateDescriptionOnDemand(data.guideId));
+
+  onMessage('validateApiKey', ({ data }) => validateApiKey(data.provider, data.apiKey));
+
+  onMessage('rewriteSelection', ({ data }) => rewriteSelection(data.text, data.instruction));
+
   onMessage('captureStep', async ({ data }) => {
     await waitUntilReady();
     return handleCaptureStep(data);
@@ -178,13 +204,13 @@ export default defineBackground(() => {
   });
 
   onMessage('startGuideMe', async ({ data }) => {
-    const steps = await getStepsForGuide(data.guideId);
+    const steps = actionSteps(await getStepsForGuide(data.guideId));
     if (steps.length === 0) return { started: false, error: 'No steps' };
 
     const firstStep = steps.find((s) => s.elementMeta) ?? steps[0];
     if (!steps.some((s) => s.elementMeta)) return { started: false, error: 'Guide lacks element metadata' };
 
-    await startSession(data.guideId, steps.length, firstStep);
+    await startSession(data.guideId, steps.length, firstStep, await resolveManual(firstStep));
 
     const activeTab = await getActiveTab();
     if (activeTab?.id && firstStep.url) {
@@ -199,7 +225,7 @@ export default defineBackground(() => {
     const session = sessionData.guideMeSession as { guideId: string } | undefined;
     if (!session) return { advanced: false };
 
-    const steps = await getStepsForGuide(session.guideId);
+    const steps = actionSteps(await getStepsForGuide(session.guideId));
     const nextIndex = data.stepIndex + 1;
 
     if (nextIndex >= steps.length) {
@@ -212,7 +238,7 @@ export default defineBackground(() => {
       await completeSession();
       return { advanced: true, completed: true };
     }
-    await advanceSession(nextStep, nextIndex);
+    await advanceSession(nextStep, nextIndex, await resolveManual(nextStep));
 
     const currentTab = await getActiveTab();
     if (currentTab?.id && nextStep.url && nextStep.url !== currentTab.url) {
@@ -227,22 +253,19 @@ export default defineBackground(() => {
     return { cancelled: true };
   });
 
-  onMessage('guideMePrev', async ({ data }) => {
-    if (data.stepIndex <= 0) return { moved: false };
-
+  onMessage('guideMeGoTo', async ({ data }) => {
     const sessionData = await localStorage.get(['guideMeSession']);
     const session = sessionData.guideMeSession as { guideId: string } | undefined;
     if (!session) return { moved: false };
 
-    const steps = await getStepsForGuide(session.guideId);
-    const prevIndex = data.stepIndex - 1;
-    const prevStep = steps[prevIndex];
-    if (!prevStep) return { moved: false };
-    await advanceSession(prevStep, prevIndex);
+    const steps = actionSteps(await getStepsForGuide(session.guideId));
+    const target = steps[data.stepIndex];
+    if (!target) return { moved: false };
+    await advanceSession(target, data.stepIndex, await resolveManual(target));
 
     const currentTab = await getActiveTab();
-    if (currentTab?.id && prevStep.url && prevStep.url !== currentTab.url) {
-      await updateTab(currentTab.id, { url: prevStep.url });
+    if (currentTab?.id && target.url && target.url !== currentTab.url) {
+      await updateTab(currentTab.id, { url: target.url });
     }
 
     return { moved: true };

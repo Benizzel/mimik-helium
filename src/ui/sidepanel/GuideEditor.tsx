@@ -1,29 +1,28 @@
-import { ArrowLeft, Layers, Maximize2, Play } from 'lucide-react';
+import { ArrowLeft, Maximize2, Play } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { i18n } from '#imports';
-import {
-  deleteStep,
-  getGuide,
-  reorderSteps,
-  updateGuideTitle,
-  updateScreenshotBlob,
-  updateStepDescription,
-} from '@/core/guides/service';
+import { actionSteps, isBlock, stepNumbers } from '@/core/guides/blocks';
+import { getGuide, onGuidesChanged } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
+import { dominantRatio } from '@/core/screenshot/geometry';
 import { createTab, focusWindow, getExtensionURL, queryTabs, updateTab } from '@/lib/browser-api';
 import { sendMessage } from '@/lib/messaging';
 import { getMostCommonDomain } from '@/lib/utils';
-import { Input } from '@/ui/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
+import BlockCard from '@/ui/shared/BlockCard';
 import EmptyGuideState from '@/ui/shared/EmptyGuideState';
 import FaviconImg from '@/ui/shared/FaviconImg';
-import BlurCanvas from './BlurCanvas';
-import ExportMenu from './ExportMenu';
 import StepCard from './StepCard';
 
 interface GuideEditorProps {
   guideId: string;
   onBack: () => void;
   onGuideMe?: (guideId: string) => void;
+}
+
+interface OpenInFullViewOptions {
+  stepId?: string;
+  tool?: 'annotate' | 'redact' | 'crop' | 'target';
 }
 
 interface GuideData {
@@ -36,10 +35,10 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
   const [data, setData] = useState<GuideData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [title, setTitle] = useState('');
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [blurringStepId, setBlurringStepId] = useState<string | null>(null);
+
+  const applyGuide = useCallback((result: GuideData) => {
+    setData(result);
+  }, []);
 
   const loadGuide = useCallback(async () => {
     const result = await getGuide(guideId);
@@ -48,61 +47,32 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
       setLoading(false);
       return;
     }
-    setData(result);
-    setTitle(result.guide.title);
+    applyGuide(result);
     setLoading(false);
-  }, [guideId]);
+  }, [guideId, applyGuide]);
 
   useEffect(() => {
     loadGuide();
   }, [loadGuide]);
 
-  const handleTitleBlur = useCallback(async () => {
-    if (!data || title === data.guide.title) return;
-    await updateGuideTitle(guideId, title);
-    setData((prev) => (prev ? { ...prev, guide: { ...prev.guide, title } } : prev));
-  }, [data, guideId, title]);
+  useEffect(() => {
+    return onGuidesChanged(loadGuide);
+  }, [loadGuide]);
 
-  const handleDescriptionChange = useCallback(async (stepId: string, description: string) => {
-    await updateStepDescription(stepId, description);
-    setData((prev) => {
-      if (!prev) return prev;
-      return { ...prev, steps: prev.steps.map((s) => (s.id === stepId ? { ...s, description } : s)) };
+  const openInFullView = useCallback((targetGuideId: string, options?: OpenInFullViewOptions) => {
+    const params = new URLSearchParams({ guideId: targetGuideId });
+    if (options?.stepId) params.set('stepId', options.stepId);
+    if (options?.tool) params.set('tool', options.tool);
+    const url = getExtensionURL(`/fullview.html?${params.toString()}`);
+    queryTabs({ url: getExtensionURL('/fullview.html') }).then((tabs) => {
+      if (tabs.length > 0 && tabs[0].id) {
+        updateTab(tabs[0].id, { active: true, url });
+        if (tabs[0].windowId) focusWindow(tabs[0].windowId);
+      } else {
+        createTab({ url });
+      }
     });
   }, []);
-
-  const handleDeleteStep = useCallback(
-    async (stepId: string) => {
-      await deleteStep(guideId, stepId);
-      const result = await getGuide(guideId);
-      if (result) {
-        setData(result);
-        setTitle(result.guide.title);
-      } else {
-        setData(null);
-        setLoading(true);
-        await loadGuide();
-      }
-    },
-    [guideId, loadGuide],
-  );
-
-  const handleBlurSave = useCallback(
-    async (blob: Blob) => {
-      if (!blurringStepId || !data) return;
-      const blurScreenshot = data.screenshots.get(blurringStepId);
-      if (!blurScreenshot) return;
-      await updateScreenshotBlob(blurScreenshot.id, blob);
-      setData((prev) => {
-        if (!prev) return prev;
-        const newScreenshots = new Map(prev.screenshots);
-        newScreenshots.set(blurringStepId, { ...blurScreenshot, blob });
-        return { ...prev, screenshots: newScreenshots };
-      });
-      setBlurringStepId(null);
-    },
-    [blurringStepId, data],
-  );
 
   if (loading) return <p className="text-sm text-purple p-4">{i18n.t('common.loading')}</p>;
 
@@ -118,127 +88,105 @@ export default function GuideEditor({ guideId, onBack, onGuideMe }: GuideEditorP
     );
   }
 
-  const blurScreenshot = blurringStepId ? data.screenshots.get(blurringStepId) : undefined;
+  const actionCount = actionSteps(data.steps).length;
+  const numbers = stepNumbers(data.steps);
+  const domain = getMostCommonDomain(data.steps);
 
   return (
     <div className="min-h-screen bg-card flex flex-col">
-      {blurringStepId && blurScreenshot && (
-        <BlurCanvas screenshot={blurScreenshot} onSave={handleBlurSave} onCancel={() => setBlurringStepId(null)} />
-      )}
       <div className="px-4 pt-3 pb-2">
         <div className="flex items-center gap-2">
-          <button
-            onClick={onBack}
-            className="shrink-0 p-1 rounded text-purple hover:text-foreground"
-            title={i18n.t('editor.backToLibrary')}
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={handleTitleBlur}
-            className="text-lg font-bold bg-transparent border-0 border-b border-transparent hover:border-border focus-visible:ring-0 focus-visible:border-accent shadow-none p-0 h-auto text-foreground"
-          />
-          <button
-            onClick={() => {
-              const url = getExtensionURL(`/fullview.html?guideId=${guideId}`);
-              queryTabs({ url: getExtensionURL('/fullview.html') }).then((tabs) => {
-                if (tabs.length > 0 && tabs[0].id) {
-                  updateTab(tabs[0].id, { active: true, url: getExtensionURL(`/fullview.html?guideId=${guideId}`) });
-                  if (tabs[0].windowId) focusWindow(tabs[0].windowId);
-                } else {
-                  createTab({ url });
-                }
-              });
-            }}
-            className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary"
-            title={i18n.t('library.openInFullView')}
-          >
-            <Maximize2 size={15} />
-          </button>
-          {data.steps.length > 0 && (
-            <button
-              onClick={async () => {
-                await sendMessage('startGuideMe', { guideId });
-                onGuideMe?.(guideId);
-              }}
-              disabled={!data.steps.some((s) => s.elementMeta)}
-              className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-              title={i18n.t('editor.guideMe')}
-            >
-              <Play size={15} />
-            </button>
-          )}
-          <div className="ml-auto shrink-0">
-            <ExportMenu guideId={guideId} guide={data.guide} steps={data.steps} screenshots={data.screenshots} />
-          </div>
-        </div>
-        <div className="text-[11px] flex items-center gap-2 text-muted-foreground" style={{ marginLeft: '34px' }}>
-          <span className="flex items-center gap-1">
-            <Layers size={11} />
-            {data.steps.length !== 1
-              ? i18n.t('fullview.stepCountPlural', [String(data.steps.length)])
-              : i18n.t('fullview.stepCount', [String(data.steps.length)])}
-          </span>
-          {(() => {
-            const d = getMostCommonDomain(data.steps);
-            if (!d) return null;
-            return (
-              <span className="flex items-center gap-1">
-                <span className="text-border">·</span>
-                <FaviconImg domain={d} size={12} className="rounded-full" />
-                {d}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={onBack} className="shrink-0 p-1 rounded text-purple hover:text-foreground">
+                <ArrowLeft size={18} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent align="start">{i18n.t('editor.backToLibrary')}</TooltipContent>
+          </Tooltip>
+
+          <div className="flex-1 min-w-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h2 className="text-[13px] font-bold truncate text-foreground leading-tight">{data.guide.title}</h2>
+              </TooltipTrigger>
+              <TooltipContent align="start">{data.guide.title}</TooltipContent>
+            </Tooltip>
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground leading-tight">
+              <span>
+                {actionCount !== 1
+                  ? i18n.t('fullview.stepCountPlural', [String(actionCount)])
+                  : i18n.t('fullview.stepCount', [String(actionCount)])}
               </span>
-            );
-          })()}
+              {domain && (
+                <>
+                  <span className="text-border">·</span>
+                  <FaviconImg domain={domain} size={10} className="rounded-full" />
+                  <span className="truncate">{domain}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {data.steps.length > 0 &&
+            (() => {
+              const replayable = data.steps.some((s) => s.elementMeta);
+              const label = i18n.t(replayable ? 'editor.guideMe' : 'editor.guideMeUnavailable');
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={async () => {
+                        if (!replayable) return;
+                        await sendMessage('startGuideMe', { guideId });
+                        onGuideMe?.(guideId);
+                      }}
+                      aria-disabled={!replayable}
+                      aria-label={label}
+                      className="shrink-0 p-1.5 rounded-md transition-colors text-purple hover:text-accent hover:bg-secondary aria-disabled:opacity-30 aria-disabled:cursor-not-allowed aria-disabled:hover:text-purple aria-disabled:hover:bg-transparent"
+                    >
+                      <Play size={15} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{label}</TooltipContent>
+                </Tooltip>
+              );
+            })()}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => openInFullView(guideId)}
+                className="shrink-0 flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] font-semibold text-purple transition-colors hover:border-accent hover:text-accent"
+              >
+                <Maximize2 size={12} />
+                {i18n.t('editor.openInDashboard')}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent align="end">{i18n.t('editor.openInDashboardHint')}</TooltipContent>
+          </Tooltip>
         </div>
       </div>
+
       <div className="px-4 pt-1 pb-4 flex-1 flex flex-col">
         {data.steps.length === 0 ? (
           <EmptyGuideState />
         ) : (
-          data.steps.map((step, idx) => (
-            <div key={step.id}>
-              {dragOverIndex === idx && dragIndex !== null && dragIndex !== idx && (
-                <div className="h-1 bg-accent rounded-full mx-4 mb-1" />
-              )}
+          data.steps.map((step) =>
+            isBlock(step) ? (
+              <BlockCard key={step.id} step={step} readOnly />
+            ) : (
               <StepCard
+                key={step.id}
                 step={step}
+                number={numbers.get(step.id) ?? 0}
                 screenshot={data.screenshots.get(step.id)}
-                onDescriptionChange={handleDescriptionChange}
-                onDelete={handleDeleteStep}
-                onBlur={(stepId) => setBlurringStepId(stepId)}
-                dragHandleProps={{
-                  onDragStart: (e: React.DragEvent) => {
-                    setDragIndex(idx);
-                    e.dataTransfer.effectAllowed = 'move';
-                  },
-                  onDragOver: (e: React.DragEvent) => {
-                    e.preventDefault();
-                    setDragOverIndex(idx);
-                  },
-                  onDragEnd: () => {
-                    if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
-                      setData((prev) => {
-                        if (!prev) return prev;
-                        const newSteps = [...prev.steps];
-                        const [moved] = newSteps.splice(dragIndex, 1);
-                        newSteps.splice(dragOverIndex, 0, moved);
-                        reorderSteps(
-                          guideId,
-                          newSteps.map((s) => s.id),
-                        );
-                        return { ...prev, steps: newSteps };
-                      });
-                    }
-                    setDragIndex(null);
-                    setDragOverIndex(null);
-                  },
-                }}
+                placeholderRatio={dominantRatio(data.screenshots)}
+                frameRatio={dominantRatio(data.screenshots)}
+                readOnly
               />
-            </div>
-          ))
+            ),
+          )
         )}
       </div>
     </div>

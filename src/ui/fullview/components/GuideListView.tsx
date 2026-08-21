@@ -2,6 +2,7 @@ import { RotateCcw, Star, Trash2 } from 'lucide-react';
 import { i18n } from '#imports';
 import { formatDate } from '@/lib/utils';
 import { useFullview } from '@/stores/fullview';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
 import { navigate } from '../router';
 
 interface GuideListViewProps {
@@ -26,6 +27,9 @@ export default function GuideListView({ category, onStar, onTrash, onRestore, on
         >
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate text-foreground">{guide.title}</p>
+            {guide.description && (
+              <p className="text-xs mt-0.5 text-muted-foreground line-clamp-1">{guide.description}</p>
+            )}
             <p className="text-xs mt-0.5 text-muted-foreground">
               {guide.stepIds.length !== 1
                 ? i18n.t('fullview_stepCountPlural', [String(guide.stepIds.length)])
@@ -33,40 +37,56 @@ export default function GuideListView({ category, onStar, onTrash, onRestore, on
               &middot; {formatDate(guide.updatedAt)}
             </p>
           </div>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity motion-reduce:transition-none">
             {category !== 'trash' ? (
               <>
-                <button
-                  onClick={(e) => onStar(e, guide.id)}
-                  className="p-1.5 rounded-lg transition-colors text-purple hover:text-accent"
-                  title={guide.starred ? i18n.t('common_unstar') : i18n.t('common_star')}
-                >
-                  <Star size={14} fill={guide.starred ? 'currentColor' : 'none'} />
-                </button>
-                <button
-                  onClick={(e) => onTrash(e, guide.id)}
-                  className="p-1.5 rounded-lg transition-colors text-purple hover:text-destructive"
-                  title={i18n.t('library_moveToTrash')}
-                >
-                  <Trash2 size={14} />
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => onStar(e, guide.id)}
+                      className="p-1.5 rounded-lg transition-colors text-purple hover:text-accent"
+                    >
+                      <Star size={14} fill={guide.starred ? 'currentColor' : 'none'} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{guide.starred ? i18n.t('common_unstar') : i18n.t('common_star')}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => onTrash(e, guide.id)}
+                      className="p-1.5 rounded-lg transition-colors text-purple hover:text-destructive"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent align="end">{i18n.t('library_moveToTrash')}</TooltipContent>
+                </Tooltip>
               </>
             ) : (
               <>
-                <button
-                  onClick={(e) => onRestore(e, guide.id)}
-                  className="p-1.5 rounded-lg transition-colors text-purple hover:text-success"
-                  title={i18n.t('common_restore')}
-                >
-                  <RotateCcw size={14} />
-                </button>
-                <button
-                  onClick={(e) => onPermanentDelete(e, guide.id)}
-                  className="p-1.5 rounded-lg transition-colors text-purple hover:text-destructive"
-                  title={i18n.t('library_deletePermanently')}
-                >
-                  <Trash2 size={14} />
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => onRestore(e, guide.id)}
+                      className="p-1.5 rounded-lg transition-colors text-purple hover:text-success"
+                    >
+                      <RotateCcw size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{i18n.t('common_restore')}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => onPermanentDelete(e, guide.id)}
+                      className="p-1.5 rounded-lg transition-colors text-purple hover:text-destructive"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent align="end">{i18n.t('library_deletePermanently')}</TooltipContent>
+                </Tooltip>
               </>
             )}
           </div>

@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { createActor } from 'xstate';
 import { CaptureState, captureMachine } from '../machine';
 

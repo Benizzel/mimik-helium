@@ -1,17 +1,28 @@
-import { getAIDescription } from '@/core/capture/ai/description';
 import type { DOMContext } from '@/core/capture/dom/context';
 import { CaptureState } from '@/core/capture/machine';
 import { buildFallbackDescription } from '@/core/capture/step-description';
 import { db } from '@/core/guides/db';
-import { addStepToGuide, createStep, saveScreenshot, updateStepDescription } from '@/core/guides/service';
+import {
+  addStepToGuide,
+  clearStepAiPending,
+  createStep,
+  saveScreenshot,
+  updateStepDescription,
+} from '@/core/guides/service';
 import type { ElementMeta, Screenshot, Step } from '@/core/guides/types';
+import { DEFAULT_TARGET_COLOR } from '@/core/screenshot/types';
 import { captureVisibleTab, localStorage } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import type { CaptureStepData, CaptureStepResponse } from '@/lib/messaging';
 import { getActor } from './actor';
+import { generateAiDescription } from './ai-description';
+import { deferDescription, shouldQueueAiDescription } from './deferred-descriptions';
+import { queueDescription } from './description-queue';
+import { flushNarrationForStep, getVoiceUpdate } from './voice';
 
 async function takeScreenshot(stepId: string, meta: ElementMeta): Promise<string | undefined> {
   try {
+    const { targetColor } = await localStorage.get(['targetColor']);
     const dataUrl = await captureVisibleTab('jpeg', 90);
     const blob = await fetch(dataUrl).then((r) => r.blob());
     const img = await createImageBitmap(blob);
@@ -24,6 +35,17 @@ async function takeScreenshot(stepId: string, meta: ElementMeta): Promise<string
       height: img.height,
       bounds: { x: meta.rect.x, y: meta.rect.y, width: meta.rect.width, height: meta.rect.height },
       pixelRatio: meta.devicePixelRatio,
+      clickPoint: meta.clickPoint,
+      edits: {
+        target: {
+          x: meta.rect.x * meta.devicePixelRatio,
+          y: meta.rect.y * meta.devicePixelRatio,
+          width: meta.rect.width * meta.devicePixelRatio,
+          height: meta.rect.height * meta.devicePixelRatio,
+          border: 'dashed',
+          color: (targetColor as string) || DEFAULT_TARGET_COLOR,
+        },
+      },
     };
     img.close();
     await saveScreenshot(screenshot);
@@ -35,13 +57,13 @@ async function takeScreenshot(stepId: string, meta: ElementMeta): Promise<string
 }
 
 async function tryAIDescription(stepId: string, domContext: DOMContext) {
-  const settings = await localStorage.get(['aiApiKey', 'aiProvider', 'aiModel']);
-  if (!settings.aiApiKey) return;
-
-  const provider = (settings.aiProvider as string) || 'openai';
-  const model = (settings.aiModel as string) || 'gpt-4o-mini';
-  const description = await getAIDescription(domContext, provider, model, settings.aiApiKey as string);
-  if (description) await updateStepDescription(stepId, description);
+  if (!(await localStorage.get(['aiApiKey'])).aiApiKey) return;
+  try {
+    await clearStepAiPending(stepId, await generateAiDescription(domContext));
+  } catch (err) {
+    await clearStepAiPending(stepId);
+    throw err;
+  }
 }
 
 export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureStepResponse> {
@@ -56,6 +78,16 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
 
   const screenshotId = await takeScreenshot(stepId, data.elementMeta);
 
+  const narrationCapturing = getVoiceUpdate().phase === 'recording';
+  const hasAiKey = !!(await localStorage.get(['aiApiKey'])).aiApiKey;
+  const willUseAI = shouldQueueAiDescription({
+    action: data.action,
+    hasDomContext: !!data.domContext,
+    hasAiKey,
+    narrationCapturing,
+  });
+
+  const timestamp = Date.now();
   await createStep({
     id: stepId,
     guideId,
@@ -63,19 +95,20 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
     description: buildFallbackDescription(data.action, data.elementMeta),
     action: data.action,
     url: snap.context.currentUrl,
-    timestamp: Date.now(),
+    timestamp,
     screenshotId,
     elementMeta: data.elementMeta,
+    aiPending: willUseAI || narrationCapturing,
   });
   await addStepToGuide(guideId, stepId);
 
-  if (data.action !== 'input' && data.domContext) {
-    try {
-      await tryAIDescription(stepId, data.domContext);
-    } catch (err) {
-      logger.error('AI description failed', err);
-    }
+  const domContext = data.domContext;
+  if (data.action !== 'input' && domContext) {
+    if (willUseAI) queueDescription(guideId, () => tryAIDescription(stepId, domContext));
+    else if (narrationCapturing && hasAiKey) deferDescription(guideId, stepId, domContext);
   }
+
+  if (narrationCapturing) void flushNarrationForStep(guideId, stepId, timestamp);
 
   return { stepId };
 }
@@ -97,11 +130,8 @@ export async function handleFinalizeInputStep(
   if (screenshotId) updates.screenshotId = screenshotId;
   await db.steps.update(stepId, updates);
 
-  if (domContext) {
-    try {
-      await tryAIDescription(stepId, domContext);
-    } catch (err) {
-      logger.error('AI description failed on finalize', err);
-    }
+  const guideId = (await db.steps.get(stepId))?.guideId;
+  if (domContext && guideId) {
+    queueDescription(guideId, () => tryAIDescription(stepId, domContext));
   }
 }

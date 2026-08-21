@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { exportGuideAsMarkdown } from '@/core/export/markdown-export';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
+
+vi.mock('@/core/screenshot/render', () => ({
+  renderScreenshot: async (s: Screenshot) => s.blob,
+}));
 
 function makeGuide(overrides: Partial<Guide> = {}): Guide {
   return {
@@ -101,6 +105,27 @@ describe('exportGuideAsMarkdown', () => {
     expect(md).not.toContain('![');
   });
 
+  it('includes the description under the title when present', async () => {
+    const guide = makeGuide({ description: 'Reset a locked-out user password.' });
+    const steps = [makeStep()];
+    const screenshots = new Map<string, Screenshot>();
+
+    const md = await exportGuideAsMarkdown(guide, steps, screenshots);
+    expect(md).toContain('# Test Guide\n\nReset a locked-out user password.\n\n');
+  });
+
+  it('omits the description block when absent', async () => {
+    const guide = makeGuide();
+    const steps = [makeStep()];
+    const screenshots = new Map<string, Screenshot>();
+
+    const md = await exportGuideAsMarkdown(guide, steps, screenshots);
+    const lines = md.split('\n');
+    expect(lines[1]).toBe('');
+    expect(lines[2].startsWith('*')).toBe(true);
+    expect(md).not.toContain('undefined');
+  });
+
   it('embeds screenshot as base64 data URL in markdown image', async () => {
     const guide = makeGuide();
     const step = makeStep();
@@ -112,5 +137,77 @@ describe('exportGuideAsMarkdown', () => {
     expect(md).toContain('![export.stepLabel[01]](data:image/png;base64,');
     const b64 = btoa('pixel-data');
     expect(md).toContain(b64);
+  });
+
+  it('labels the data URL with the rendered mime type, not the stored one', async () => {
+    const step = makeStep();
+    const ss = makeScreenshot(step.id, 'pixel-data');
+    ss.mimeType = 'image/jpeg';
+
+    const md = await exportGuideAsMarkdown(makeGuide(), [step], new Map([[step.id, ss]]));
+
+    expect(md).toContain('](data:image/png;base64,');
+    expect(md).not.toContain('data:image/jpeg');
+  });
+
+  it('renders a heading block as an H2 without a step number', async () => {
+    const guide = makeGuide();
+    const steps = [makeStep({ id: 'block-1', blockType: 'heading', description: 'Section title', url: '' })];
+
+    const md = await exportGuideAsMarkdown(guide, steps, new Map());
+    expect(md).toContain('## Section title');
+    expect(md).not.toContain('export.stepLabel');
+  });
+
+  it('renders a callout block as a blockquote with its variant label', async () => {
+    const guide = makeGuide();
+    const steps = [
+      makeStep({
+        id: 'block-1',
+        blockType: 'callout',
+        calloutVariant: 'warning',
+        description: 'Do not skip this',
+        url: '',
+      }),
+    ];
+
+    const md = await exportGuideAsMarkdown(guide, steps, new Map());
+    expect(md).toContain('> **blocks.variantWarning**');
+    expect(md).toContain('> Do not skip this');
+  });
+
+  it('prefixes every line of a multi-line callout', async () => {
+    const guide = makeGuide();
+    const steps = [makeStep({ id: 'block-1', blockType: 'callout', description: 'First line\nSecond line', url: '' })];
+
+    const md = await exportGuideAsMarkdown(guide, steps, new Map());
+    expect(md).toContain('> First line\n> Second line');
+  });
+
+  it('keeps step numbering sequential across an interleaved block', async () => {
+    const guide = makeGuide();
+    const steps = [
+      makeStep({ index: 0, description: 'First action' }),
+      makeStep({ id: 'block-1', index: 1, blockType: 'heading', description: 'Section title', url: '' }),
+      makeStep({ id: 'step-2', index: 2, description: 'Second action' }),
+    ];
+
+    const md = await exportGuideAsMarkdown(guide, steps, new Map());
+    expect(md).toContain('## export.stepLabel[01]: First action');
+    expect(md).toContain('## export.stepLabel[02]: Second action');
+    expect(md).not.toContain('export.stepLabel[03]');
+  });
+
+  it('counts only action steps in the metadata line', async () => {
+    const guide = makeGuide();
+    const steps = [
+      makeStep({ index: 0 }),
+      makeStep({ id: 'block-1', index: 1, blockType: 'heading', description: 'Section title', url: '' }),
+      makeStep({ id: 'block-2', index: 2, blockType: 'callout', description: 'Heads up', url: '' }),
+      makeStep({ id: 'step-2', index: 3, description: 'Type text' }),
+    ];
+
+    const md = await exportGuideAsMarkdown(guide, steps, new Map());
+    expect(md).toContain('export.stepsCount[2]');
   });
 });

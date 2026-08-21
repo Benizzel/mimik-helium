@@ -32,14 +32,13 @@ Clica em gravar, faz o que precisa, e recebe um guia caprichado com capturas de 
 - [📺 Demo](#-demo)
 - [👋 Começando](#-começando)
 - [✨ Funcionalidades](#-funcionalidades)
-  - [🎬 Captura automática](#-captura-automática)
-  - [📸 Capturas anotadas](#-capturas-anotadas)
   - [🔒 Smart Blur](#-smart-blur)
   - [🧠 Descrições por IA (opcional)](#-descrições-por-ia-opcional)
   - [▶️ Reprodução Guide Me](#️-reprodução-guide-me)
+  - [🎙️ Narração por voz (opcional)](#️-narração-por-voz-opcional)
+  - [✏️ Editor de guias](#️-editor-de-guias)
   - [📤 Exportação multi-formato](#-exportação-multi-formato)
-  - [🌍 Multi-idioma](#-multi-idioma)
-  - [💾 Armazenamento 100% local](#-armazenamento-100-local)
+- [🔐 Privacidade e armazenamento](#-privacidade-e-armazenamento)
 - [🤝 Contribuir](#-contribuir)
 - [📜 Licença](#-licença)
 
@@ -50,7 +49,7 @@ Clica em gravar, faz o que precisa, e recebe um guia caprichado com capturas de 
 ## 📺 Demo
 
 <div align="center">
-<img src="public/demo.gif" alt="Demo do Mimik" width="800" />
+<img src="https://github.com/user-attachments/assets/9de20b45-2256-4127-8242-141cf1802f39" alt="Demo do Mimik" width="800" />
 </div>
 
 ## 👋 Começando
@@ -59,10 +58,17 @@ O Mimik transforma qualquer tarefa repetitiva do navegador num guia documentado 
 
 Seja documentando ferramentas internas, escrevendo tutoriais do produto, ou integrando um colega novo, o Mimik captura cada clique, tecla e navegação automaticamente pra tu focar no que importa.
 
+Cada ação relevante vira um passo: cliques em botões e links, campos de formulário, atalhos de teclado, ações da área de transferência, arrastos e navegações. Cliques rápidos em elementos próximos são agrupados pros guias ficarem limpos, e o clique é interceptado antes da página navegar, então nada se perde em SPAs nem em carregamentos completos.
+
+Cada passo ganha uma captura com o elemento clicado destacado e ampliado. Sem recortar na mão, sem ferramenta de anotação pra aprender.
+
 | Navegador | Versão | Instalação |
 | --------- | ------ | ---------- |
 | Chrome    | [![Chrome Version][chrome-version-shield]][chrome-link]   | [Chrome Web Store][chrome-link] |
 | Firefox   | [![Firefox Version][firefox-version-shield]][firefox-link] | [Firefox Add-ons][firefox-link]  |
+| Edge      | [![Edge Version][edge-version-shield]][edge-link]          | [Microsoft Edge Add-ons][edge-link] |
+
+Disponível em inglês, espanhol, português brasileiro, francês e alemão. O idioma das descrições de IA é configurado separadamente, então tu pode usar o Mimik em inglês e gerar os guias em português, ou qualquer combinação.
 
 > \[!IMPORTANT]
 >
@@ -80,33 +86,13 @@ Seja documentando ferramentas internas, escrevendo tutoriais do produto, ou inte
 
 ## ✨ Funcionalidades
 
-### 🎬 Captura automática
-
-Clica, digita, navega. O Mimik vê tudo. Cada ação relevante vira um passo: cliques em botões e links, campos de formulário, atalhos de teclado, área de transferência, arrastar e soltar, e navegações.
-
-A fusão inteligente de eventos descarta os cliques rápidos em elementos próximos, pra teus guias ficarem limpos. A interceptação do clique acontece *antes* da página mudar, então nada se perde em SPAs nem em recarregamentos completos.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 📸 Capturas anotadas
-
-Cada passo ganha uma captura com o elemento clicado destacado e um zoom na área importante. Sem recortar na mão, sem aprender ferramentas de anotação. O Mimik descobre qual parte da página importa e enquadra ela pra ti.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
 ### 🔒 Smart Blur
 
 O Mimik detecta e desfoca dados sensíveis automaticamente nas tuas capturas: e-mails, telefones, CPFs, cartões de crédito, IPs, endereços MAC. Liga ou desliga cada categoria do jeito que tu quiser.
 
 Precisa esconder algo específico? O seletor manual deixa tu escolher qualquer elemento do DOM e mascarar ele em todas as capturas onde aparecer.
+
+<img src="https://github.com/user-attachments/assets/968d2518-c561-4d68-92a6-3d5f569fe38a" alt="Smart Blur" width="800" />
 
 <div align="right">
 
@@ -120,6 +106,8 @@ Traz a tua API key (OpenAI ou Anthropic) e o Mimik gera descrições naturais ti
 
 As descrições são geradas a partir de um contexto leve do DOM (~50-100 tokens), não das capturas. Umas 15-30 vezes mais barato que modelos com visão. Escolhe o idioma das descrições (inglês, espanhol, português, francês).
 
+<img src="https://github.com/user-attachments/assets/3540cbd5-133f-46fd-a9b6-ffce9b4d422a" alt="Descrições por IA" width="800" />
+
 <div align="right">
 
 [![Back to top][back-to-top]](#readme-top)
@@ -129,6 +117,36 @@ As descrições são geradas a partir de um contexto leve do DOM (~50-100 tokens
 ### ▶️ Reprodução Guide Me
 
 Reproduz qualquer guia ao vivo numa página real. O Mimik destaca o próximo elemento, marca teu progresso passo a passo, e avança sozinho conforme tu vai interagindo. Perfeito pra integrar colegas ou pra se guiar num processo tu mesmo.
+
+<img src="https://github.com/user-attachments/assets/56ffca1d-5074-491f-8571-dd70782d4b05" alt="Reprodução Guide Me" width="800" />
+
+<div align="right">
+
+[![Back to top][back-to-top]](#readme-top)
+
+</div>
+
+### 🎙️ Narração por voz (opcional)
+
+Fala em voz alta enquanto grava e o Mimik transforma o que tu disse nas descrições dos passos. O
+áudio é transcrito com a tua própria key (OpenAI ou Groq) e casado com o passo a que pertence,
+então tu narra uma vez em vez de escrever cada passo na mão.
+
+<img src="https://github.com/user-attachments/assets/061fddc7-da65-4641-8b39-d30b80c36531" alt="Narração por voz" width="800" />
+
+<div align="right">
+
+[![Back to top][back-to-top]](#readme-top)
+
+</div>
+
+### ✏️ Editor de guias
+
+Ajusta um guia depois sem regravar. Recorta, anota e censura qualquer captura, reescreve um passo
+com IA sem sair do editor, coloca títulos e notas entre os passos, reordena ou apaga em lote, e
+volta atrás pelo histórico de versões.
+
+<img src="https://github.com/user-attachments/assets/62d3a01e-b129-44c8-8ba3-e9b97ff08d7e" alt="Editor de guias" width="800" />
 
 <div align="right">
 
@@ -140,21 +158,15 @@ Reproduz qualquer guia ao vivo numa página real. O Mimik destaca o próximo ele
 
 Compartilha os guias no formato que melhor cabe no teu fluxo:
 
-- **HTML**: autônomo, compartilha em qualquer lugar, imagens embutidas em base64
+- **Vídeo**: passo a passo narrado, mp4/H.264, com o cursor indo até cada alvo
 - **PDF**: pronto pra imprimir, A4 retrato com quebras de página automáticas
+- **DOCX**: abre e continua editando no Word
+- **HTML**: autônomo, compartilha em qualquer lugar, imagens embutidas em base64
 - **Markdown**: cola no Notion, GitHub, docs internas, wikis
 
 Todas as exportações são geradas no cliente. Nada passa por servidor.
 
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 🌍 Multi-idioma
-
-Interface disponível em inglês, espanhol, português brasileiro e francês. O idioma das descrições de IA é configurado separadamente, então tu pode usar o Mimik em inglês e gerar os guias em português, ou qualquer combinação.
+<img src="https://github.com/user-attachments/assets/e7584527-7d68-4f3f-9261-8380ee08dfb4" alt="Exportação multi-formato" width="800" />
 
 <div align="right">
 
@@ -162,9 +174,11 @@ Interface disponível em inglês, espanhol, português brasileiro e francês. O 
 
 </div>
 
-### 💾 Armazenamento 100% local
+## 🔐 Privacidade e armazenamento
 
-Teus guias, passos e capturas ficam no teu dispositivo. Sem backend, sem conta, sem telemetria. Tuas API keys (se tu usar alguma) nunca saem do navegador. Ficam salvas localmente e vão direto pro provedor de IA que tu escolheu.
+Teus guias, passos e capturas ficam no teu dispositivo. Sem backend, sem conta, sem telemetria. Tuas API keys (se tu usar alguma) nunca saem do navegador. Ficam salvas localmente e são usadas pra chamar direto o provedor que tu escolheu.
+
+Duas coisas saem do navegador, as duas documentadas na [política de privacidade](https://mimik.westpoint.io/privacy/): os ícones dos sites são buscados no serviço de favicons do Google, o que envia o domínio daquele site, e os recursos opcionais de IA e voz mandam texto ou áudio pro provedor que tu configurou.
 
 <div align="right">
 
@@ -225,3 +239,5 @@ MIT © [Westpoint](https://github.com/westpoint-io). Olha o [LICENSE](./LICENSE)
 [chrome-link]: https://chromewebstore.google.com/detail/mimik/jmfohdaflahliammccpiadmkcibohgha
 [firefox-version-shield]: https://img.shields.io/amo/v/mimik?label=Firefox%20Version&style=flat-square&logo=firefoxbrowser&logoColor=C7D2FE&color=4F46E5&labelColor=1E1B4B
 [firefox-link]: https://addons.mozilla.org/en-US/firefox/addon/mimik/
+[edge-version-shield]: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fhgjemhfoffebbollleajkpefblppleai&query=%24.version&label=Edge%20Version&style=flat-square&logo=microsoftedge&logoColor=C7D2FE&color=4F46E5&labelColor=1E1B4B
+[edge-link]: https://microsoftedge.microsoft.com/addons/detail/hgjemhfoffebbollleajkpefblppleai

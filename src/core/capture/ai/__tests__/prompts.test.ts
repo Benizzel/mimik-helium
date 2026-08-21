@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { AI_LANGUAGES, getLanguageSuffix } from '../prompts';
+import { AI_LANGUAGES, GUIDE_META_PROMPT, getLanguageSuffix } from '../prompts';
+
+describe('GUIDE_META_PROMPT', () => {
+  it('has a steps placeholder', () => {
+    expect(GUIDE_META_PROMPT).toContain('{{steps}}');
+  });
+
+  it('keeps the 60-character title constraint', () => {
+    expect(GUIDE_META_PROMPT).toContain('60 characters');
+  });
+
+  it('asks for a description of one or two sentences', () => {
+    expect(GUIDE_META_PROMPT.toLowerCase()).toContain('description');
+    expect(GUIDE_META_PROMPT).toMatch(/one or two sentences/i);
+  });
+});
 
 describe('getLanguageSuffix', () => {
   it('returns empty string for English', () => {
@@ -29,13 +44,13 @@ describe('getLanguageSuffix', () => {
   it('includes IMPORTANT instruction', () => {
     const suffix = getLanguageSuffix('es');
     expect(suffix).toContain('IMPORTANT');
-    expect(suffix).toContain('Write the description in');
+    expect(suffix).toContain('Write the output in');
   });
 });
 
 describe('AI_LANGUAGES', () => {
-  it('has 4 supported languages', () => {
-    expect(AI_LANGUAGES).toHaveLength(4);
+  it('has 5 supported languages', () => {
+    expect(AI_LANGUAGES).toHaveLength(5);
   });
 
   it('includes English as first entry', () => {

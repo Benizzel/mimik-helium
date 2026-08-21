@@ -8,7 +8,7 @@ export const CaptureState = {
 export type CaptureStateValue = (typeof CaptureState)[keyof typeof CaptureState];
 
 type CaptureEvent =
-  | { type: 'START_RECORDING'; url?: string }
+  | { type: 'START_RECORDING'; url?: string; insertTargetGuideId?: string; insertAtIndex?: number }
   | { type: 'STOP_RECORDING' }
   | { type: 'USER_ACTION' }
   | { type: 'URL_CHANGED'; url: string };
@@ -17,6 +17,8 @@ interface CaptureContext {
   currentGuideId: string | null;
   stepCount: number;
   currentUrl: string;
+  insertTargetGuideId: string | null;
+  insertAtIndex: number | null;
 }
 
 export const captureMachine = createMachine({
@@ -30,6 +32,8 @@ export const captureMachine = createMachine({
     currentGuideId: null,
     stepCount: 0,
     currentUrl: '',
+    insertTargetGuideId: null,
+    insertAtIndex: null,
   },
   states: {
     [CaptureState.IDLE]: {
@@ -40,6 +44,8 @@ export const captureMachine = createMachine({
             currentGuideId: () => crypto.randomUUID(),
             stepCount: 0,
             currentUrl: ({ event }) => event.url ?? '',
+            insertTargetGuideId: ({ event }) => event.insertTargetGuideId ?? null,
+            insertAtIndex: ({ event }) => event.insertAtIndex ?? null,
           }),
         },
       },
@@ -52,6 +58,8 @@ export const captureMachine = createMachine({
             currentGuideId: null,
             stepCount: 0,
             currentUrl: '',
+            insertTargetGuideId: null,
+            insertAtIndex: null,
           }),
         },
         USER_ACTION: {

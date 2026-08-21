@@ -38,7 +38,7 @@ export function isNavigatingClick(el: HTMLElement): boolean {
 
 export function isTooLarge(el: Element): boolean {
   const rect = el.getBoundingClientRect();
-  return rect.width / window.innerWidth > MAX_ELEMENT_RATIO && rect.height / window.innerHeight > MAX_ELEMENT_RATIO;
+  return rect.width / window.innerWidth > MAX_ELEMENT_RATIO || rect.height / window.innerHeight > MAX_ELEMENT_RATIO;
 }
 
 export function isMimikElement(el: Element): boolean {

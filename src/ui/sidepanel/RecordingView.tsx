@@ -1,17 +1,22 @@
-import { Check, EyeOff, X } from 'lucide-react';
+import { Check, EyeOff, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { i18n } from '#imports';
+import { browser, i18n } from '#imports';
 import { deleteStep, getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
 import type { Screenshot, Step } from '@/core/guides/types';
-import { getActiveTab } from '@/lib/browser-api';
+import { getActiveTab, localStorage } from '@/lib/browser-api';
 import { sendMessage } from '@/lib/messaging';
+import type { PanelVoiceUpdate } from '@/lib/port';
 import { extractDomain } from '@/lib/utils';
 import { Button } from '@/ui/components/ui/button';
-import ZoomScreenshot from './ZoomScreenshot';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/ui/tooltip';
+import ScreenshotView from '@/ui/shared/ScreenshotView';
+import MicToggle from './MicToggle';
+import VoiceStatus from './VoiceStatus';
 
 interface RecordingViewProps {
   guideId: string;
   onStop: () => void;
+  voice: PanelVoiceUpdate;
 }
 
 function timeAgo(createdAt: number): string {
@@ -26,10 +31,11 @@ interface LiveStep {
   screenshot?: Screenshot;
 }
 
-export default function RecordingView({ guideId, onStop }: RecordingViewProps) {
+export default function RecordingView({ guideId, onStop, voice }: RecordingViewProps) {
   const [steps, setSteps] = useState<LiveStep[]>([]);
   const [siteUrl, setSiteUrl] = useState('');
   const [isBlurring, setIsBlurring] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [, setTick] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -75,19 +81,30 @@ export default function RecordingView({ guideId, onStop }: RecordingViewProps) {
     });
   }, []);
 
+  useEffect(() => {
+    if (import.meta.env.BROWSER === 'firefox') return;
+    localStorage.get(['voiceEnabled']).then((stored) => setVoiceEnabled(stored.voiceEnabled === true));
+  }, []);
+
+  useEffect(() => {
+    if (voice.phase !== 'error' || voice.reason !== 'permission-denied') return;
+    setVoiceEnabled(false);
+    void localStorage.set({ voiceEnabled: false });
+  }, [voice.phase, voice.reason]);
+
   const handleBlur = useCallback(async () => {
     await sendMessage('enterBlurMode', undefined);
     setIsBlurring(true);
   }, []);
 
   useEffect(() => {
-    const handler = (changes: Record<string, chrome.storage.StorageChange>) => {
+    const handler = (changes: Record<string, { newValue?: unknown }>) => {
       if ('mimikBlurMode' in changes && changes.mimikBlurMode.newValue === false) {
         setIsBlurring(false);
       }
     };
-    chrome.storage.onChanged.addListener(handler);
-    return () => chrome.storage.onChanged.removeListener(handler);
+    browser.storage.onChanged.addListener(handler);
+    return () => browser.storage.onChanged.removeListener(handler);
   }, []);
 
   const handleDeleteStep = useCallback(
@@ -146,31 +163,47 @@ export default function RecordingView({ guideId, onStop }: RecordingViewProps) {
                 <div className="px-4 pb-4 group">
                   {liveStep.screenshot && (
                     <div className="mb-2">
-                      <ZoomScreenshot
+                      <ScreenshotView
                         screenshot={liveStep.screenshot}
                         alt={liveStep.step.description}
                         className="shadow-sm"
                         crop
                         animate
+                        readOnly
                       />
                     </div>
                   )}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-[13px] font-medium leading-snug text-foreground">
-                        {liveStep.step.description}
-                      </p>
+                      {liveStep.step.aiPending ? (
+                        <p className="flex items-center gap-1.5 text-[13px] font-medium leading-snug text-muted-foreground">
+                          <Loader2 size={13} className="animate-spin" />
+                          {i18n.t(
+                            voice.phase === 'recording' || voice.phase === 'transcribing'
+                              ? 'editor.transcribingStepDescription'
+                              : 'editor.writingStepDescription',
+                          )}
+                        </p>
+                      ) : (
+                        <p className="text-[13px] font-medium leading-snug text-foreground">
+                          {liveStep.step.description}
+                        </p>
+                      )}
                       <span className="text-[10px] text-purple">
                         {timeAgo(liveStep.step.timestamp)} · {extractDomain(liveStep.step.url || siteUrl)}
                       </span>
                     </div>
-                    <button
-                      onClick={() => handleDeleteStep(liveStep.step.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-border hover:text-destructive"
-                      title={i18n.t('recording.deleteStep')}
-                    >
-                      <X size={13} />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleDeleteStep(liveStep.step.id)}
+                          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity motion-reduce:transition-none p-1 rounded text-border hover:text-destructive"
+                        >
+                          <X size={13} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent align="end">{i18n.t('recording.deleteStep')}</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
                 {idx < steps.length - 1 && <div className="mx-4 mb-4 h-px bg-border" />}
@@ -182,26 +215,42 @@ export default function RecordingView({ guideId, onStop }: RecordingViewProps) {
       </div>
 
       {/* Bottom bar */}
-      <div className="shrink-0 border-t border-border px-4 py-2.5 flex items-center gap-2">
-        <Button onClick={onStop} className="flex-1 h-10 rounded-full font-semibold text-[13px]">
-          <Check size={16} strokeWidth={3} />
-          {i18n.t('recording.finishRecording')}
-        </Button>
-        <button
-          onClick={handleBlur}
-          disabled={isBlurring}
-          className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors text-muted-foreground hover:border-accent hover:text-accent disabled:opacity-50 disabled:cursor-not-allowed"
-          title={i18n.t('recording.smartBlur')}
-        >
-          <EyeOff size={16} />
-        </button>
-        <button
-          onClick={onStop}
-          className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors text-purple hover:border-destructive/30 hover:text-destructive"
-          title={i18n.t('recording.discard')}
-        >
-          <X size={16} />
-        </button>
+      <div className="shrink-0 border-t border-border">
+        {import.meta.env.BROWSER !== 'firefox' && <VoiceStatus update={voice} enabled={voiceEnabled} />}
+        <div className="px-4 py-2.5 flex items-center gap-2">
+          <Button onClick={onStop} className="flex-1 h-10 rounded-full font-semibold text-[13px]">
+            <Check size={16} strokeWidth={3} />
+            {i18n.t('recording.finishRecording')}
+          </Button>
+          {import.meta.env.BROWSER !== 'firefox' && (
+            <MicToggle enabled={voiceEnabled} live={voice.phase === 'recording'} onChange={setVoiceEnabled} />
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="shrink-0">
+                <button
+                  onClick={handleBlur}
+                  disabled={isBlurring}
+                  className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors text-muted-foreground hover:border-accent hover:text-accent disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <EyeOff size={16} />
+                </button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{i18n.t('recording.smartBlur')}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onStop}
+                className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors text-purple hover:border-destructive/30 hover:text-destructive"
+              >
+                <X size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent align="end">{i18n.t('recording.discard')}</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );

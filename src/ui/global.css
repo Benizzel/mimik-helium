@@ -43,6 +43,13 @@ body {
   font-family: "Poppins", sans-serif;
 }
 
+button:not(:disabled):not([aria-disabled="true"]),
+[role="button"]:not([aria-disabled="true"]),
+label:has(> input[type="checkbox"]),
+input[type="checkbox"]:not(:disabled) {
+  cursor: pointer;
+}
+
 @keyframes gradient-text {
   0% { background-position: 100% 50%; }
   100% { background-position: -100% 50%; }

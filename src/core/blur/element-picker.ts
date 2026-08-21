@@ -1,7 +1,9 @@
 import { i18n } from '#imports';
+import { HoverRing } from '@/lib/hover-ring';
 
 const MANUAL_CLASS = 'mimik-manual-blur';
 const BLUR_ATTR = 'data-mimik-blur';
+const RING_COLOR = '#7C3AED';
 
 const STYLES = `
   :host {
@@ -9,15 +11,6 @@ const STYLES = `
     inset: 0;
     z-index: 2147483645;
     pointer-events: none;
-  }
-  .ring {
-    position: fixed;
-    border: 2px dashed #7C3AED;
-    border-radius: 4px;
-    pointer-events: none;
-    transition: all 0.15s ease;
-    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1);
-    display: none;
   }
   .bar {
     position: fixed;
@@ -58,7 +51,7 @@ const STYLES = `
 
 export class ElementPicker {
   private host: HTMLElement | null = null;
-  private ring: HTMLElement | null = null;
+  private ring = new HoverRing(RING_COLOR);
   private listeners: [string, EventListener, AddEventListenerOptions][] = [];
   private onDone: (() => void) | null = null;
 
@@ -87,7 +80,7 @@ export class ElementPicker {
     this.listeners = [];
     this.host?.remove();
     this.host = null;
-    this.ring = null;
+    this.ring.dispose();
     document.documentElement.style.removeProperty('cursor');
   }
 
@@ -99,10 +92,6 @@ export class ElementPicker {
     const style = document.createElement('style');
     style.textContent = STYLES;
     shadow.appendChild(style);
-
-    const ring = document.createElement('div');
-    ring.className = 'ring';
-    shadow.appendChild(ring);
 
     const bar = document.createElement('div');
     bar.className = 'bar';
@@ -119,7 +108,6 @@ export class ElementPicker {
     bar.appendChild(doneBtn);
     shadow.appendChild(bar);
 
-    this.ring = ring;
     document.documentElement.appendChild(this.host);
   }
 
@@ -154,17 +142,10 @@ export class ElementPicker {
   private onMouseOver(e: Event) {
     const raw = (e as MouseEvent).target;
     if (!raw || !(raw instanceof HTMLElement) || this.isMimikElement(raw)) return;
-    if (!this.ring) return;
-    const rect = raw.getBoundingClientRect();
-    const pad = 3;
-    this.ring.style.left = `${rect.left - pad}px`;
-    this.ring.style.top = `${rect.top - pad}px`;
-    this.ring.style.width = `${rect.width + pad * 2}px`;
-    this.ring.style.height = `${rect.height + pad * 2}px`;
-    this.ring.style.display = 'block';
+    this.ring.show(raw);
   }
 
   private onMouseOut() {
-    if (this.ring) this.ring.style.display = 'none';
+    this.ring.hide();
   }
 }

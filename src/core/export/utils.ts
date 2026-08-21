@@ -22,6 +22,10 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
+export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  return await blob.arrayBuffer();
+}
+
 export function extractDomain(steps: Step[]): string | null {
   const stepWithUrl = steps.find((s) => s.url);
   if (!stepWithUrl) return null;
@@ -32,7 +36,7 @@ export function extractDomain(steps: Step[]): string | null {
   }
 }
 
-const LOCALE_MAP: Record<string, string> = { en: 'en-US', es: 'es', 'pt-BR': 'pt-BR', fr: 'fr' };
+const LOCALE_MAP: Record<string, string> = { en: 'en-US', es: 'es', 'pt-BR': 'pt-BR', fr: 'fr', de: 'de-DE' };
 
 export function formatDate(timestamp: number): string {
   let locale = 'en-US';
@@ -61,4 +65,41 @@ export async function fetchFaviconBase64(domain: string): Promise<string | null>
   } catch {
     return null;
   }
+}
+
+export function fitImage(width: number, height: number, maxHeight: number): { width: number; height: number } {
+  if (!Number.isFinite(height) || height <= 0 || height <= maxHeight) return { width, height };
+  return { width: width * (maxHeight / height), height: maxHeight };
+}
+
+export const MAX_TITLE_LINES = 3;
+export const MAX_DESC_LINES = 4;
+export const MAX_LEAD_LINES = 2;
+
+export function clampLines(lines: string[], max: number): string[] {
+  if (lines.length <= max) return lines;
+  const kept = lines.slice(0, max);
+  kept[max - 1] = `${kept[max - 1].replace(/\s+$/, '')}…`;
+  return kept;
+}
+
+export const LEAD_FONT_PX = 13;
+export const LEAD_LINE_RATIO = 1.5;
+export const LEAD_MARGIN_PX = 14;
+
+export function pxToMm(px: number): number {
+  return (px * 25.4) / 96;
+}
+
+export function containFit(
+  srcWidth: number,
+  srcHeight: number,
+  boxWidth: number,
+  boxHeight: number,
+): { width: number; height: number; x: number; y: number } {
+  if (!(srcWidth > 0) || !(srcHeight > 0)) return { width: boxWidth, height: boxHeight, x: 0, y: 0 };
+  const scale = Math.min(boxWidth / srcWidth, boxHeight / srcHeight);
+  const width = srcWidth * scale;
+  const height = srcHeight * scale;
+  return { width, height, x: (boxWidth - width) / 2, y: (boxHeight - height) / 2 };
 }

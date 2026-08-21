@@ -66,6 +66,14 @@ export default function SearchResults({ results, query, selected, onSelect, onHo
             >
               {r.guide.title}
             </p>
+            {r.guide.description && (
+              <p
+                className="text-[11px] mt-0.5 line-clamp-1"
+                style={{ color: i === selected ? 'rgba(199,210,254,0.6)' : 'var(--color-muted-foreground)' }}
+              >
+                {r.guide.description}
+              </p>
+            )}
             <p
               className="text-[10px] mt-0.5"
               style={{ color: i === selected ? 'rgba(199,210,254,0.6)' : 'var(--color-muted-foreground)' }}
