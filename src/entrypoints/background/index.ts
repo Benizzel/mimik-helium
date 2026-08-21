@@ -42,6 +42,15 @@ async function resolveManual(step: Step): Promise<boolean> {
   return stepRequiresManual(step, screenshots.get(step.id));
 }
 
+async function startNarrationIfPossible(): Promise<boolean> {
+  await waitUntilReady();
+  const actor = getActor();
+  if (!canStartNarrationNow(String(actor.getSnapshot().value), getVoiceUpdate().phase)) return false;
+  const activeTab = await getActiveTab();
+  await startVoiceNarration(activeTab?.id);
+  return getVoiceUpdate().phase === 'recording';
+}
+
 export default defineBackground(() => {
   logger.info('Background service worker started');
 
@@ -75,7 +84,7 @@ export default defineBackground(() => {
   initActor().catch(initActorFallback);
   cancelSession();
   registerNavigationListeners();
-  registerVoiceListeners();
+  registerVoiceListeners(startNarrationIfPossible);
 
   setupPortListener((port) => {
     logger.debug('Panel connected via port');
@@ -148,16 +157,7 @@ export default defineBackground(() => {
     return { success: true, guideId: guideId ?? undefined, inserted: false };
   });
 
-  onMessage('startNarration', async () => {
-    await waitUntilReady();
-    const actor = getActor();
-    if (!canStartNarrationNow(String(actor.getSnapshot().value), getVoiceUpdate().phase)) {
-      return { started: false };
-    }
-    const activeTab = await getActiveTab();
-    await startVoiceNarration(activeTab?.id);
-    return { started: getVoiceUpdate().phase === 'recording' };
-  });
+  onMessage('startNarration', async () => ({ started: await startNarrationIfPossible() }));
 
   onMessage('enterBlurMode', async () => {
     await waitUntilReady();

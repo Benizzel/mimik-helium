@@ -37,6 +37,8 @@ import { describeUnnarratedSteps } from './describe-unnarrated';
 
 const START_TIMEOUT_MS = 8000;
 
+let resumeNarration: (() => Promise<unknown>) | null = null;
+
 let phase: PanelVoiceUpdate = { type: 'VOICE_UPDATE', phase: 'idle' };
 
 export function getVoiceUpdate(): PanelVoiceUpdate {
@@ -133,6 +135,13 @@ async function beginVoiceCapture(microphoneId: string | undefined, tabId: number
 
 export function canStartNarrationNow(captureState: string, voicePhase: VoicePhase): boolean {
   return captureState === CaptureState.RECORDING && voicePhase !== 'recording' && voicePhase !== 'transcribing';
+}
+
+export type PermissionOutcome = 'start' | 'report-denied' | 'ignore';
+
+export function permissionOutcome(state: 'granted' | 'denied', voicePhase: VoicePhase): PermissionOutcome {
+  if (voicePhase === 'recording' || voicePhase === 'transcribing') return 'ignore';
+  return state === 'granted' ? 'start' : 'report-denied';
 }
 
 export async function startVoiceNarration(tabId?: number): Promise<void> {
@@ -292,12 +301,20 @@ function handleVoiceHandoff(event: VoiceHandoffEvent): void {
 
 function handlePermissionResult(event: VoicePermissionResultEvent): void {
   logger.info('voice: microphone permission', event.state);
-  if (event.state === 'granted' && phase.phase === 'error') report({ phase: 'idle' });
+  const outcome = permissionOutcome(event.state, phase.phase);
+  if (outcome === 'ignore') return;
+  if (outcome === 'report-denied') {
+    report({ phase: 'error', reason: 'permission-denied', error: 'Microphone access was refused' });
+    return;
+  }
+  if (phase.phase === 'error') report({ phase: 'idle' });
+  void resumeNarration?.();
 }
 
-export function registerVoiceListeners(): void {
+export function registerVoiceListeners(onMicrophoneGranted?: () => Promise<unknown>): void {
   if (!supportsVoice()) return;
 
+  resumeNarration = onMicrophoneGranted ?? null;
   registerVoicePanelRelay();
 
   onRuntimeMessage((message) => {
