@@ -8,7 +8,7 @@
 
 **Auto-capture any browser workflow into a step-by-step guide. No account, no cloud, no tracking.**
 
-Click record, do the thing, get a polished guide with annotated screenshots. Edit, replay, or export.
+Click record, do the thing, get a polished guide with annotated screenshots. Narrate it as you go, edit it after, then replay or export.
 
 <!-- SHIELD GROUP -->
 
@@ -32,14 +32,13 @@ Click record, do the thing, get a polished guide with annotated screenshots. Edi
 - [📺 Demo](#-demo)
 - [👋 Getting Started](#-getting-started)
 - [✨ Features](#-features)
-  - [🎬 Auto-capture](#-auto-capture)
-  - [📸 Annotated screenshots](#-annotated-screenshots)
   - [🔒 Smart Blur](#-smart-blur)
   - [🧠 AI descriptions (optional)](#-ai-descriptions-optional)
   - [▶️ Guide Me replay](#️-guide-me-replay)
+  - [🎙️ Voice narration (optional)](#️-voice-narration-optional)
+  - [✏️ Guide editor](#️-guide-editor)
   - [📤 Multi-format export](#-multi-format-export)
-  - [🌍 Multi-language](#-multi-language)
-  - [💾 100% local storage](#-100-local-storage)
+- [🔐 Privacy & storage](#-privacy--storage)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
 
@@ -50,7 +49,7 @@ Click record, do the thing, get a polished guide with annotated screenshots. Edi
 ## 📺 Demo
 
 <div align="center">
-<img src="https://github.com/user-attachments/assets/d4c64cb8-ad26-4de1-af02-a04a64e2836e" alt="Mimik demo" width="800" />
+<img src="https://github.com/user-attachments/assets/9de20b45-2256-4127-8242-141cf1802f39" alt="Mimik demo" width="800" />
 </div>
 
 ## 👋 Getting Started
@@ -59,10 +58,17 @@ Mimik turns any repetitive browser task into a documented, shareable guide in se
 
 Whether you're documenting internal tools, writing product tutorials, or onboarding a teammate, Mimik captures every click, keystroke, and navigation automatically so you can focus on the work.
 
+Every meaningful action becomes a step: clicks on buttons and links, form inputs, keyboard shortcuts, clipboard actions, drag events, and page navigations. Rapid clicks on nearby elements are merged so guides stay clean, and clicks are intercepted before the page navigates away, so nothing is lost on SPAs or full page loads.
+
+Each step gets a screenshot with the clicked element highlighted and zoomed in. No manual cropping, no annotation tools to learn.
+
 | Browser | Version | Install |
 | ------- | ------- | ------- |
 | Chrome  | [![Chrome Version][chrome-version-shield]][chrome-link]   | [Chrome Web Store][chrome-link] |
 | Firefox | [![Firefox Version][firefox-version-shield]][firefox-link] | [Firefox Add-ons][firefox-link]  |
+| Edge    | [![Edge Version][edge-version-shield]][edge-link]          | [Microsoft Edge Add-ons][edge-link] |
+
+Available in English, Spanish, Brazilian Portuguese, French, and German. The AI description language is set separately, so you can run Mimik in English and generate guides in Spanish, or any combination.
 
 > \[!IMPORTANT]
 >
@@ -80,33 +86,13 @@ Whether you're documenting internal tools, writing product tutorials, or onboard
 
 ## ✨ Features
 
-### 🎬 Auto-capture
-
-Click, type, navigate. Mimik watches it all. Every meaningful action becomes a step: clicks on buttons and links, form inputs, keyboard shortcuts, clipboard actions, drag events, and page navigations.
-
-Smart event merging deduplicates rapid clicks on nearby elements, so your guides stay clean. Click interception fires *before* the page navigates away, so nothing gets lost during SPAs or full page loads.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 📸 Annotated screenshots
-
-Every step gets a screenshot with the clicked element highlighted and zoomed in. No manual cropping, no annotation tools to learn. Mimik figures out the important part of the page and frames it for you.
-
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
 ### 🔒 Smart Blur
 
 Mimik automatically detects and blurs sensitive data in your screenshots: emails, phone numbers, SSNs, credit cards, IP addresses, MAC addresses. Toggle each category independently.
 
 Need to blur something custom? The manual blur picker lets you select any DOM element and mask it across every screenshot where it appears.
+
+<img src="https://github.com/user-attachments/assets/968d2518-c561-4d68-92a6-3d5f569fe38a" alt="Smart Blur" width="800" />
 
 <div align="right">
 
@@ -116,9 +102,11 @@ Need to blur something custom? The manual blur picker lets you select any DOM el
 
 ### 🧠 AI descriptions (optional)
 
-Bring your own API key (OpenAI or Anthropic) and Mimik generates human-readable step descriptions like *"Click the **Submit** button to save changes"* instead of `Click button "Submit"`.
+Bring your own API key (OpenAI or Anthropic) and Mimik generates human-readable step descriptions like *"Click the **Submit** button to save changes"* instead of the rule-based `Click Submit`.
 
-Descriptions are generated from a lightweight DOM context (~50-100 tokens), not screenshots. Roughly 15-30x cheaper than vision models. Choose the language you want descriptions in (English, Spanish, Portuguese, French).
+Descriptions are generated from a lightweight DOM context (~50-100 tokens), not screenshots. Roughly 15-30x cheaper than vision models. Choose the language you want descriptions in (English, Spanish, Portuguese, French, German).
+
+<img src="https://github.com/user-attachments/assets/3540cbd5-133f-46fd-a9b6-ffce9b4d422a" alt="AI descriptions" width="800" />
 
 <div align="right">
 
@@ -130,6 +118,36 @@ Descriptions are generated from a lightweight DOM context (~50-100 tokens), not 
 
 Replay any guide live on a real page. Mimik highlights the next element to click, tracks your progress step by step, and advances automatically as you interact. Perfect for onboarding teammates or walking through a process yourself.
 
+<img src="https://github.com/user-attachments/assets/56ffca1d-5074-491f-8571-dd70782d4b05" alt="Guide Me replay" width="800" />
+
+<div align="right">
+
+[![Back to top][back-to-top]](#readme-top)
+
+</div>
+
+### 🎙️ Voice narration (optional)
+
+Talk through the workflow out loud while you record and Mimik turns what you said into the step
+descriptions. Audio is transcribed with your own key (OpenAI or Groq) and matched to the steps it
+belongs to, so you narrate once instead of writing every step by hand.
+
+<img src="https://github.com/user-attachments/assets/061fddc7-da65-4641-8b39-d30b80c36531" alt="Voice narration" width="800" />
+
+<div align="right">
+
+[![Back to top][back-to-top]](#readme-top)
+
+</div>
+
+### ✏️ Guide editor
+
+Fix a guide after the fact without re-recording. Crop, annotate and redact any screenshot, rewrite a
+step with AI inline, drop headings and notes between steps, reorder or bulk-delete, and roll back
+through version history.
+
+<img src="https://github.com/user-attachments/assets/62d3a01e-b129-44c8-8ba3-e9b97ff08d7e" alt="Guide editor" width="800" />
+
 <div align="right">
 
 [![Back to top][back-to-top]](#readme-top)
@@ -140,21 +158,15 @@ Replay any guide live on a real page. Mimik highlights the next element to click
 
 Share guides in whatever format fits your workflow:
 
-- **HTML**: self-contained, share anywhere, base64-embedded images
+- **Video**: narrated walkthrough, mp4/H.264, with the cursor moving to each target
 - **PDF**: print-ready, A4 portrait with auto page breaks
+- **DOCX**: open and keep editing in Word
+- **HTML**: self-contained, share anywhere, base64-embedded images
 - **Markdown**: paste into Notion, GitHub, internal docs, wikis
 
 All exports are generated client-side. Nothing touches a server.
 
-<div align="right">
-
-[![Back to top][back-to-top]](#readme-top)
-
-</div>
-
-### 🌍 Multi-language
-
-UI available in English, Spanish, Brazilian Portuguese, and French. The AI description language is configurable independently, so you can run Mimik in English but generate guides in Spanish, or any combination.
+<img src="https://github.com/user-attachments/assets/e7584527-7d68-4f3f-9261-8380ee08dfb4" alt="Multi-format export" width="800" />
 
 <div align="right">
 
@@ -162,9 +174,11 @@ UI available in English, Spanish, Brazilian Portuguese, and French. The AI descr
 
 </div>
 
-### 💾 100% local storage
+## 🔐 Privacy & storage
 
-Guides, steps, and screenshots live on your device. There's no backend, no account, no telemetry. Your API keys (if you bring one) never leave your browser. They're stored locally and sent directly to the AI provider you chose.
+Guides, steps, and screenshots live on your device. There's no backend, no account, no telemetry. Your API keys (if you bring one) never leave your browser — they're stored locally and used to call the provider you chose directly.
+
+Two things do leave the browser, both documented in the [privacy policy](https://mimik.westpoint.io/privacy/): site icons are fetched from Google's favicon service, which sends that site's domain, and the optional AI and voice features send text or audio to the provider you configured.
 
 <div align="right">
 
@@ -225,5 +239,7 @@ MIT © [Westpoint](https://github.com/westpoint-io). See [LICENSE](./LICENSE) fo
 [chrome-link]: https://chromewebstore.google.com/detail/mimik/jmfohdaflahliammccpiadmkcibohgha
 [firefox-version-shield]: https://img.shields.io/amo/v/mimik?label=Firefox%20Version&style=flat-square&logo=firefoxbrowser&logoColor=C7D2FE&color=4F46E5&labelColor=1E1B4B
 [firefox-link]: https://addons.mozilla.org/en-US/firefox/addon/mimik/
+[edge-version-shield]: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fhgjemhfoffebbollleajkpefblppleai&query=%24.version&label=Edge%20Version&style=flat-square&logo=microsoftedge&logoColor=C7D2FE&color=4F46E5&labelColor=1E1B4B
+[edge-link]: https://microsoftedge.microsoft.com/addons/detail/hgjemhfoffebbollleajkpefblppleai
 </content>
 </invoke>
