@@ -229,7 +229,7 @@ export async function clearStepAiPending(stepId: string, description?: string): 
       return true;
     }
     await db.steps.update(stepId, { aiPending: false });
-    return false;
+    return step.aiPending === true;
   });
   if (wrote) notifyGuidesChanged({ type: 'mutated' });
 }
