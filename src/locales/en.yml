@@ -322,6 +322,7 @@ annotationEditor:
   colorLabel: Colour
   textPlaceholder: Type something...
   targetBorder: Border style
+  targetDim: Dim background
   modeAnnotate: "Annotate"
   toolLine: "Line"
   duplicate: "Duplicate"

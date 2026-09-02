@@ -322,6 +322,7 @@ annotationEditor:
   colorLabel: Cor
   textPlaceholder: Digite algo...
   targetBorder: Estilo da borda
+  targetDim: Escurecer fundo
   modeAnnotate: "Anotar"
   toolLine: "Linha"
   duplicate: "Duplicar"

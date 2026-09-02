@@ -455,7 +455,7 @@ describe('diffSnapshots', () => {
           's1',
           {
             annotations: [],
-            target: { x: 4, y: 6, width: 8, height: 10, border: 'dashed', color: '#4F46E5' },
+            target: { x: 4, y: 6, width: 8, height: 10, border: 'solid', color: '#4F46E5', dim: true },
           },
           captured,
         ),

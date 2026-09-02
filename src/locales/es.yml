@@ -322,6 +322,7 @@ annotationEditor:
   colorLabel: Color
   textPlaceholder: Escribe algo...
   targetBorder: Estilo del borde
+  targetDim: Oscurecer fondo
   modeAnnotate: "Anotar"
   toolLine: "Línea"
   duplicate: "Duplicar"

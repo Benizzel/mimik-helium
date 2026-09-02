@@ -4,7 +4,8 @@ import type { Annotation } from '@/core/screenshot/types';
 import { DEFAULT_TARGET_COLOR } from '@/core/screenshot/types';
 
 const drawAnnotation = vi.hoisted(() => vi.fn());
-vi.mock('@/core/screenshot/draw', () => ({ drawAnnotation }));
+const drawSpotlight = vi.hoisted(() => vi.fn());
+vi.mock('@/core/screenshot/draw', () => ({ drawAnnotation, drawSpotlight, TARGET_RADIUS: 12 }));
 
 const { imageDimensions, renderScreenshot } = await import('@/core/screenshot/render');
 
@@ -68,6 +69,7 @@ beforeEach(() => {
   convertArgs = [];
   closed = 0;
   drawAnnotation.mockClear();
+  drawSpotlight.mockClear();
   vi.stubGlobal(
     'createImageBitmap',
     vi.fn(async () => ({
@@ -158,8 +160,25 @@ describe('renderScreenshot click target', () => {
       w: 240,
       h: 120,
       color: DEFAULT_TARGET_COLOR,
-      border: 'dashed',
+      border: 'solid',
     });
+  });
+
+  it('dims the viewport behind an implicit target by default', async () => {
+    await renderScreenshot(bounded());
+
+    expect(drawSpotlight).toHaveBeenCalledTimes(1);
+    expect(drawSpotlight.mock.calls[0][1]).toEqual({ x: 60, y: 80, w: 240, h: 120 });
+  });
+
+  it('skips the dim overlay when the target opts out', async () => {
+    const s = makeScreenshot({
+      bounds: { x: 30, y: 40, width: 120, height: 60 },
+      edits: { target: { x: 5, y: 6, width: 7, height: 8, border: 'solid', color: '#F43F5E', dim: false } },
+    });
+    await renderScreenshot(s);
+
+    expect(drawSpotlight).not.toHaveBeenCalled();
   });
 
   it('skips the outline when the caller opts out', async () => {

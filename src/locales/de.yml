@@ -425,6 +425,7 @@ annotationEditor:
   colorLabel: "Farbe"
   textPlaceholder: "Text eingeben ..."
   targetBorder: "Rahmenstil"
+  targetDim: "Hintergrund abdunkeln"
   modeAnnotate: "Kommentieren"
   toolLine: "Linie"
   duplicate: "Duplizieren"

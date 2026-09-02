@@ -1,5 +1,5 @@
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
-import { drawAnnotation } from './draw';
+import { drawAnnotation, drawSpotlight, TARGET_RADIUS } from './draw';
 import { resolveTarget, resolveViewport } from './geometry';
 
 interface RenderOptions {
@@ -30,6 +30,15 @@ export async function renderScreenshot(screenshot: Screenshot, opts: RenderOptio
 
   const target = opts.target === false ? null : resolveTarget(screenshot);
   if (target) {
+    if (target.dim !== false) {
+      drawSpotlight(
+        ctx,
+        { x: target.x, y: target.y, w: target.width, h: target.height },
+        TARGET_RADIUS,
+        viewport,
+        target.dimOpacity,
+      );
+    }
     drawAnnotation(
       ctx,
       {

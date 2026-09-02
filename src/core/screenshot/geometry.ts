@@ -239,7 +239,8 @@ export function resolveTarget(screenshot: TargetSource): ClickTarget | null {
     y: bounds.y * dpr,
     width: bounds.width * dpr,
     height: bounds.height * dpr,
-    border: 'dashed',
+    border: 'solid',
     color: DEFAULT_TARGET_COLOR,
+    dim: true,
   };
 }

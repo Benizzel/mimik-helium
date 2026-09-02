@@ -3,17 +3,46 @@ import { DEFAULT_LINE_HEIGHT, FONT_FAMILIES, LINE_WIDTHS } from './types';
 
 export type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
-export const TARGET_STROKE = 3.5;
+export const TARGET_STROKE = 5;
 export const TARGET_RADIUS = 12;
+export const DEFAULT_DIM_OPACITY = 0.55;
+export const DEFAULT_DIM_COLOR = '#0A0A0F';
 
-export function drawRoundedRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
+function roundedRectPath(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
   ctx.arcTo(x + w, y + h, x, y + h, r);
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
+}
+
+export function drawRoundedRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  roundedRectPath(ctx, x, y, w, h, r);
   ctx.closePath();
+}
+
+/**
+ * Dims the whole viewport and punches a rounded-rect hole over the target
+ * (single evenodd fill, so the hole is a true cutout rather than a redraw).
+ */
+export function drawSpotlight(
+  ctx: Ctx,
+  hole: { x: number; y: number; w: number; h: number },
+  radius: number,
+  viewport: { x: number; y: number; width: number; height: number },
+  opacity: number = DEFAULT_DIM_OPACITY,
+  color: string = DEFAULT_DIM_COLOR,
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(viewport.x, viewport.y, viewport.width, viewport.height);
+  roundedRectPath(ctx, hole.x, hole.y, hole.w, hole.h, radius);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.globalAlpha = opacity;
+  ctx.fill('evenodd');
+  ctx.restore();
 }
 
 function drawArrowEnd(ctx: Ctx, x1: number, y1: number, x2: number, y2: number, width: number, end: ArrowEnd) {
@@ -93,6 +122,8 @@ export function drawAnnotation(ctx: Ctx, a: Annotation, originX: number, originY
     case 'target':
       ctx.strokeStyle = a.color;
       ctx.lineWidth = TARGET_STROKE;
+      ctx.shadowColor = a.color;
+      ctx.shadowBlur = 16;
       if (a.border === 'dashed') ctx.setLineDash([8, 5]);
       drawRoundedRect(ctx, a.x, a.y, a.w, a.h, TARGET_RADIUS);
       ctx.stroke();

@@ -26,7 +26,7 @@ export default function ImagePlaceholder({
       className={`flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-secondary/60 text-muted-foreground ${className}`}
       style={{ aspectRatio: ratio }}
     >
-      <MascotIcon size={64} pose="lookaway" tone="muted" />
+      <MascotIcon size={64} tone="muted" />
       <span className="text-[12px] font-semibold text-muted-foreground">{label}</span>
       {onUpload && (
         <>

@@ -18,6 +18,8 @@ export const DEFAULT_TARGET_COLOR = '#4F46E5';
 export interface ClickTarget extends ScreenshotBounds {
   border: TargetBorder;
   color: string;
+  dim?: boolean;
+  dimOpacity?: number;
 }
 
 export type LineWidth = 'none' | 'xs' | 'sm' | 'ms' | 'md' | 'ml' | 'lg' | 'xl';

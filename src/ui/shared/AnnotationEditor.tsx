@@ -5,6 +5,7 @@ import {
   CopyPlus,
   Crop,
   EyeOff,
+  Focus,
   Minus,
   MousePointer2,
   MousePointerClick,
@@ -23,7 +24,7 @@ import { i18n } from '#imports';
 import { updateScreenshotEdits } from '@/core/guides/service';
 import type { Screenshot, ScreenshotBounds } from '@/core/guides/types';
 import { shadeOf } from '@/core/screenshot/color';
-import { drawAnnotation, drawRoundedRect, TARGET_RADIUS, TARGET_STROKE } from '@/core/screenshot/draw';
+import { drawAnnotation, drawRoundedRect, drawSpotlight, TARGET_RADIUS, TARGET_STROKE } from '@/core/screenshot/draw';
 import {
   annotationBounds,
   cropTo,
@@ -328,6 +329,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
   const [pulse, setPulse] = useState(0);
   const [defaultTargetColor, setDefaultTargetColor] = useState(DEFAULT_TARGET_COLOR);
   const [grabbing, setGrabbing] = useState(false);
+  const [targetDim, setTargetDim] = useState<boolean>(() => resolveTarget(screenshot)?.dim !== false);
 
   const [fill] = useState('transparent');
   const [lineWidth] = useState<LineWidth>('ms');
@@ -497,6 +499,14 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
 
     for (const a of annotations) {
       if (a.type === 'target') {
+        if (targetDim) {
+          drawSpotlight(ctx, { x: a.x, y: a.y, w: a.w, h: a.h }, TARGET_RADIUS, {
+            x: 0,
+            y: 0,
+            width: canvas.width,
+            height: canvas.height,
+          });
+        }
         const gradient = ctx.createConicGradient(pulse * Math.PI * 2, a.x + a.w / 2, a.y + a.h / 2);
         for (const [stop, v, s] of TARGET_SWEEP) gradient.addColorStop(stop, shadeOf(a.color, v, s));
         ctx.save();
@@ -564,7 +574,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
       }
       ctx.restore();
     }
-  }, [annotations, draft, cropDraft, selectedId, bitmap, getScale, mode, viewport, pulse]);
+  }, [annotations, draft, cropDraft, selectedId, bitmap, getScale, mode, viewport, pulse, targetDim]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -874,6 +884,7 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
             height: targetAnnotation.h,
             border: targetAnnotation.border,
             color: targetAnnotation.color,
+            dim: targetDim,
           }
         : null;
     const nextEdits: ScreenshotEdits = {
@@ -1048,17 +1059,31 @@ export default function AnnotationEditor({ screenshot, tool, onDone, onCancel }:
                       </ColorPopover>
                     )}
                     {selectedTarget ? (
-                      <Tip label={i18n.t('annotationEditor.targetBorder')}>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateTarget({ border: selectedTarget.border === 'dashed' ? 'solid' : 'dashed' })
-                          }
-                          className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
-                        >
-                          {selectedTarget.border === 'dashed' ? <SquareDashed size={14} /> : <Square size={14} />}
-                        </button>
-                      </Tip>
+                      <>
+                        <Tip label={i18n.t('annotationEditor.targetBorder')}>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateTarget({ border: selectedTarget.border === 'dashed' ? 'solid' : 'dashed' })
+                            }
+                            className="w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15"
+                          >
+                            {selectedTarget.border === 'dashed' ? <SquareDashed size={14} /> : <Square size={14} />}
+                          </button>
+                        </Tip>
+                        <Tip label={i18n.t('annotationEditor.targetDim')}>
+                          <button
+                            type="button"
+                            aria-pressed={targetDim}
+                            onClick={() => setTargetDim((v) => !v)}
+                            className={`w-6 h-6 flex items-center justify-center rounded-md text-primary-foreground hover:bg-primary-foreground/15 ${
+                              targetDim ? 'bg-primary-foreground/25' : ''
+                            }`}
+                          >
+                            <Focus size={14} />
+                          </button>
+                        </Tip>
+                      </>
                     ) : (
                       <Tip label={i18n.t('annotationEditor.duplicate')}>
                         <button
